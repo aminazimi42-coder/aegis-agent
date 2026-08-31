@@ -10,13 +10,13 @@ This phase extended the platform from a basic AI routing foundation into a speci
 - Updated all four specialist agents with role-aware responses and specialized execution language.
 - Extended the workflow in `app/orchestrator.py` so the platform runs all four agents and returns a combined result payload.
 - Implemented workflow execution in `core/ai_core.py` for the complete coordination cycle.
-- Kept the architecture aligned to the four required agents: Alina, Kiyan, Bita, and Aylin.
+- Kept the architecture aligned to the four required agents: Alina, Kian, Bita, and Aylin.
 - Verified the compatibility and stability of the cumulative project state.
 
 ## Agent specialization
 
 - Alina: strategy, coordination, planning, and prioritization
-- Kiyan: operational execution, monitoring, and deployment work
+- Kian: operational execution, monitoring, and deployment work
 - Bita: synthesis, analysis, and risk summarization
 - Aylin: validation, review, audit, and quality confirmation
 

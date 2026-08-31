@@ -9,7 +9,7 @@ This phase focused on the API web server layer, advanced agent engine behavior, 
 - Added the FastAPI application factory in `app/server.py` with the runtime endpoints required for service health and task dispatch.
 - Implemented a production monitoring model in `core/monitoring/metrics.py` to expose agent catalog, uptime, environment, and service health metadata.
 - Enhanced the AI coordination layer so the server can expose a full agent catalog and a full four-agent workflow result bundle.
-- Kept the platform aligned to the four-agent architecture: Alina, Kiyan, Bita, and Aylin.
+- Kept the platform aligned to the four-agent architecture: Alina, Kian, Bita, and Aylin.
 - Added explicit validation coverage for the new web server and monitoring surface in `tests/test_api_server_monitoring.py`.
 - Updated the project dependency manifest to include the web API runtime stack: FastAPI and Uvicorn.
 

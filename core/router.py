@@ -25,7 +25,7 @@ class SmartModelRouter:
         if any(keyword in normalized for keyword in ["plan", "strategy", "coordinate", "prioritize"]):
             return "Alina"
         if any(keyword in normalized for keyword in ["execute", "deploy", "run", "operate", "monitor"]):
-            return "Kiyan"
+            return "Kian"
         if any(keyword in normalized for keyword in ["analyze", "reason", "synthesize", "risk", "insight"]):
             return "Bita"
         if any(keyword in normalized for keyword in ["validate", "verify", "check", "quality", "audit"]):

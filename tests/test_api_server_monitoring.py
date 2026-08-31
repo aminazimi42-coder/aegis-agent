@@ -30,7 +30,7 @@ class PhaseTwoAPITests(unittest.TestCase):
         self.assertEqual(len(payload["agents"]), 4)
         self.assertEqual(
             {item["name"] for item in payload["agents"]},
-            {"Alina", "Kiyan", "Bita", "Aylin"},
+            {"Alina", "Kian", "Bita", "Aylin"},
         )
 
     def test_task_dispatch_endpoint(self):

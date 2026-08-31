@@ -1,0 +1,8 @@
+name: Dara
+role: Ahmed oversight
+status: scaffolded
+owner: Ahmed
+capabilities:
+  - oversight
+  - review
+  - governance

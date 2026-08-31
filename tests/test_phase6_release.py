@@ -28,7 +28,7 @@ class PhaseSixReleaseTests(unittest.TestCase):
         self.assertEqual(len(workflow["results"]), 4)
         self.assertEqual(
             {item["agent_name"] for item in workflow["results"]},
-            {"Alina", "Kiyan", "Bita", "Aylin"},
+            {"Alina", "Kian", "Bita", "Aylin"},
         )
 
 

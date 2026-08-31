@@ -1,7 +1,7 @@
 [project]
 name = "aegis-agent-platform"
-version = "0.5.0"
-description = "Production-ready multi-agent SaaS framework for enterprise orchestration"
+version = "0.6.0-a"
+description = "Foundation multi-agent SaaS framework for enterprise orchestration"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -28,6 +28,25 @@ warn_return_any = true
 warn_unused_configs = true
 check_untyped_defs = true
 disallow_untyped_defs = true
+
+[tool.setuptools]
+packages = [
+  "agents",
+  "agents.alina",
+  "agents.aylin",
+  "agents.bita",
+  "agents.kian",
+  "agents.rasa",
+  "agents.dara",
+  "app",
+  "app.api",
+  "app.services",
+  "core",
+  "core.monitoring",
+  "core.diagnostics",
+  "core.recovery",
+  "core.runtime",
+]
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]

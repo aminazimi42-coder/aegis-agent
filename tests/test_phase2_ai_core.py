@@ -10,7 +10,7 @@ class PhaseTwoAITests(unittest.TestCase):
         self.assertEqual(len(AGENT_REGISTRY), 4)
         self.assertEqual(
             [agent.name for agent in AGENT_REGISTRY],
-            ["Alina", "Kiyan", "Bita", "Aylin"],
+            ["Alina", "Kian", "Bita", "Aylin"],
         )
 
     def test_ai_core_dispatches_task_to_expected_agent(self):

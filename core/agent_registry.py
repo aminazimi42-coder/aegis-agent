@@ -11,7 +11,7 @@ AGENT_REGISTRY: list[AgentSpec] = [
         capabilities=["planning", "coordination", "routing"],
     ),
     AgentSpec(
-        name="Kiyan",
+        name="Kian",
         role="Operational execution",
         description="Responsible for fast execution and task flow management.",
         capabilities=["execution", "monitoring", "optimization"],

@@ -9,7 +9,7 @@ This phase established the foundational architecture for the Aegis Agent Platfor
 - Created the root directory structure.
 - Added the runtime entry point in `app/`.
 - Added shared contracts and agent metadata in `core/`.
-- Added four agent modules: Alina, Kiyan, Bita, and Aylin.
+- Added four agent modules: Alina, Kian, Bita, and Aylin.
 - Added architecture documentation and phase reports.
 
 ## Validation

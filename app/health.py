@@ -17,7 +17,7 @@ def health_snapshot() -> dict:
         "service": "Aegis Agent Platform",
         "status": HealthStatus.HEALTHY.value,
         "agent_count": 4,
-        "version": "0.4.0",
+        "version": "0.6.0-a",
         "checks": {
             "config": "ok",
             "security": "ok",

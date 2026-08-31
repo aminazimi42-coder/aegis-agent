@@ -1,17 +1,10 @@
-Phase 4 Execution Directive: Comprehensive Testing, OpenAPI Expansion & Release Finalization
-Objective
-Expand the OpenAPI documentation/endpoints, run comprehensive integration and end-to-end tests across all system components, and finalize the release baseline.
-Step-by-Step Instructions for Agent
-OpenAPI & API Route Expansion:
-Verify and expand API routes and FastAPI schemas in app/server/app.py or equivalent router files to expose complete metadata and endpoints.
-Comprehensive Test Suite Execution:
-Run the full project test suite to confirm zero regressions:
-./.venv/bin/python -m unittest discover tests
-Pre-Validation Gate:
-Run the strict validation script to ensure Ruff and Bandit pass cleanly:
-./scripts/validate_code.sh
-Git Commit, Push & Release Finalization:
-Stage all modified and final files using git add.
-Commit the release changes with the exact message: git commit -m "feat(release): finalize Phase 4 OpenAPI expansion, comprehensive tests, and release candidate"
-Push the code to the remote repository: git push origin main
-Provide a final summary of all verification checks and release status.
+Phase A Execution Directive: Identity, Renaming, and Core Agent Scaffolding Objective
+Enforce version lock 0.6.0-a across pyproject.toml, FastAPI, and config.
+Completely eradicate "Kiyan" and replace with "Kian" everywhere (code, tests, README).
+Scaffold agents/rasa/ and agents/dara/ (stubbed for Amin and Ahmed oversight).
+Update README status to reflect foundation SaaS architecture. Step-by-Step Instructions for Agent
+Update pyproject.toml version to "0.6.0-a" and declare setuptools packages.
+Perform global search-and-replace for "Kiyan" to "Kian" across code and tests.
+Create agents/rasa/ and agents/dara/ directories with baseline manifests and stubs.
+Run validation check and commit changes with message: "feat(wave-a): establish identity, rename Kian, scaffold Rasa and Dara".
+Push changes to origin main.

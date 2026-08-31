@@ -6,8 +6,8 @@
 
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-API%20Ready-009688)](https://fastapi.tiangolo.com/)
-[![Version](https://img.shields.io/badge/Version-0.5.0-orange)](https://github.com/)
-[![Status](https://img.shields.io/badge/Build-Production%20Ready-brightgreen)](https://github.com/)
+[![Version](https://img.shields.io/badge/Version-0.6.0-a-orange)](https://github.com/)
+[![Status](https://img.shields.io/badge/Status-Foundation%20SaaS%20Architecture-brightgreen)](https://github.com/)
 [![Agents](https://img.shields.io/badge/Multi-Agent-4%20Specialists-8b5cf6)](https://github.com/)
 [![Tests](https://img.shields.io/badge/Validated-29%20Passed%20Tests-success)](https://github.com/)
 
@@ -55,7 +55,7 @@ Aegis Agent Platform is a cinematic multi-agent SaaS framework engineered for re
           │                             │                               │
           ▼                             ▼                               ▼
 ┌──────────────────────┐     ┌──────────────────────┐     ┌──────────────────────┐
-│  Alina               │     │  Kiyan               │     │  Bita                │
+│  Alina               │     │  Kian                │     │  Bita                │
 │  Strategic routing   │     │  Operational flow   │     │  Analysis & insight  │
 │  Prioritization      │     │  Execution control  │     │  Synthesis          │
 └──────────────────────┘     └──────────────────────┘     └──────────────────────┘
@@ -77,7 +77,7 @@ Aegis Agent Platform is a cinematic multi-agent SaaS framework engineered for re
 - prioritization and system alignment
 - executive coordination and governance
 
-### Kiyan — Execution specialist
+### Kian — Execution specialist
 > “Performance under pressure.”
 
 - runtime execution flow
@@ -161,7 +161,7 @@ The platform enforces a disciplined release model:
 Aegis Agent Platform
 ├── agents/
 │   ├── alina/
-│   ├── kiyan/
+│   ├── kian/
 │   ├── bita/
 │   └── aylin/
 ├── app/

@@ -3,10 +3,10 @@ from __future__ import annotations
 from core.agent_base import BaseAgent
 
 
-class KiyanAgent(BaseAgent):
+class KianAgent(BaseAgent):
     """Execution-focused specialist."""
 
-    name = "Kiyan"
+    name = "Kian"
     role = "Operational execution"
     description = "Runs operational workflows and monitors delivery stability."
     capabilities = ["execution", "monitoring", "optimization", "delivery"]

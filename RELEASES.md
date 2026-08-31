@@ -1,6 +1,6 @@
 # Aegis Agent Platform Release Plan
 
-> Version: 0.5.0
+> Version: 0.6.0-a
 > Release status: stable and verified
 > Start date: 2026-08-31
 > Creator: Azimi Innovation Lab
@@ -14,7 +14,7 @@ This release finalizes the Aegis Agent Platform as a production-ready multi-agen
 ## Architecture summary
 
 - API layer: FastAPI application with service health, metrics, and task routing
-- Agent layer: Alina, Kiyan, Bita, Aylin
+- Agent layer: Alina, Kian, Bita, Aylin
 - Runtime layer: configuration, environment normalization, runtime diagnostics, and self-recovery
 - Monitoring layer: health telemetry, runtime metrics, security posture, and operational visibility
 - Deployment layer: Docker + Render configuration for service hosting

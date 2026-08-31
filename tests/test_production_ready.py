@@ -10,12 +10,12 @@ from core.runtime.runtime_context import RuntimeContext
 
 class ProductionReadyFrameworkTests(unittest.TestCase):
     def test_runtime_context_bootstrap(self):
-        config = load_config({"environment": "production", "version": "0.5.0"})
+        config = load_config({"environment": "production", "version": "0.6.0-a"})
         context = RuntimeContext.from_config(config)
 
         self.assertEqual(context.environment, "production")
         self.assertEqual(context.agent_count, 4)
-        self.assertEqual(context.version, "0.5.0")
+        self.assertEqual(context.version, "0.6.0-a")
 
     def test_self_recovery_reconciles_runtime_state(self):
         recovery = SelfRecovery("development", 3)
@@ -32,7 +32,7 @@ class ProductionReadyFrameworkTests(unittest.TestCase):
         self.assertEqual(report["status"], "healthy")
 
     def test_runtime_service_bootstrap_runs_cleanly(self):
-        config = load_config({"environment": "production", "version": "0.5.0"})
+        config = load_config({"environment": "production", "version": "0.6.0-a"})
         context = RuntimeContext.from_config(config)
         service = RuntimeService(context)
         startup = service.bootstrap()

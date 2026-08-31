@@ -1,0 +1,8 @@
+name: Rasa
+role: Amin oversight
+status: scaffolded
+owner: Amin Azimi
+capabilities:
+  - oversight
+  - governance
+  - review

@@ -3,7 +3,7 @@
 The Aegis Agent Platform is designed around four specialist agents:
 
 - Alina: strategic coordination
-- Kiyan: operational execution
+- Kian: operational execution
 - Bita: analysis and synthesis
 - Aylin: quality and validation
 

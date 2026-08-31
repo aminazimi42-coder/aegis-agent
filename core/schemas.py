@@ -10,7 +10,7 @@ class AgentResponse(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    agent_name: Literal["Alina", "Kiyan", "Bita", "Aylin"]
+    agent_name: Literal["Alina", "Kian", "Bita", "Aylin"]
     role: str
     response: str
     task: str

@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 from agents.alina.agent import AlinaAgent
 from agents.aylin.agent import AylinAgent
 from agents.bita.agent import BitaAgent
-from agents.kiyan.agent import KiyanAgent
+from agents.kian.agent import KianAgent
 from core.agent_registry import AGENT_REGISTRY
 
 
@@ -16,7 +16,7 @@ class AICore:
         self.registry = {agent.name: agent for agent in AGENT_REGISTRY}
         self.agent_map = {
             "Alina": AlinaAgent(),
-            "Kiyan": KiyanAgent(),
+            "Kian": KianAgent(),
             "Bita": BitaAgent(),
             "Aylin": AylinAgent(),
         }
@@ -28,7 +28,7 @@ class AICore:
         if any(keyword in lower_task for keyword in ["plan", "strategy", "coordinate", "prioritize", "route"]):
             return "Alina"
         if any(keyword in lower_task for keyword in ["execute", "deploy", "run", "operate", "monitor", "optimize"]):
-            return "Kiyan"
+            return "Kian"
         if any(keyword in lower_task for keyword in ["analyze", "reason", "synthesize", "summarize", "risk", "insight"]):
             return "Bita"
         if any(keyword in lower_task for keyword in ["validate", "verify", "check", "quality", "audit", "test"]):
@@ -61,7 +61,7 @@ class AICore:
 
     def run_workflow(self, task: str) -> List[Dict[str, Any]]:
         """Collect the specialized output of all four agents for a task."""
-        ordered_names = ["Alina", "Kiyan", "Bita", "Aylin"]
+        ordered_names = ["Alina", "Kian", "Bita", "Aylin"]
         results: List[Dict[str, Any]] = []
 
         for name in ordered_names:

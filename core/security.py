@@ -4,7 +4,7 @@ from __future__ import annotations
 class SecurityPolicy:
     """Minimal platform security scaffold with deterministic allow-list validation."""
 
-    ALLOWED_AGENTS = {"Alina", "Kiyan", "Bita", "Aylin"}
+    ALLOWED_AGENTS = {"Alina", "Kian", "Bita", "Aylin"}
 
     def is_allowed(self, agent_name: str) -> bool:
         return agent_name in self.ALLOWED_AGENTS

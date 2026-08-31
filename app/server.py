@@ -30,7 +30,7 @@ def create_app() -> FastAPI:
     """Create and configure the production FastAPI application."""
     app = FastAPI(
         title="Aegis Agent Platform",
-        version="0.5.0",
+        version="0.6.0-a",
         description="Production web API for the multi-agent SaaS platform.",
         openapi_tags=[
             {

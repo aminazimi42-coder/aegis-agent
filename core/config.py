@@ -14,7 +14,7 @@ class AppConfig:
     agent_count: int = 4
     debug: bool = False
     log_level: str = "INFO"
-    version: str = "0.4.0"
+    version: str = "0.6.0-a"
 
 
 def load_config(overrides: Optional[Dict[str, Any]] = None) -> AppConfig:
@@ -25,7 +25,7 @@ def load_config(overrides: Optional[Dict[str, Any]] = None) -> AppConfig:
         "agent_count": int(os.getenv("AEGIS_AGENT_COUNT", "4")),
         "debug": os.getenv("AEGIS_DEBUG", "false").lower() == "true",
         "log_level": os.getenv("AEGIS_LOG_LEVEL", "INFO"),
-        "version": os.getenv("AEGIS_VERSION", "0.4.0"),
+        "version": os.getenv("AEGIS_VERSION", "0.6.0-a"),
     }
 
     if overrides:
