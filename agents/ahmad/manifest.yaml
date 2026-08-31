@@ -1,7 +1,7 @@
-name: Rasa
-role: Amin oversight
+name: Ahmed
+role: Ahmed oversight
 status: scaffolded
-owner: Amin Azimi
+owner: Ahmed
 capabilities:
   - oversight
   - governance

@@ -7,12 +7,14 @@ Developed through the End-to-End System Development model.
 
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timezone
 from typing import Any
 
 from core.ai_core import AICore
 from core.monitoring.metrics import PlatformMetrics
 from core.quality import ProductionQualityGate
+from core.task_store import TaskStore
 from fastapi import FastAPI
 from pydantic import BaseModel
 
@@ -24,6 +26,7 @@ class TaskDispatchRequest(BaseModel):
     """Request body for dispatching a task to the specialist engine."""
 
     task: str
+    idempotency_key: str | None = None
 
 
 def create_app() -> FastAPI:
@@ -61,6 +64,9 @@ def create_app() -> FastAPI:
     )
     metrics = PlatformMetrics()
     ai_core = AICore()
+    task_store = TaskStore()
+    app.state.task_store = task_store
+    app.state.db_session = task_store
     app.include_router(agent_router)
     app.include_router(task_router)
     app.include_router(telemetry_router)
@@ -83,25 +89,64 @@ def create_app() -> FastAPI:
         agents = ai_core.catalog()
         return {"agents": agents, "agent_count": len(agents)}
 
-    @app.post("/api/v1/tasks/dispatch", tags=["tasks"])
-    def dispatch_task(request: TaskDispatchRequest) -> dict[str, Any]:
-        selected_result = ai_core.dispatch(request.task)
-        workflow = ai_core.run_workflow(request.task)
-        quality_gate = ProductionQualityGate.evaluate(
-            request.task,
-            selected_result["agent_name"],
-            selected_result["response"],
-        )
+    @app.post("/tasks/dispatch", tags=["tasks"], status_code=202)
+    @app.post("/api/v1/tasks/dispatch", tags=["tasks"], status_code=202)
+    async def dispatch_task(request: TaskDispatchRequest) -> dict[str, Any]:
+        task_key = request.idempotency_key or request.task
+        existing_task = task_store.get_by_idempotency_key(task_key)
+        if existing_task is not None:
+            return {
+                "task_id": existing_task["task_id"],
+                "status": existing_task["status"],
+                "selected_agent": existing_task.get("selected_agent"),
+                "message": "The task already exists in the task store for this idempotency key.",
+                "duplicate": True,
+            }
 
+        record = task_store.get_or_create(request.task, task_key)
+
+        async def worker() -> None:
+            task_store.update(
+                record["task_id"],
+                status="processing",
+                message="The task is now executing in the async agent workflow.",
+            )
+            selected_result = ai_core.dispatch(record["task"])
+            workflow = ai_core.run_workflow(record["task"])
+            quality_gate = ProductionQualityGate.evaluate(
+                record["task"],
+                selected_result["agent_name"],
+                selected_result["response"],
+            )
+            task_store.update(
+                record["task_id"],
+                status="completed",
+                selected_agent=selected_result["agent_name"],
+                message="The async task completed successfully.",
+                result={
+                    "workflow": workflow,
+                    "agent_count": len(workflow),
+                    "platform_status": platform_status(),
+                    "quality_gate": quality_gate,
+                    "response": selected_result["response"],
+                },
+            )
+
+        asyncio.create_task(worker())
         return {
-            "selected_agent": selected_result["agent_name"],
-            "task": request.task,
-            "status": "completed",
-            "results": workflow,
-            "agent_count": len(workflow),
-            "platform_status": platform_status(),
-            "quality_gate": quality_gate,
+            "task_id": record["task_id"],
+            "status": "queued",
+            "selected_agent": None,
+            "message": "The task was accepted and queued for asynchronous execution.",
+            "duplicate": False,
         }
+
+    @app.get("/tasks/{task_id}/status")
+    def task_status(task_id: str) -> dict[str, Any]:
+        task = task_store.get(task_id)
+        if task is None:
+            return {"task_id": task_id, "status": "not_found"}
+        return task
 
     return app
 

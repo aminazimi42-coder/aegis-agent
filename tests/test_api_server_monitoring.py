@@ -38,10 +38,12 @@ class PhaseTwoAPITests(unittest.TestCase):
             "/api/v1/tasks/dispatch",
             json={"task": "Plan a global launch and validate the final outcome"},
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 202)
         payload = response.json()
-        self.assertIn("selected_agent", payload)
-        self.assertIn("results", payload)
+        self.assertIn("task_id", payload)
+        self.assertIn("status", payload)
+        self.assertEqual(payload["status"], "queued")
+        self.assertIn("duplicate", payload)
 
 
 if __name__ == "__main__":

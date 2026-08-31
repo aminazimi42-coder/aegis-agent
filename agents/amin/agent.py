@@ -3,11 +3,11 @@ from __future__ import annotations
 from core.agent_base import BaseAgent
 
 
-class DaraAgent(BaseAgent):
-    """Oversight specialist scaffold for Ahmed oversight workflows."""
+class AminAgent(BaseAgent):
+    """Oversight specialist scaffold for Amin supervisory workflows."""
 
-    name = "Dara"
-    role = "Ahmed oversight"
+    name = "Amin"
+    role = "Amin oversight"
     description = "Provides secondary authority, review checkpoints, and governance coverage for supervision loops."
     capabilities = ["oversight", "review", "audit", "governance"]
 

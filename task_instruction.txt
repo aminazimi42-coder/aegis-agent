@@ -1,10 +1,9 @@
-Phase A Execution Directive: Identity, Renaming, and Core Agent Scaffolding Objective
-Enforce version lock 0.6.0-a across pyproject.toml, FastAPI, and config.
-Completely eradicate "Kiyan" and replace with "Kian" everywhere (code, tests, README).
-Scaffold agents/rasa/ and agents/dara/ (stubbed for Amin and Ahmed oversight).
-Update README status to reflect foundation SaaS architecture. Step-by-Step Instructions for Agent
-Update pyproject.toml version to "0.6.0-a" and declare setuptools packages.
-Perform global search-and-replace for "Kiyan" to "Kian" across code and tests.
-Create agents/rasa/ and agents/dara/ directories with baseline manifests and stubs.
-Run validation check and commit changes with message: "feat(wave-a): establish identity, rename Kian, scaffold Rasa and Dara".
+Phase B Execution Directive: Agent Rename Correction & Async Task Engine Objective
+Rename agents/dara and agents/rasa directories to agents/amin and agents/ahmad.
+Update all imports, references, and manifests across the codebase to use Amin and Ahmed.
+Implement async task dispatch route (POST /tasks/dispatch returning 202) and Idempotency tracking. Step-by-Step Instructions for Agent
+Rename agents/dara to agents/amin and agents/rasa to agents/ahmad safely.
+Perform global search-and-replace for dara/rasa references to amin/ahmad.
+Initialize database session and implement POST /tasks/dispatch with background execution.
+Run validation tests, commit with message: "feat(wave-b): rename to amin/ahmad and implement async tasks".
 Push changes to origin main.
