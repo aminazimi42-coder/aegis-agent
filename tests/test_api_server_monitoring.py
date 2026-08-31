@@ -45,6 +45,20 @@ class PhaseTwoAPITests(unittest.TestCase):
         self.assertEqual(payload["status"], "queued")
         self.assertIn("duplicate", payload)
 
+    def test_task_status_lookup_endpoint(self):
+        create_response = self.client.post(
+            "/api/v1/tasks/dispatch",
+            json={"task": "Validate release readiness and audit the final state"},
+        )
+        task_id = create_response.json()["task_id"]
+
+        response = self.client.get(f"/api/v1/tasks/{task_id}")
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["task_id"], task_id)
+        self.assertIn("status", payload)
+        self.assertIn("telemetry", payload)
+
 
 if __name__ == "__main__":
     unittest.main()

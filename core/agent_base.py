@@ -12,18 +12,29 @@ class BaseAgent(ABC):
     role: str = "Specialist"
     description: str = "Unspecified specialist role."
     capabilities: list[str] = []
+    metadata: dict = {}
 
     def profile(self) -> dict:
         """Return the canonical metadata for the agent."""
+        base_profile = {
+            "name": self.name,
+            "role": self.role,
+            "description": self.description,
+            "capabilities": list(self.capabilities),
+        }
+        metadata = getattr(self, "metadata", None)
+        if metadata:
+            base_profile["metadata"] = metadata
         for agent in AGENT_REGISTRY:
             if agent.name == self.name:
-                return {
-                    "name": agent.name,
-                    "role": agent.role,
-                    "description": agent.description,
-                    "capabilities": agent.capabilities,
-                }
-        return {"name": self.name, "role": self.role, "description": self.description, "capabilities": list(self.capabilities)}
+                base_profile["name"] = agent.name
+                base_profile["role"] = agent.role
+                base_profile["description"] = agent.description
+                base_profile["capabilities"] = list(agent.capabilities)
+                if metadata:
+                    base_profile["metadata"] = metadata
+                return base_profile
+        return base_profile
 
     def plan(self, task: str) -> str:
         """Generate the specialist plan for a task."""

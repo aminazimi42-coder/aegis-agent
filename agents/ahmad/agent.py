@@ -10,6 +10,20 @@ class AhmedAgent(BaseAgent):
     role = "Ahmed oversight"
     description = "Provides governance, stewardship, and oversight coverage for elevated authority workflows."
     capabilities = ["oversight", "governance", "review", "escalation"]
+    metadata = {
+        "log": {
+            "channel": "oversight",
+            "level": "info",
+            "owner": "Ahmed",
+            "component": "ahmad",
+            "scope": "governance",
+        },
+        "execution": {
+            "mode": "async",
+            "telemetry": "enabled",
+            "checkpoint": "escalation",
+        },
+    }
 
     def handle(self, task: str) -> str:
         return f"{self.name} governance: maintain the strategic oversight view and confirm the authority path for {task}"

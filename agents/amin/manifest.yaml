@@ -6,3 +6,8 @@ capabilities:
   - oversight
   - review
   - governance
+logs:
+  channel: oversight
+  level: info
+  component: amin
+  scope: governance

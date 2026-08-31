@@ -1,9 +1,9 @@
-Phase B Execution Directive: Agent Rename Correction & Async Task Engine Objective
-Rename agents/dara and agents/rasa directories to agents/amin and agents/ahmad.
-Update all imports, references, and manifests across the codebase to use Amin and Ahmed.
-Implement async task dispatch route (POST /tasks/dispatch returning 202) and Idempotency tracking. Step-by-Step Instructions for Agent
-Rename agents/dara to agents/amin and agents/rasa to agents/ahmad safely.
-Perform global search-and-replace for dara/rasa references to amin/ahmad.
-Initialize database session and implement POST /tasks/dispatch with background execution.
-Run validation tests, commit with message: "feat(wave-b): rename to amin/ahmad and implement async tasks".
+Phase C Execution Directive: Advanced Integration and Metadata Pipeline Objective
+Enhance multi-agent routing metadata and finalize task telemetry reporting.
+Implement GET /tasks/{task_id} status tracking endpoint with memory store retrieval.
+Run comprehensive validation suites and prepare production readiness manifest. Step-by-Step Instructions for Agent
+Add GET /tasks/{task_id} endpoint in server.py to query task states and execution telemetry.
+Ensure amin and ahmad oversight logs are properly structured in agent metadata blocks.
+Execute unit tests and linting gates to verify zero-regression status.
+Commit changes with message: "feat(wave-c): implement task status telemetry and oversight metadata".
 Push changes to origin main.

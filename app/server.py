@@ -130,6 +130,12 @@ def create_app() -> FastAPI:
                     "quality_gate": quality_gate,
                     "response": selected_result["response"],
                 },
+                telemetry={
+                    "request": record["task"],
+                    "agent_count": len(workflow),
+                    "quality_gate": quality_gate,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                },
             )
 
         asyncio.create_task(worker())
@@ -141,12 +147,30 @@ def create_app() -> FastAPI:
             "duplicate": False,
         }
 
-    @app.get("/tasks/{task_id}/status")
+    @app.get("/tasks/{task_id}", tags=["tasks"])
+    @app.get("/api/v1/tasks/{task_id}", tags=["tasks"])
     def task_status(task_id: str) -> dict[str, Any]:
         task = task_store.get(task_id)
         if task is None:
-            return {"task_id": task_id, "status": "not_found"}
-        return task
+            return {
+                "task_id": task_id,
+                "status": "not_found",
+                "telemetry": {"timestamp": datetime.now(timezone.utc).isoformat()},
+            }
+        payload = dict(task)
+        payload["telemetry"] = payload.get(
+            "telemetry",
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "status": payload.get("status", "unknown"),
+            },
+        )
+        return payload
+
+    @app.get("/tasks/{task_id}/status", tags=["tasks"])
+    @app.get("/api/v1/tasks/{task_id}/status", tags=["tasks"])
+    def task_status_detail(task_id: str) -> dict[str, Any]:
+        return task_status(task_id)
 
     return app
 
