@@ -1,8 +1,8 @@
-Phase D Execution Directive: Production Readiness, Health Telemetry, and Final Handoff Objective
-Finalize system health diagnostics and telemetry verification across all agent wrappers.
-Run full regression testing, security scanning, and ensure zero unresolved warnings.
-Prepare the repository for final production deployment handoff. Step-by-Step Instructions for Agent
-Verify health check endpoints and structured logging metrics for amin and ahmad components.
-Run full test suite using unittest and code validation scripts.
-Perform final git cleanup, tag the release as v0.6.0-a, and commit all changes with message: "feat(wave-d): finalize production readiness and system health telemetry".
-Push changes and tags to origin main.
+Phase E Execution Directive: Advanced Security Layer and Agent Firewall Objective
+Implement robust input/output security validation and filtering to prevent injection and hacking attempts across agent pathways.
+Set up security middleware inside the core application pipeline for amin and ahmad components. Step-by-Step Instructions for Agent
+Create a security module in core/security.py for request sanitization and threat filtering.
+Integrate the security firewall middleware into server.py to inspect incoming agent payloads.
+Run unit tests and security validation scripts (Bandit/Ruff) to ensure zero security regressions.
+Commit changes with message: "feat(wave-e): implement advanced security layer and agent firewall".
+Push changes to origin main.

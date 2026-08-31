@@ -8,14 +8,17 @@ Developed through the End-to-End System Development model.
 from __future__ import annotations
 
 import asyncio
+import json
 from datetime import datetime, timezone
 from typing import Any
 
 from core.ai_core import AICore
 from core.monitoring.metrics import PlatformMetrics
 from core.quality import ProductionQualityGate
+from core.security import SecurityPolicy, sanitize_payload
 from core.task_store import TaskStore
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from app.api.health import health_snapshot, platform_status
@@ -65,8 +68,33 @@ def create_app() -> FastAPI:
     metrics = PlatformMetrics()
     ai_core = AICore()
     task_store = TaskStore()
+    security_policy = SecurityPolicy()
     app.state.task_store = task_store
     app.state.db_session = task_store
+    app.state.security_policy = security_policy
+
+    @app.middleware("http")
+    async def security_middleware(request: Request, call_next):
+        if request.method in {"POST", "PUT", "PATCH"}:
+            try:
+                raw_body = await request.body()
+                if raw_body:
+                    try:
+                        parsed = json.loads(raw_body)
+                        sanitize_payload(parsed)
+                    except json.JSONDecodeError:
+                        sanitized_text = raw_body.decode("utf-8", errors="ignore")
+                        if sanitized_text:
+                            security_policy.validate_task(sanitized_text)
+
+                    async def receive() -> dict[str, Any]:
+                        return {"type": "http.request", "body": raw_body, "more_body": False}
+
+                    request._receive = receive
+            except ValueError as exc:
+                return JSONResponse(status_code=400, content={"detail": str(exc)})
+        return await call_next(request)
+
     app.include_router(agent_router)
     app.include_router(task_router)
     app.include_router(telemetry_router)
