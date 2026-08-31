@@ -7,7 +7,7 @@
 [![Python 3.11](https://img.shields.io/badge/Python-3.11-blue)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-Production%20Ready-009688)](https://fastapi.tiangolo.com/)
 [![Agents](https://img.shields.io/badge/Agents-4%20Specialists-8b5cf6)](https://github.com/)
-[![Tests](https://img.shields.io/badge/Validation-24%20Passed%20Unit%20Tests-brightgreen)](https://github.com/)
+[![Tests](https://img.shields.io/badge/Validation-27%20Passed%20Unit%20Tests-brightgreen)](https://github.com/)
 
 ## Mission
 
@@ -26,7 +26,7 @@ Aegis Agent Platform is a cinematic multi-agent SaaS foundation engineered for r
 - deterministic routing and workflow execution
 - health, readiness, and telemetry monitoring
 - production-safe reconciliation and environment governance
-- validated with 24 passed unit tests
+- validated with 27 passed unit tests
 
 ## Architecture overview
 
@@ -77,7 +77,7 @@ Health checks: enabled
 Readiness checks: enabled
 Recovery actions: enabled
 Diagnostics: enabled
-Unit tests passed: 24
+Unit tests passed: 27
 ```
 
 ## Engine roles
@@ -187,7 +187,7 @@ python3 -m compileall .
 
 The project is validated with a production-grade regression suite and currently reports:
 
-- 24 passed unit tests
+- 27 passed unit tests
 - successful runtime verification
 - successful compile validation
 - stable health and readiness checks

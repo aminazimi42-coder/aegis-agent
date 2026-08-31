@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: aegis-agent-platform
+    env: python
+    plan: free
+    buildCommand: pip install --upgrade pip && pip install .
+    startCommand: uvicorn app.server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.15
