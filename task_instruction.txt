@@ -1,8 +1,8 @@
-Phase 4 Execution Directive: Full Implementation of Sovereign Tenant Memory Vault Objective
-Implement tenant-isolated memory vaults with encryption key management, TTL controls, and secure namespace segregation. Step-by-Step Instructions for Agent
-Create tenant-scoped memory and vault management in core/tenant_memory.py.
-Integrate memory isolation checks into agent execution and server middleware.
-Add robust unit tests in tests/test_tenant_memory.py to verify zero cross-tenant memory leakage.
-Run validation checks.
-Commit changes with message: "feat(memory-phase4): implement sovereign tenant memory vault".
+Phase 5 Execution Directive: Full Implementation of Causal Swarm Observability Objective
+Implement real causal swarm observability, OpenTelemetry tracing, and detailed execution telemetry mapping across requests, agents, tools, and validation layers. Step-by-Step Instructions for Agent
+Create the observability and tracing telemetry module in core/observability.py.
+Integrate tracing spans and metrics into server.py, orchestrators, and execution loops.
+Add regression tests in tests/test_observability.py to verify trace continuity and metrics tracking.
+Run final validation, lint, and security checks.
+Commit changes with message: "feat(observability-phase5): implement causal swarm observability".
 Push changes to origin main.

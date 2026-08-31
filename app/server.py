@@ -16,6 +16,7 @@ from core.ai_core import AICore
 from core.finops_autopilot import FinOpsAutopilot
 from core.model_router import TrustAwareModelRouter
 from core.monitoring.metrics import PlatformMetrics
+from core.observability import CausalSwarmObservability
 from core.quality import ProductionQualityGate
 from core.retry_guard import RetryGuard
 from core.security import SecurityPolicy, sanitize_payload
@@ -102,6 +103,7 @@ def create_app() -> FastAPI:
     model_router = TrustAwareModelRouter()
     tool_token_manager = ToolTokenManager()
     tenant_memory = TenantMemoryVault(default_ttl_seconds=3600)
+    observability = CausalSwarmObservability(default_ttl_seconds=3600)
     retry_guard = RetryGuard(max_retries=2)
     app.state.task_store = task_store
     app.state.db_session = task_store
@@ -111,10 +113,17 @@ def create_app() -> FastAPI:
     app.state.model_router = model_router
     app.state.tool_token_manager = tool_token_manager
     app.state.tenant_memory = tenant_memory
+    app.state.observability = observability
     app.state.retry_guard = retry_guard
 
     @app.middleware("http")
     async def security_middleware(request: Request, call_next):
+        trace = observability.trace_request(
+            tenant_id=request.headers.get("x-tenant-id") or "default",
+            kind="request",
+            metadata={"path": request.url.path, "method": request.method},
+        )
+        request.state.trace = trace
         if request.method in {"POST", "PUT", "PATCH"}:
             try:
                 raw_body = await request.body()
@@ -172,6 +181,11 @@ def create_app() -> FastAPI:
                     request._receive = receive
 
                 if request.url.path.endswith("/dispatch"):
+                    observability.record_event(
+                        trace,
+                        "request_body_received",
+                        {"path": request.url.path, "tenant_id": tenant_id},
+                    )
                     if token_optimizer.throttle_if_needed(
                         "dispatch",
                         max_requests_per_minute=30,
@@ -196,7 +210,14 @@ def create_app() -> FastAPI:
                     status_code=response_code,
                     content={"detail": str(exc)},
                 )
-        return await call_next(request)
+        response = await call_next(request)
+        observability.record_metric("requests_total", 1)
+        observability.record_event(
+            trace,
+            "request_completed",
+            {"status": response.status_code, "path": request.url.path},
+        )
+        return response
 
     app.include_router(agent_router)
     app.include_router(task_router)
