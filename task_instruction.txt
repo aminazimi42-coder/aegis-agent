@@ -1,8 +1,7 @@
-Phase 5 Execution Directive: Full Implementation of Causal Swarm Observability Objective
-Implement real causal swarm observability, OpenTelemetry tracing, and detailed execution telemetry mapping across requests, agents, tools, and validation layers. Step-by-Step Instructions for Agent
-Create the observability and tracing telemetry module in core/observability.py.
-Integrate tracing spans and metrics into server.py, orchestrators, and execution loops.
-Add regression tests in tests/test_observability.py to verify trace continuity and metrics tracking.
-Run final validation, lint, and security checks.
-Commit changes with message: "feat(observability-phase5): implement causal swarm observability".
-Push changes to origin main.
+Phase 6 Final Verification and Repository Sign-Off Directive Objective
+Perform a complete end-to-end audit, verify the integrity of all 5 newly implemented core modules (FinOps, Router, Tool Tokens, Tenant Memory, and Observability), and execute final release tagging. Step-by-Step Instructions for Agent
+Run the entire test suite across all modules and confirm 100% test pass rates without errors.
+Generate a comprehensive architecture and execution summary report in docs/phase-reports/phase-6-final-audit.md.
+Tag the repository with the final production-candidate tag (v1.0.0-rc2).
+Commit changes with message: "feat(release-phase6): complete final multi-agent platform hardening and verification".
+Push commits and tags to origin main.
