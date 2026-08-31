@@ -1,8 +1,8 @@
-Phase F Execution Directive: Token Consumption Optimization and Cost Control Objective
-Implement smart token usage monitoring, response caching, and budget tracking limits across agent execution flows.
-Set up resource throttling middleware to prevent excessive or redundant API calls. Step-by-Step Instructions for Agent
-Create a token optimization and cost-control module in core/token_optimizer.py.
-Integrate the caching and token-tracking middleware into server.py and agent wrappers.
-Run comprehensive unit tests and code validation scripts to verify zero regressions.
-Commit changes with message: "feat(wave-f): implement token optimization and cost control layers".
+Phase G Execution Directive: Intelligent Retry Limitation and Loop Prevention Objective
+Implement a strict retry-limiting and circuit-breaker mechanism to prevent infinite agent loops and halt execution after 2 consecutive failed attempts.
+Integrate retry telemetry and state persistence into the agent lifecycle. Step-by-Step Instructions for Agent
+Create a loop-prevention and retry-limiter module in core/retry_guard.py to cap executions at a maximum of 2 retries.
+Wire the retry-guard policy into server.py and agent execution orchestrators.
+Run comprehensive unit tests and code validation scripts to confirm zero regressions.
+Commit changes with message: "feat(wave-g): implement intelligent retry limitation and loop prevention".
 Push changes to origin main.

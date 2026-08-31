@@ -15,6 +15,7 @@ from typing import Any
 from core.ai_core import AICore
 from core.monitoring.metrics import PlatformMetrics
 from core.quality import ProductionQualityGate
+from core.retry_guard import RetryGuard
 from core.security import SecurityPolicy, sanitize_payload
 from core.task_store import TaskStore
 from core.token_optimizer import TokenOptimizer
@@ -71,10 +72,12 @@ def create_app() -> FastAPI:
     task_store = TaskStore()
     security_policy = SecurityPolicy()
     token_optimizer = TokenOptimizer()
+    retry_guard = RetryGuard(max_retries=2)
     app.state.task_store = task_store
     app.state.db_session = task_store
     app.state.security_policy = security_policy
     app.state.token_optimizer = token_optimizer
+    app.state.retry_guard = retry_guard
 
     @app.middleware("http")
     async def security_middleware(request: Request, call_next):
@@ -154,37 +157,52 @@ def create_app() -> FastAPI:
         record = task_store.get_or_create(request.task, task_key)
 
         async def worker() -> None:
-            task_store.update(
-                record["task_id"],
-                status="processing",
-                message="The task is now executing in the async agent workflow.",
-            )
-            selected_result = ai_core.dispatch(record["task"])
-            workflow = ai_core.run_workflow(record["task"])
-            quality_gate = ProductionQualityGate.evaluate(
-                record["task"],
-                selected_result["agent_name"],
-                selected_result["response"],
-            )
-            task_store.update(
-                record["task_id"],
-                status="completed",
-                selected_agent=selected_result["agent_name"],
-                message="The async task completed successfully.",
-                result={
-                    "workflow": workflow,
-                    "agent_count": len(workflow),
-                    "platform_status": platform_status(),
-                    "quality_gate": quality_gate,
-                    "response": selected_result["response"],
-                },
-                telemetry={
-                    "request": record["task"],
-                    "agent_count": len(workflow),
-                    "quality_gate": quality_gate,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                },
-            )
+            try:
+                task_store.update(
+                    record["task_id"],
+                    status="processing",
+                    message="The task is now executing in the async agent workflow.",
+                )
+                selected_result = retry_guard.execute(
+                    record["task_id"],
+                    lambda: ai_core.dispatch(record["task"]),
+                )
+                workflow = retry_guard.execute(
+                    f"{record['task_id']}-workflow",
+                    lambda: ai_core.run_workflow(record["task"]),
+                )
+                quality_gate = ProductionQualityGate.evaluate(
+                    record["task"],
+                    selected_result["agent_name"],
+                    selected_result["response"],
+                )
+                task_store.update(
+                    record["task_id"],
+                    status="completed",
+                    selected_agent=selected_result["agent_name"],
+                    message="The async task completed successfully.",
+                    result={
+                        "workflow": workflow,
+                        "agent_count": len(workflow),
+                        "platform_status": platform_status(),
+                        "quality_gate": quality_gate,
+                        "response": selected_result["response"],
+                    },
+                    telemetry={
+                        "request": record["task"],
+                        "agent_count": len(workflow),
+                        "quality_gate": quality_gate,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "retry_state": retry_guard.snapshot(record["task_id"]),
+                    },
+                )
+            except RuntimeError as exc:
+                task_store.update(
+                    record["task_id"],
+                    status="failed",
+                    message=str(exc),
+                    telemetry={"retry_state": retry_guard.snapshot(record["task_id"])},
+                )
 
         asyncio.create_task(worker())
         return {

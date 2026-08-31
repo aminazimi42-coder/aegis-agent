@@ -4,6 +4,7 @@ from core.agent_registry import AGENT_REGISTRY
 from core.ai_core import AICore
 from core.quality import ProductionQualityGate
 from core.recovery.self_recovery import SelfRecovery
+from core.retry_guard import RetryGuard
 
 
 def orchestrate_platform() -> str:
@@ -22,18 +23,23 @@ def orchestrate_platform() -> str:
 def run_agent_workflow(task: str) -> dict:
     """Execute the AI coordination workflow for a single task."""
     ai_core = AICore()
-    selected_result = ai_core.dispatch(task)
-    workflow_results = ai_core.run_workflow(task)
-    quality_gate = ProductionQualityGate.evaluate(
-        task,
-        selected_result["agent_name"],
-        selected_result["response"],
-    )
+    retry_guard = RetryGuard(max_retries=2)
 
-    return {
-        "platform_name": "Aegis Agent Platform",
-        "agent_count": len(AGENT_REGISTRY),
-        "selected_agent": selected_result["agent_name"],
-        "results": workflow_results,
-        "quality_gate": quality_gate,
-    }
+    def execute_workflow() -> dict:
+        selected_result = ai_core.dispatch(task)
+        workflow_results = ai_core.run_workflow(task)
+        quality_gate = ProductionQualityGate.evaluate(
+            task,
+            selected_result["agent_name"],
+            selected_result["response"],
+        )
+        return {
+            "platform_name": "Aegis Agent Platform",
+            "agent_count": len(AGENT_REGISTRY),
+            "selected_agent": selected_result["agent_name"],
+            "results": workflow_results,
+            "quality_gate": quality_gate,
+            "retry_state": retry_guard.snapshot(task),
+        }
+
+    return retry_guard.execute(task, execute_workflow)
