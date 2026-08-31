@@ -1,7 +1,7 @@
-Phase 2 Execution Directive: Full Implementation of Trust-Aware Model Router Objective
-Implement an advanced, enterprise-grade model router considering cost, privacy, latency, and capability constraints. Step-by-Step Instructions for Agent
-Create model routing logic in core/model_router.py.
-Integrate router middleware into server.py.
-Run full unit tests and validation checks.
-Commit with message: "feat(router-phase2): implement trust-aware model router".
-Push to origin main.
+Phase 3 Execution Directive: Full Implementation of Zero-Trust Tool Capability Tokens Objective
+Implement dynamic, short-lived, scoped tool execution tokens to enforce least-privilege tool access per tenant and task. Step-by-Step Instructions for Agent
+Create the token issuance and scope validation logic in core/tool_tokens.py.
+Integrate token authorization into tool execution handlers in server.py.
+Add regression tests in tests/test_tool_tokens.py to verify access control.
+Commit changes with message: "feat(tokens-phase3): implement zero-trust tool capability tokens".
+Push changes to origin main.

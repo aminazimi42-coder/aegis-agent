@@ -20,6 +20,7 @@ from core.quality import ProductionQualityGate
 from core.retry_guard import RetryGuard
 from core.security import SecurityPolicy, sanitize_payload
 from core.task_store import TaskStore
+from core.tool_tokens import ToolTokenManager
 from core.token_optimizer import TokenOptimizer
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -35,6 +36,27 @@ class TaskDispatchRequest(BaseModel):
     task: str
     idempotency_key: str | None = None
     tenant_id: str | None = None
+
+
+class ToolIssueRequest(BaseModel):
+    """Issue a scoped capability token for a tool call."""
+
+    tenant_id: str
+    task_id: str
+    tool_name: str
+    capabilities: list[str] | None = None
+    ttl_seconds: int | None = None
+
+
+class ToolExecutionRequest(BaseModel):
+    """Execute a tool only after the caller presents a valid capability token."""
+
+    tool_name: str
+    tenant_id: str
+    task_id: str
+    required_capabilities: list[str] | None = None
+    payload: dict[str, Any] | None = None
+    token: str | None = None
 
 
 def create_app() -> FastAPI:
@@ -77,6 +99,7 @@ def create_app() -> FastAPI:
     token_optimizer = TokenOptimizer()
     finops_autopilot = FinOpsAutopilot()
     model_router = TrustAwareModelRouter()
+    tool_token_manager = ToolTokenManager()
     retry_guard = RetryGuard(max_retries=2)
     app.state.task_store = task_store
     app.state.db_session = task_store
@@ -84,6 +107,7 @@ def create_app() -> FastAPI:
     app.state.token_optimizer = token_optimizer
     app.state.finops_autopilot = finops_autopilot
     app.state.model_router = model_router
+    app.state.tool_token_manager = tool_token_manager
     app.state.retry_guard = retry_guard
 
     @app.middleware("http")
@@ -172,6 +196,57 @@ def create_app() -> FastAPI:
     def list_agents() -> dict[str, Any]:
         agents = ai_core.catalog()
         return {"agents": agents, "agent_count": len(agents)}
+
+    @app.post("/api/v1/tools/issue", tags=["tools"], status_code=200)
+    @app.post("/tools/issue", tags=["tools"], status_code=200)
+    def issue_tool_token(request: ToolIssueRequest) -> dict[str, Any]:
+        token = tool_token_manager.issue_token(
+            tenant_id=request.tenant_id,
+            task_id=request.task_id,
+            tool_name=request.tool_name,
+            capabilities=request.capabilities or ["read"],
+            ttl_seconds=request.ttl_seconds,
+        )
+        return {
+            "token": token,
+            "tool_name": request.tool_name,
+            "tenant_id": request.tenant_id,
+            "task_id": request.task_id,
+            "capabilities": request.capabilities or ["read"],
+            "expires_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+    @app.post("/api/v1/tools/execute", tags=["tools"], status_code=200)
+    @app.post("/tools/execute", tags=["tools"], status_code=200)
+    async def execute_tool(request: Request) -> dict[str, Any]:
+        body = await request.json()
+        tool_request = ToolExecutionRequest(**body)
+        auth_header = request.headers.get("authorization")
+        token = tool_request.token
+        if auth_header and not token:
+            token = auth_header
+        try:
+            validated = tool_token_manager.authorize_headers(
+                authorization=auth_header,
+                tool_name=tool_request.tool_name,
+                required_capabilities=tool_request.required_capabilities or ["read"],
+                tenant_id=tool_request.tenant_id,
+                task_id=tool_request.task_id,
+            )
+        except (PermissionError, ValueError) as exc:
+            return JSONResponse(
+                status_code=403,
+                content={"detail": str(exc), "tool_name": tool_request.tool_name},
+            )
+
+        return {
+            "status": "authorized",
+            "tool_name": validated.tool_name,
+            "tenant_id": validated.tenant_id,
+            "task_id": validated.task_id,
+            "capabilities": list(validated.capabilities),
+            "payload": tool_request.payload,
+        }
 
     @app.post("/tasks/dispatch", tags=["tasks"], status_code=202)
     @app.post("/api/v1/tasks/dispatch", tags=["tasks"], status_code=202)
