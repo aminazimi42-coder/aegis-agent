@@ -6,8 +6,8 @@
 
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-API%20Ready-009688)](https://fastapi.tiangolo.com/)
-[![Version](https://img.shields.io/badge/Version-0.6.0-a-orange)](https://github.com/)
-[![Status](https://img.shields.io/badge/Status-Foundation%20SaaS%20Architecture-brightgreen)](https://github.com/)
+[![Version](https://img.shields.io/badge/Version-1.0.0-rc1-orange)](https://github.com/)
+[![Status](https://img.shields.io/badge/Status-Release%20Candidate-brightgreen)](https://github.com/)
 [![Agents](https://img.shields.io/badge/Multi-Agent-4%20Specialists-8b5cf6)](https://github.com/)
 [![Tests](https://img.shields.io/badge/Validated-29%20Passed%20Tests-success)](https://github.com/)
 

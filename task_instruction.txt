@@ -1,8 +1,8 @@
-Phase G Execution Directive: Intelligent Retry Limitation and Loop Prevention Objective
-Implement a strict retry-limiting and circuit-breaker mechanism to prevent infinite agent loops and halt execution after 2 consecutive failed attempts.
-Integrate retry telemetry and state persistence into the agent lifecycle. Step-by-Step Instructions for Agent
-Create a loop-prevention and retry-limiter module in core/retry_guard.py to cap executions at a maximum of 2 retries.
-Wire the retry-guard policy into server.py and agent execution orchestrators.
-Run comprehensive unit tests and code validation scripts to confirm zero regressions.
-Commit changes with message: "feat(wave-g): implement intelligent retry limitation and loop prevention".
-Push changes to origin main.
+Phase H Execution Directive: Comprehensive Integration Testing and System Hardening Objective
+Run end-to-end multi-agent integration suites and verify coordination between amin, ahmad, and core security/token/retry layers.
+Finalize deployment documentation and sign-off manifests. Step-by-Step Instructions for Agent
+Create a comprehensive end-to-end integration test suite in tests/test_e2e_integration.py covering security, token tracking, and retry guards.
+Verify all system endpoints and ensure complete backward compatibility.
+Run full validation scripts and tag the final release candidate as v1.0.0-rc1.
+Commit changes with message: "feat(wave-h): implement comprehensive e2e integration testing and system hardening".
+Push changes and tags to origin main.

@@ -1,7 +1,7 @@
 # Aegis Agent Platform Release Plan
 
-> Version: 0.6.0-a
-> Release status: stable and verified
+> Version: 1.0.0-rc1
+> Release status: release candidate and verified
 > Start date: 2026-08-31
 > Creator: Azimi Innovation Lab
 > Owner: AI Architect Amin Azimi

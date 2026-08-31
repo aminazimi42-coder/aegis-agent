@@ -5,8 +5,8 @@ owner: AI Architect Amin Azimi
 development_model: End-to-End System Development
 copyright: "2026 Azimi Innovation Lab. All rights reserved."
 environment: production
-version: 0.6.0-a
-status: production-ready
+version: 1.0.0-rc1
+status: release-candidate
 agents:
   - Alina
   - Kian

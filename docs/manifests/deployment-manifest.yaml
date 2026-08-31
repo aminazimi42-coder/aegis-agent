@@ -1,10 +1,11 @@
 service: aegis-agent-platform
-release: 0.6.0-a
+release: 1.0.0-rc1
 creator: Azimi Innovation Lab
 owner: AI Architect Amin Azimi
 development_model: End-to-End System Development
 environment: production
 strategy: rolling
+status: release-candidate
 copyright: "2026 Azimi Innovation Lab. All rights reserved."
 health_checks:
   liveness: enabled

@@ -28,7 +28,7 @@ class ReleaseStatus:
         }
 
 
-def release_manifest(environment: str = "production", version: str = "1.0.0") -> dict:
+def release_manifest(environment: str = "production", version: str = "1.0.0-rc1") -> dict:
     """Return the release manifest for the active deployment candidate."""
     config = load_config({"environment": environment, "version": version})
     status = ReleaseStatus(config)
