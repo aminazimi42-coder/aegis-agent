@@ -1,8 +1,7 @@
-Phase 1 Execution Directive: Full Implementation of Agentic FinOps Autopilot & Advanced Token Budget Control Objective
-Implement a fully functional, production-grade FinOps and token-budget controller to strictly monitor, forecast, and hard-cap token usage and operational costs per request and tenant, eliminating credit waste. Step-by-Step Instructions for Agent
-Create a robust FinOps controller module in core/finops_autopilot.py containing dynamic budget caps, real-time token pricing models, and hard-limit enforcement logic.
-Integrate the FinOps interception middleware into server.py and agent execution orchestrators to block requests exceeding token/cost thresholds.
-Add comprehensive unit and stress tests in tests/test_finops_autopilot.py to verify accurate budget enforcement and zero credit leaks.
-Run code validation and security checks (Ruff and Bandit).
-Commit changes with message: "feat(finops-phase1): implement production-grade agentic finops autopilot and token budget enforcement".
-Push changes to origin main.
+Phase 2 Execution Directive: Full Implementation of Trust-Aware Model Router Objective
+Implement an advanced, enterprise-grade model router considering cost, privacy, latency, and capability constraints. Step-by-Step Instructions for Agent
+Create model routing logic in core/model_router.py.
+Integrate router middleware into server.py.
+Run full unit tests and validation checks.
+Commit with message: "feat(router-phase2): implement trust-aware model router".
+Push to origin main.

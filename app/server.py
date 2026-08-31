@@ -14,6 +14,7 @@ from typing import Any
 
 from core.ai_core import AICore
 from core.finops_autopilot import FinOpsAutopilot
+from core.model_router import TrustAwareModelRouter
 from core.monitoring.metrics import PlatformMetrics
 from core.quality import ProductionQualityGate
 from core.retry_guard import RetryGuard
@@ -75,12 +76,14 @@ def create_app() -> FastAPI:
     security_policy = SecurityPolicy()
     token_optimizer = TokenOptimizer()
     finops_autopilot = FinOpsAutopilot()
+    model_router = TrustAwareModelRouter()
     retry_guard = RetryGuard(max_retries=2)
     app.state.task_store = task_store
     app.state.db_session = task_store
     app.state.security_policy = security_policy
     app.state.token_optimizer = token_optimizer
     app.state.finops_autopilot = finops_autopilot
+    app.state.model_router = model_router
     app.state.retry_guard = retry_guard
 
     @app.middleware("http")
@@ -103,6 +106,13 @@ def create_app() -> FastAPI:
                             task_text = parsed.get("task")
                             if isinstance(task_text, str):
                                 finops_autopilot.enforce_budget(tenant_id, task_text)
+                                request.state.route_decision = model_router.evaluate(
+                                    task_text,
+                                    parsed.get("model_name"),
+                                )
+                                parsed["model_name"] = request.state.route_decision[
+                                    "selected_model"
+                                ]
                     except json.JSONDecodeError:
                         sanitized_text = raw_body.decode("utf-8", errors="ignore")
                         if sanitized_text:
