@@ -13,6 +13,8 @@ A structured multi-agent platform with four specialist agents: Alina, Kiyan, Bit
 
 - Phase 0: foundation and constraints established
 - Phase 1: core architecture and agent skeleton created
+- Phase 2: AI core and agent routing implemented
+- Phase 3: specialized agent behavior and workflow execution implemented
 
 ## Local development
 

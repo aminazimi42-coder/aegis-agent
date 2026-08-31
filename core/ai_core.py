@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from agents.alina.agent import AlinaAgent
 from agents.aylin.agent import AylinAgent
@@ -46,3 +46,21 @@ class AICore:
             "response": response,
             "task": task,
         }
+
+    def run_workflow(self, task: str) -> List[Dict[str, Any]]:
+        """Collect the specialized output of all four agents for a task."""
+        ordered_names = ["Alina", "Kiyan", "Bita", "Aylin"]
+        results: List[Dict[str, Any]] = []
+
+        for name in ordered_names:
+            agent = self.agent_map[name]
+            results.append(
+                {
+                    "agent_name": name,
+                    "role": agent.profile()["role"],
+                    "response": agent.handle(task),
+                    "task": task,
+                }
+            )
+
+        return results

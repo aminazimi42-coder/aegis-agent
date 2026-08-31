@@ -9,4 +9,4 @@ class BitaAgent(BaseAgent):
     name = "Bita"
 
     def handle(self, task: str) -> str:
-        return f"{self.name} analyzed and summarized: {task}"
+        return f"{self.name} analysis and synthesis: Evaluate the context, synthesize insight, and summarize the key risks for {task}"

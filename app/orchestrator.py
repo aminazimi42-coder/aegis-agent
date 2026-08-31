@@ -14,10 +14,11 @@ def run_agent_workflow(task: str) -> dict:
     """Execute the AI coordination workflow for a single task."""
     ai_core = AICore()
     selected_result = ai_core.dispatch(task)
+    workflow_results = ai_core.run_workflow(task)
 
     return {
         "platform_name": "Aegis Agent Platform",
         "agent_count": len(AGENT_REGISTRY),
         "selected_agent": selected_result["agent_name"],
-        "results": [selected_result],
+        "results": workflow_results,
     }

@@ -9,4 +9,4 @@ class AlinaAgent(BaseAgent):
     name = "Alina"
 
     def handle(self, task: str) -> str:
-        return f"{self.name} coordinated: {task}"
+        return f"{self.name} strategic coordination: Plan and route the task with a clear strategy for {task}"

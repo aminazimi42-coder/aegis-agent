@@ -9,4 +9,4 @@ class AylinAgent(BaseAgent):
     name = "Aylin"
 
     def handle(self, task: str) -> str:
-        return f"{self.name} validated: {task}"
+        return f"{self.name} validation and quality review: Check, verify, and confirm the final outcome for {task}"
