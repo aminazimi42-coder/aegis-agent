@@ -1,8 +1,7 @@
 import unittest
 
-from fastapi.testclient import TestClient
-
 from app.server import create_app
+from fastapi.testclient import TestClient
 
 
 class OpenAPIRouteExpansionTests(unittest.TestCase):
@@ -23,7 +22,8 @@ class OpenAPIRouteExpansionTests(unittest.TestCase):
         self.assertIn("/api/v1/diagnostics", paths)
 
     def test_expanded_routes_return_valid_payloads(self):
-        self.assertEqual(self.client.get("/api/v1/agents/{agent_name}".replace("{agent_name}", "Alina")).status_code, 200)
+        agent_path = "/api/v1/agents/{agent_name}".replace("{agent_name}", "Alina")
+        self.assertEqual(self.client.get(agent_path).status_code, 200)
         self.assertEqual(self.client.get("/api/v1/telemetry").status_code, 200)
         self.assertEqual(self.client.get("/api/v1/diagnostics").status_code, 200)
 

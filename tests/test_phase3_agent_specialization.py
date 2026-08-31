@@ -15,11 +15,16 @@ class PhaseThreeAgentSpecializationTests(unittest.TestCase):
         self.assertEqual(AylinAgent().profile()["role"], "Quality and validation")
 
     def test_orchestrator_runs_all_four_agents(self):
-        payload = run_agent_workflow("Plan execution for a new deployment and validate the final output")
+        payload = run_agent_workflow(
+            "Plan execution for a new deployment and validate the final output"
+        )
 
         self.assertEqual(payload["agent_count"], 4)
         self.assertEqual(len(payload["results"]), 4)
-        self.assertEqual({item["agent_name"] for item in payload["results"]}, {"Alina", "Kiyan", "Bita", "Aylin"})
+        self.assertEqual(
+            {item["agent_name"] for item in payload["results"]},
+            {"Alina", "Kiyan", "Bita", "Aylin"},
+        )
 
     def test_agent_response_has_specialized_context(self):
         self.assertIn("strategy", AlinaAgent().handle("Plan the new strategy").lower())

@@ -10,14 +10,14 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+from core.ai_core import AICore
+from core.monitoring.metrics import PlatformMetrics
+from core.quality import ProductionQualityGate
 from fastapi import FastAPI
 from pydantic import BaseModel
 
 from app.api.health import health_snapshot, platform_status
 from app.api.routes import agent_router, diagnostics_router, task_router, telemetry_router
-from core.ai_core import AICore
-from core.monitoring.metrics import PlatformMetrics
-from core.quality import ProductionQualityGate
 
 
 class TaskDispatchRequest(BaseModel):
@@ -33,12 +33,30 @@ def create_app() -> FastAPI:
         version="0.5.0",
         description="Production web API for the multi-agent SaaS platform.",
         openapi_tags=[
-            {"name": "health", "description": "Runtime liveness and service health endpoints."},
-            {"name": "metrics", "description": "Operational telemetry and service metrics."},
-            {"name": "agents", "description": "Multi-agent registry and specialist catalog endpoints."},
-            {"name": "tasks", "description": "Task execution, status, and workflow endpoints."},
-            {"name": "telemetry", "description": "Telemetry, runtime health, and SaaS monitoring signals."},
-            {"name": "diagnostics", "description": "Runtime diagnostics and readiness checks."},
+            {
+                "name": "health",
+                "description": "Runtime liveness and service health endpoints.",
+            },
+            {
+                "name": "metrics",
+                "description": "Operational telemetry and service metrics.",
+            },
+            {
+                "name": "agents",
+                "description": "Multi-agent registry and specialist catalog endpoints.",
+            },
+            {
+                "name": "tasks",
+                "description": "Task execution, status, and workflow endpoints.",
+            },
+            {
+                "name": "telemetry",
+                "description": "Telemetry, runtime health, and SaaS monitoring signals.",
+            },
+            {
+                "name": "diagnostics",
+                "description": "Runtime diagnostics and readiness checks.",
+            },
         ],
     )
     metrics = PlatformMetrics()
@@ -69,7 +87,11 @@ def create_app() -> FastAPI:
     def dispatch_task(request: TaskDispatchRequest) -> dict[str, Any]:
         selected_result = ai_core.dispatch(request.task)
         workflow = ai_core.run_workflow(request.task)
-        quality_gate = ProductionQualityGate.evaluate(request.task, selected_result["agent_name"], selected_result["response"])
+        quality_gate = ProductionQualityGate.evaluate(
+            request.task,
+            selected_result["agent_name"],
+            selected_result["response"],
+        )
 
         return {
             "selected_agent": selected_result["agent_name"],

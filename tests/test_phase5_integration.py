@@ -12,7 +12,10 @@ class PhaseFiveIntegrationTests(unittest.TestCase):
 
         self.assertEqual(workflow["agent_count"], 4)
         self.assertEqual(len(workflow["results"]), 4)
-        self.assertEqual({item["agent_name"] for item in workflow["results"]}, {"Alina", "Kiyan", "Bita", "Aylin"})
+        self.assertEqual(
+            {item["agent_name"] for item in workflow["results"]},
+            {"Alina", "Kiyan", "Bita", "Aylin"},
+        )
 
     def test_ai_core_integration_works_across_all_agents(self):
         core = AICore()

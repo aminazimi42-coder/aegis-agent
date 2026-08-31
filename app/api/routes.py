@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
-
-from core.ai_core import AICore
 from core.agent_registry import AGENT_REGISTRY
+from core.ai_core import AICore
 from core.monitoring.metrics import PlatformMetrics
 from core.security import SecurityPolicy
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
 
 
 class AgentProfileResponse(BaseModel):
@@ -70,10 +69,30 @@ def get_agent(agent_name: str) -> AgentProfileResponse:
 @task_router.get("/tasks", response_model=TaskListResponse)
 def list_tasks() -> TaskListResponse:
     tasks = [
-        TaskSummary(id="task-001", name="Strategic planning", summary="Develop a coordinated launch plan", status="queued"),
-        TaskSummary(id="task-002", name="Operational execution", summary="Run deployment and monitoring workflows", status="running"),
-        TaskSummary(id="task-003", name="Analytical synthesis", summary="Review risk, dependencies, and market context", status="queued"),
-        TaskSummary(id="task-004", name="Quality validation", summary="Verify the final output before release", status="ready"),
+        TaskSummary(
+            id="task-001",
+            name="Strategic planning",
+            summary="Develop a coordinated launch plan",
+            status="queued",
+        ),
+        TaskSummary(
+            id="task-002",
+            name="Operational execution",
+            summary="Run deployment and monitoring workflows",
+            status="running",
+        ),
+        TaskSummary(
+            id="task-003",
+            name="Analytical synthesis",
+            summary="Review risk, dependencies, and market context",
+            status="queued",
+        ),
+        TaskSummary(
+            id="task-004",
+            name="Quality validation",
+            summary="Verify the final output before release",
+            status="ready",
+        ),
     ]
     return TaskListResponse(tasks=tasks, total=len(tasks))
 
@@ -100,7 +119,14 @@ def diagnostics() -> DiagnosticsResponse:
         "runtime": "ok",
         "agent_registry": "ok",
         "error_handling": "ok",
-        "security": "ok" if all(security_policy.is_allowed(agent_name) for agent_name in ["Alina", "Kiyan", "Bita", "Aylin"]) else "blocked",
+        "security": (
+            "ok"
+            if all(
+                security_policy.is_allowed(agent_name)
+                for agent_name in ["Alina", "Kiyan", "Bita", "Aylin"]
+            )
+            else "blocked"
+        ),
     }
     return DiagnosticsResponse(
         service=metrics["service"],

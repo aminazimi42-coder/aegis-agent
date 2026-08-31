@@ -13,7 +13,9 @@ class RuntimeService:
 
     def bootstrap(self) -> dict:
         """Runs bootstrap-level verification before the runtime starts."""
-        outcome: RecoveryOutcome = self.recovery.reconcile(expected_environment=self.context.environment)
+        outcome: RecoveryOutcome = self.recovery.reconcile(
+            expected_environment=self.context.environment
+        )
 
         return {
             "service": self.context.app_name,

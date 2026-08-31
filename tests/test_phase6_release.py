@@ -20,11 +20,16 @@ class PhaseSixReleaseTests(unittest.TestCase):
         self.assertEqual(snapshot["service"], "Aegis Agent Platform")
 
     def test_release_workflow_remains_operational(self):
-        workflow = run_agent_workflow("Deploy the platform to production and validate release quality")
+        workflow = run_agent_workflow(
+            "Deploy the platform to production and validate release quality"
+        )
 
         self.assertEqual(workflow["agent_count"], 4)
         self.assertEqual(len(workflow["results"]), 4)
-        self.assertEqual({item["agent_name"] for item in workflow["results"]}, {"Alina", "Kiyan", "Bita", "Aylin"})
+        self.assertEqual(
+            {item["agent_name"] for item in workflow["results"]},
+            {"Alina", "Kiyan", "Bita", "Aylin"},
+        )
 
 
 if __name__ == "__main__":

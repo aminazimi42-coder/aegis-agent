@@ -1,8 +1,7 @@
 import unittest
 
-from fastapi.testclient import TestClient
-
 from app.server import create_app
+from fastapi.testclient import TestClient
 
 
 class PhaseTwoAPITests(unittest.TestCase):
@@ -29,7 +28,10 @@ class PhaseTwoAPITests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         payload = response.json()
         self.assertEqual(len(payload["agents"]), 4)
-        self.assertEqual({item["name"] for item in payload["agents"]}, {"Alina", "Kiyan", "Bita", "Aylin"})
+        self.assertEqual(
+            {item["name"] for item in payload["agents"]},
+            {"Alina", "Kiyan", "Bita", "Aylin"},
+        )
 
     def test_task_dispatch_endpoint(self):
         response = self.client.post(

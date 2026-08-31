@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from app.health import health_snapshot
 from core.config import load_config
 from core.diagnostics.health import RuntimeDiagnostics
 from core.monitoring.metrics import PlatformMetrics
 from core.runtime.runtime_context import RuntimeContext
+
+from app.health import health_snapshot
 
 
 def liveness_check() -> dict:

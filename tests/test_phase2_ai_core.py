@@ -1,6 +1,6 @@
 import unittest
 
-from app.orchestrator import orchestrate_platform, run_agent_workflow
+from app.orchestrator import run_agent_workflow
 from core.agent_registry import AGENT_REGISTRY
 from core.ai_core import AICore
 
@@ -8,7 +8,10 @@ from core.ai_core import AICore
 class PhaseTwoAITests(unittest.TestCase):
     def test_agent_registry_contains_four_agents(self):
         self.assertEqual(len(AGENT_REGISTRY), 4)
-        self.assertEqual([agent.name for agent in AGENT_REGISTRY], ["Alina", "Kiyan", "Bita", "Aylin"])
+        self.assertEqual(
+            [agent.name for agent in AGENT_REGISTRY],
+            ["Alina", "Kiyan", "Bita", "Aylin"],
+        )
 
     def test_ai_core_dispatches_task_to_expected_agent(self):
         core = AICore()

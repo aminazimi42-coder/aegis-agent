@@ -1,7 +1,7 @@
 import unittest
 
 from app.health import HealthStatus, health_snapshot
-from core.config import AppConfig, load_config
+from core.config import load_config
 from core.security import SecurityPolicy
 
 

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from app.health import health_snapshot
 from core.config import AppConfig, load_config
+
+from app.health import health_snapshot
 
 
 class ReleaseStatus:
