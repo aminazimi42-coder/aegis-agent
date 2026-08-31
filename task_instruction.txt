@@ -1,18 +1,17 @@
-Phase 3 Execution Directive: Specialist Agent Integration & Orchestration Pipeline
+Phase 4 Execution Directive: Comprehensive Testing, OpenAPI Expansion & Release Finalization
 Objective
-Implement specialized multi-agent routing logic and the master orchestration pipeline to handle complex multi-step user workflows deterministically.
+Expand the OpenAPI documentation/endpoints, run comprehensive integration and end-to-end tests across all system components, and finalize the release baseline.
 Step-by-Step Instructions for Agent
-Specialist Agent Expansion:
-Ensure specialized agents (e.g., in agents/) are properly registered and configured to process domain-specific requests utilizing the Pydantic schemas.
-Orchestrator Pipeline Integration:
-Update app/orchestrator.py or equivalent engine to coordinate multi-agent tasks sequentially or in parallel with proper error handling and logging.
-Sandboxed Testing & Pre-Validation:
-Run the updated integration test suite:
+OpenAPI & API Route Expansion:
+Verify and expand API routes and FastAPI schemas in app/server/app.py or equivalent router files to expose complete metadata and endpoints.
+Comprehensive Test Suite Execution:
+Run the full project test suite to confirm zero regressions:
 ./.venv/bin/python -m unittest discover tests
-Run the pre-validation security and lint gate:
+Pre-Validation Gate:
+Run the strict validation script to ensure Ruff and Bandit pass cleanly:
 ./scripts/validate_code.sh
-Git Commit, Push & Handoff:
-Stage modified and new files using git add.
-Commit changes with the exact message: git commit -m "feat(orchestrator): integrate multi-agent specialized pipeline and execution flow"
-Push the changes to the remote repository: git push origin main
-Provide a concise summary of the verification and test outcomes.
+Git Commit, Push & Release Finalization:
+Stage all modified and final files using git add.
+Commit the release changes with the exact message: git commit -m "feat(release): finalize Phase 4 OpenAPI expansion, comprehensive tests, and release candidate"
+Push the code to the remote repository: git push origin main
+Provide a final summary of all verification checks and release status.
