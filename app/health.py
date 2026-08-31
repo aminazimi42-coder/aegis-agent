@@ -23,4 +23,9 @@ def health_snapshot() -> dict:
             "security": "ok",
             "agents": "ok",
         },
+        "telemetry": {
+            "status": "healthy",
+            "security": "secure",
+            "runtime": "stable",
+        },
     }

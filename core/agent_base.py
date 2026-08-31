@@ -9,6 +9,9 @@ class BaseAgent(ABC):
     """Base abstraction for all specialist agents in the platform."""
 
     name: str = "BaseAgent"
+    role: str = "Specialist"
+    description: str = "Unspecified specialist role."
+    capabilities: list[str] = []
 
     def profile(self) -> dict:
         """Return the canonical metadata for the agent."""
@@ -20,7 +23,35 @@ class BaseAgent(ABC):
                     "description": agent.description,
                     "capabilities": agent.capabilities,
                 }
-        return {"name": self.name, "role": "Specialist", "description": "Unspecified specialist role.", "capabilities": []}
+        return {"name": self.name, "role": self.role, "description": self.description, "capabilities": list(self.capabilities)}
+
+    def plan(self, task: str) -> str:
+        """Generate the specialist plan for a task."""
+        return f"{self.name} plan: define the sequence, priorities, and risk boundaries for {task}"
+
+    def execute(self, task: str) -> str:
+        """Execute the specialist workflow for a task."""
+        return f"{self.name} execution: perform the delivery path and monitor the operation for {task}"
+
+    def analyze(self, task: str) -> str:
+        """Analyze the task with specialist reasoning."""
+        return f"{self.name} analysis: evaluate the context, synthesize insight, and clarify dependencies for {task}"
+
+    def validate(self, task: str) -> str:
+        """Validate the task result before completion."""
+        return f"{self.name} validation: verify quality, check completion, and confirm the final outcome for {task}"
+
+    def run_engine(self, task: str) -> dict:
+        """Return a richer specialist execution payload for SaaS workflows."""
+        return {
+            "agent": self.name,
+            "role": self.profile()["role"],
+            "plan": self.plan(task),
+            "execution": self.execute(task),
+            "analysis": self.analyze(task),
+            "validation": self.validate(task),
+            "summary": self.handle(task),
+        }
 
     @abstractmethod
     def handle(self, task: str) -> str:

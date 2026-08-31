@@ -1,0 +1,16 @@
+service: aegis-agent-platform
+release: 0.5.0
+creator: Azimi Innovation Lab
+owner: AI Architect Amin Azimi
+development_model: End-to-End System Development
+environment: production
+strategy: rolling
+copyright: "2026 Azimi Innovation Lab. All rights reserved."
+health_checks:
+  liveness: enabled
+  readiness: enabled
+  graceful_shutdown: enabled
+recovery:
+  auto_reconcile: true
+  environment_normalization: true
+  deployment_guardrails: enabled

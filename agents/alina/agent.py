@@ -7,6 +7,9 @@ class AlinaAgent(BaseAgent):
     """Strategic orchestration specialist."""
 
     name = "Alina"
+    role = "Strategic coordination"
+    description = "Coordinates strategy, prioritization, and system-level routing."
+    capabilities = ["planning", "coordination", "routing", "prioritization"]
 
     def handle(self, task: str) -> str:
-        return f"{self.name} strategic coordination: Plan and route the task with a clear strategy for {task}"
+        return f"{self.name} strategic coordination: define a clear execution strategy, route priorities, and align stakeholders for {task}"

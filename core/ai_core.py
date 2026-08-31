@@ -35,6 +35,18 @@ class AICore:
             return "Aylin"
         return "Alina"
 
+    def catalog(self) -> List[Dict[str, Any]]:
+        """Return the canonical metadata catalog for the platform agents."""
+        return [
+            {
+                "name": agent.name,
+                "role": agent.role,
+                "description": agent.description,
+                "capabilities": agent.capabilities,
+            }
+            for agent in AGENT_REGISTRY
+        ]
+
     def dispatch(self, task: str) -> Dict[str, Any]:
         """Dispatch a task to a specialist and return the result payload."""
         agent_name = self.resolve_agent_name(task)

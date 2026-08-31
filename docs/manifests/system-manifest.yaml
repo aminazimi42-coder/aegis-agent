@@ -1,0 +1,19 @@
+service: aegis-agent-platform
+name: Aegis Agent Platform
+creator: Azimi Innovation Lab
+owner: AI Architect Amin Azimi
+development_model: End-to-End System Development
+copyright: "2026 Azimi Innovation Lab. All rights reserved."
+environment: production
+version: 0.5.0
+status: production-ready
+agents:
+  - Alina
+  - Kiyan
+  - Bita
+  - Aylin
+checks:
+  health: healthy
+  audits: enabled
+  recovery: enabled
+  diagnostics: enabled

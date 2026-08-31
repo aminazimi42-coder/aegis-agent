@@ -7,6 +7,9 @@ class KiyanAgent(BaseAgent):
     """Execution-focused specialist."""
 
     name = "Kiyan"
+    role = "Operational execution"
+    description = "Runs operational workflows and monitors delivery stability."
+    capabilities = ["execution", "monitoring", "optimization", "delivery"]
 
     def handle(self, task: str) -> str:
-        return f"{self.name} operational execution: Run and monitor the execution path for {task}"
+        return f"{self.name} operational execution: run the delivery path, monitor throughput, and stabilize execution for {task}"
