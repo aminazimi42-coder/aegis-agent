@@ -3,6 +3,8 @@ from __future__ import annotations
 from time import monotonic
 from typing import Any
 
+from agents.ahmad.agent import AhmedAgent
+from agents.amin.agent import AminAgent
 from core.agent_registry import AGENT_REGISTRY
 from core.config import load_config
 
@@ -26,6 +28,19 @@ class PlatformMetrics:
             }
             for agent in AGENT_REGISTRY
         ]
+
+        oversight_components = []
+        for agent in (AminAgent(), AhmedAgent()):
+            details = agent.metadata.copy()
+            oversight_components.append(
+                {
+                    "name": agent.name,
+                    "role": agent.role,
+                    "component": details["log"]["component"],
+                    "log": details["log"],
+                    "execution": details["execution"],
+                }
+            )
 
         telemetry = {
             "health": {
@@ -53,6 +68,7 @@ class PlatformMetrics:
                 "requests_per_minute": 0,
                 "active_agents": len(agent_catalog),
             },
+            "oversight_components": oversight_components,
         }
 
         return {

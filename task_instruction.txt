@@ -1,9 +1,8 @@
-Phase C Execution Directive: Advanced Integration and Metadata Pipeline Objective
-Enhance multi-agent routing metadata and finalize task telemetry reporting.
-Implement GET /tasks/{task_id} status tracking endpoint with memory store retrieval.
-Run comprehensive validation suites and prepare production readiness manifest. Step-by-Step Instructions for Agent
-Add GET /tasks/{task_id} endpoint in server.py to query task states and execution telemetry.
-Ensure amin and ahmad oversight logs are properly structured in agent metadata blocks.
-Execute unit tests and linting gates to verify zero-regression status.
-Commit changes with message: "feat(wave-c): implement task status telemetry and oversight metadata".
-Push changes to origin main.
+Phase D Execution Directive: Production Readiness, Health Telemetry, and Final Handoff Objective
+Finalize system health diagnostics and telemetry verification across all agent wrappers.
+Run full regression testing, security scanning, and ensure zero unresolved warnings.
+Prepare the repository for final production deployment handoff. Step-by-Step Instructions for Agent
+Verify health check endpoints and structured logging metrics for amin and ahmad components.
+Run full test suite using unittest and code validation scripts.
+Perform final git cleanup, tag the release as v0.6.0-a, and commit all changes with message: "feat(wave-d): finalize production readiness and system health telemetry".
+Push changes and tags to origin main.

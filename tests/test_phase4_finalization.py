@@ -27,6 +27,21 @@ class PhaseFourFinalizationTests(unittest.TestCase):
         self.assertIn("telemetry", status)
         self.assertIn("health", status["telemetry"])
 
+    def test_platform_metrics_include_oversight_components(self):
+        snapshot = PlatformMetrics().snapshot()
+
+        self.assertIn("oversight_components", snapshot["telemetry"])
+        self.assertEqual(
+            {entry["component"] for entry in snapshot["telemetry"]["oversight_components"]},
+            {"amin", "ahmad"},
+        )
+        self.assertTrue(
+            all(
+                "log" in entry and entry["log"]["channel"] == "oversight"
+                for entry in snapshot["telemetry"]["oversight_components"]
+            )
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -27,5 +27,21 @@ def health_snapshot() -> dict:
             "status": "healthy",
             "security": "secure",
             "runtime": "stable",
+            "oversight_components": {
+                "amin": {
+                    "component": "amin",
+                    "channel": "oversight",
+                    "level": "info",
+                    "owner": "Amin Azimi",
+                    "scope": "governance",
+                },
+                "ahmad": {
+                    "component": "ahmad",
+                    "channel": "oversight",
+                    "level": "info",
+                    "owner": "Ahmed",
+                    "scope": "governance",
+                },
+            },
         },
     }
