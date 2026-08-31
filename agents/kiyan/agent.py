@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from core.agent_base import BaseAgent
 
-class KiyanAgent:
+
+class KiyanAgent(BaseAgent):
     """Execution-focused specialist."""
 
     name = "Kiyan"

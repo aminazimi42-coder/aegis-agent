@@ -14,7 +14,7 @@ class ExecutionState(str, Enum):
     FAILED = "failed"
 
 
-@dataclass(slots=True)
+@dataclass
 class AgentSpec:
     """Static descriptor for a single agent."""
 
@@ -24,7 +24,7 @@ class AgentSpec:
     capabilities: list[str] = field(default_factory=list)
 
 
-@dataclass(slots=True)
+@dataclass
 class TaskMessage:
     """Unit of work passed between orchestrator and agents."""
 

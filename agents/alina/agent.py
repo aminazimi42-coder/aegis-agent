@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from core.agent_base import BaseAgent
 
-class AlinaAgent:
+
+class AlinaAgent(BaseAgent):
     """Strategic orchestration specialist."""
 
     name = "Alina"

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from core.agent_base import BaseAgent
 
-class AylinAgent:
+
+class AylinAgent(BaseAgent):
     """Quality assurance and verification specialist."""
 
     name = "Aylin"
