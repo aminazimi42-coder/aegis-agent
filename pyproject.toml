@@ -1,0 +1,11 @@
+[project]
+name = "aegis-agent-platform"
+version = "0.1.0"
+description = "Multi-agent platform with four specialist agents"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
