@@ -1,8 +1,8 @@
-Phase E Execution Directive: Advanced Security Layer and Agent Firewall Objective
-Implement robust input/output security validation and filtering to prevent injection and hacking attempts across agent pathways.
-Set up security middleware inside the core application pipeline for amin and ahmad components. Step-by-Step Instructions for Agent
-Create a security module in core/security.py for request sanitization and threat filtering.
-Integrate the security firewall middleware into server.py to inspect incoming agent payloads.
-Run unit tests and security validation scripts (Bandit/Ruff) to ensure zero security regressions.
-Commit changes with message: "feat(wave-e): implement advanced security layer and agent firewall".
+Phase F Execution Directive: Token Consumption Optimization and Cost Control Objective
+Implement smart token usage monitoring, response caching, and budget tracking limits across agent execution flows.
+Set up resource throttling middleware to prevent excessive or redundant API calls. Step-by-Step Instructions for Agent
+Create a token optimization and cost-control module in core/token_optimizer.py.
+Integrate the caching and token-tracking middleware into server.py and agent wrappers.
+Run comprehensive unit tests and code validation scripts to verify zero regressions.
+Commit changes with message: "feat(wave-f): implement token optimization and cost control layers".
 Push changes to origin main.

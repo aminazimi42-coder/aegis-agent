@@ -42,6 +42,16 @@ class PhaseFourFinalizationTests(unittest.TestCase):
             )
         )
 
+    def test_token_optimizer_tracks_budget_and_cache(self):
+        from core.token_optimizer import TokenOptimizer
+
+        optimizer = TokenOptimizer(max_tokens_per_request=100, daily_budget=500)
+        cached = optimizer.cache_response("Plan the final launch", "Alina", "Plan approved")
+
+        self.assertTrue(cached)
+        self.assertEqual(optimizer.get_cached_response("Plan the final launch"), "Plan approved")
+        self.assertLessEqual(optimizer.usage_summary()["total_tokens"], 500)
+
 
 if __name__ == "__main__":
     unittest.main()

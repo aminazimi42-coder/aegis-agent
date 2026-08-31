@@ -17,6 +17,7 @@ from core.monitoring.metrics import PlatformMetrics
 from core.quality import ProductionQualityGate
 from core.security import SecurityPolicy, sanitize_payload
 from core.task_store import TaskStore
+from core.token_optimizer import TokenOptimizer
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -69,9 +70,11 @@ def create_app() -> FastAPI:
     ai_core = AICore()
     task_store = TaskStore()
     security_policy = SecurityPolicy()
+    token_optimizer = TokenOptimizer()
     app.state.task_store = task_store
     app.state.db_session = task_store
     app.state.security_policy = security_policy
+    app.state.token_optimizer = token_optimizer
 
     @app.middleware("http")
     async def security_middleware(request: Request, call_next):
@@ -91,6 +94,23 @@ def create_app() -> FastAPI:
                         return {"type": "http.request", "body": raw_body, "more_body": False}
 
                     request._receive = receive
+
+                if request.url.path.endswith("/dispatch"):
+                    if token_optimizer.throttle_if_needed("dispatch", max_requests_per_minute=30):
+                        return JSONResponse(
+                            status_code=429,
+                            content={
+                                "detail": (
+                                    "Resource throttling limit reached for this "
+                                    "agent dispatch."
+                                )
+                            },
+                        )
+                    if token_optimizer._total_tokens >= token_optimizer.daily_budget:
+                        return JSONResponse(
+                            status_code=429,
+                            content={"detail": "Daily token budget exhausted."},
+                        )
             except ValueError as exc:
                 return JSONResponse(status_code=400, content={"detail": str(exc)})
         return await call_next(request)
