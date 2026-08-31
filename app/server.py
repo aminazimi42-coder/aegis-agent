@@ -14,6 +14,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from app.api.health import health_snapshot, platform_status
+from app.api.routes import agent_router, diagnostics_router, task_router, telemetry_router
 from core.ai_core import AICore
 from core.monitoring.metrics import PlatformMetrics
 from core.quality import ProductionQualityGate
@@ -31,28 +32,40 @@ def create_app() -> FastAPI:
         title="Aegis Agent Platform",
         version="0.5.0",
         description="Production web API for the multi-agent SaaS platform.",
+        openapi_tags=[
+            {"name": "health", "description": "Runtime liveness and service health endpoints."},
+            {"name": "metrics", "description": "Operational telemetry and service metrics."},
+            {"name": "agents", "description": "Multi-agent registry and specialist catalog endpoints."},
+            {"name": "tasks", "description": "Task execution, status, and workflow endpoints."},
+            {"name": "telemetry", "description": "Telemetry, runtime health, and SaaS monitoring signals."},
+            {"name": "diagnostics", "description": "Runtime diagnostics and readiness checks."},
+        ],
     )
     metrics = PlatformMetrics()
     ai_core = AICore()
+    app.include_router(agent_router)
+    app.include_router(task_router)
+    app.include_router(telemetry_router)
+    app.include_router(diagnostics_router)
 
-    @app.get("/health")
+    @app.get("/health", tags=["health"])
     def health() -> dict[str, Any]:
         payload = health_snapshot()
         payload["timestamp"] = datetime.now(timezone.utc).isoformat()
         return payload
 
-    @app.get("/metrics")
+    @app.get("/metrics", tags=["metrics"])
     def metrics_endpoint() -> dict[str, Any]:
         payload = metrics.snapshot()
         payload["timestamp"] = datetime.now(timezone.utc).isoformat()
         return payload
 
-    @app.get("/api/v1/agents")
+    @app.get("/api/v1/agents", tags=["agents"])
     def list_agents() -> dict[str, Any]:
         agents = ai_core.catalog()
         return {"agents": agents, "agent_count": len(agents)}
 
-    @app.post("/api/v1/tasks/dispatch")
+    @app.post("/api/v1/tasks/dispatch", tags=["tasks"])
     def dispatch_task(request: TaskDispatchRequest) -> dict[str, Any]:
         selected_result = ai_core.dispatch(request.task)
         workflow = ai_core.run_workflow(request.task)

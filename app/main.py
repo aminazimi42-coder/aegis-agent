@@ -8,9 +8,12 @@ Developed through the End-to-End System Development model.
 from __future__ import annotations
 
 from app.api.health import platform_status
+from app.server import create_app
 from app.services.runtime_service import RuntimeService
 from core.config import load_config
 from core.runtime.runtime_context import RuntimeContext
+
+app = create_app()
 
 
 def main() -> None:
