@@ -1,8 +1,8 @@
-Phase H Execution Directive: Comprehensive Integration Testing and System Hardening Objective
-Run end-to-end multi-agent integration suites and verify coordination between amin, ahmad, and core security/token/retry layers.
-Finalize deployment documentation and sign-off manifests. Step-by-Step Instructions for Agent
-Create a comprehensive end-to-end integration test suite in tests/test_e2e_integration.py covering security, token tracking, and retry guards.
-Verify all system endpoints and ensure complete backward compatibility.
-Run full validation scripts and tag the final release candidate as v1.0.0-rc1.
-Commit changes with message: "feat(wave-h): implement comprehensive e2e integration testing and system hardening".
-Push changes and tags to origin main.
+Phase 1 Execution Directive: Full Implementation of Agentic FinOps Autopilot & Advanced Token Budget Control Objective
+Implement a fully functional, production-grade FinOps and token-budget controller to strictly monitor, forecast, and hard-cap token usage and operational costs per request and tenant, eliminating credit waste. Step-by-Step Instructions for Agent
+Create a robust FinOps controller module in core/finops_autopilot.py containing dynamic budget caps, real-time token pricing models, and hard-limit enforcement logic.
+Integrate the FinOps interception middleware into server.py and agent execution orchestrators to block requests exceeding token/cost thresholds.
+Add comprehensive unit and stress tests in tests/test_finops_autopilot.py to verify accurate budget enforcement and zero credit leaks.
+Run code validation and security checks (Ruff and Bandit).
+Commit changes with message: "feat(finops-phase1): implement production-grade agentic finops autopilot and token budget enforcement".
+Push changes to origin main.

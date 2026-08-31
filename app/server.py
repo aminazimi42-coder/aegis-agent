@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from core.ai_core import AICore
+from core.finops_autopilot import FinOpsAutopilot
 from core.monitoring.metrics import PlatformMetrics
 from core.quality import ProductionQualityGate
 from core.retry_guard import RetryGuard
@@ -32,6 +33,7 @@ class TaskDispatchRequest(BaseModel):
 
     task: str
     idempotency_key: str | None = None
+    tenant_id: str | None = None
 
 
 def create_app() -> FastAPI:
@@ -72,11 +74,13 @@ def create_app() -> FastAPI:
     task_store = TaskStore()
     security_policy = SecurityPolicy()
     token_optimizer = TokenOptimizer()
+    finops_autopilot = FinOpsAutopilot()
     retry_guard = RetryGuard(max_retries=2)
     app.state.task_store = task_store
     app.state.db_session = task_store
     app.state.security_policy = security_policy
     app.state.token_optimizer = token_optimizer
+    app.state.finops_autopilot = finops_autopilot
     app.state.retry_guard = retry_guard
 
     @app.middleware("http")
@@ -84,14 +88,26 @@ def create_app() -> FastAPI:
         if request.method in {"POST", "PUT", "PATCH"}:
             try:
                 raw_body = await request.body()
+                parsed: Any = None
+                tenant_id = request.headers.get("x-tenant-id") or "default"
                 if raw_body:
                     try:
                         parsed = json.loads(raw_body)
                         sanitize_payload(parsed)
+                        if isinstance(parsed, dict):
+                            tenant_id = str(
+                                parsed.get("tenant_id")
+                                or parsed.get("tenant")
+                                or tenant_id
+                            )
+                            task_text = parsed.get("task")
+                            if isinstance(task_text, str):
+                                finops_autopilot.enforce_budget(tenant_id, task_text)
                     except json.JSONDecodeError:
                         sanitized_text = raw_body.decode("utf-8", errors="ignore")
                         if sanitized_text:
                             security_policy.validate_task(sanitized_text)
+                            finops_autopilot.enforce_budget(tenant_id, sanitized_text)
 
                     async def receive() -> dict[str, Any]:
                         return {"type": "http.request", "body": raw_body, "more_body": False}
@@ -99,7 +115,10 @@ def create_app() -> FastAPI:
                     request._receive = receive
 
                 if request.url.path.endswith("/dispatch"):
-                    if token_optimizer.throttle_if_needed("dispatch", max_requests_per_minute=30):
+                    if token_optimizer.throttle_if_needed(
+                        "dispatch",
+                        max_requests_per_minute=30,
+                    ):
                         return JSONResponse(
                             status_code=429,
                             content={
@@ -114,8 +133,12 @@ def create_app() -> FastAPI:
                             status_code=429,
                             content={"detail": "Daily token budget exhausted."},
                         )
-            except ValueError as exc:
-                return JSONResponse(status_code=400, content={"detail": str(exc)})
+            except (ValueError, RuntimeError) as exc:
+                response_code = 429 if isinstance(exc, RuntimeError) else 400
+                return JSONResponse(
+                    status_code=response_code,
+                    content={"detail": str(exc)},
+                )
         return await call_next(request)
 
     app.include_router(agent_router)
@@ -143,6 +166,15 @@ def create_app() -> FastAPI:
     @app.post("/tasks/dispatch", tags=["tasks"], status_code=202)
     @app.post("/api/v1/tasks/dispatch", tags=["tasks"], status_code=202)
     async def dispatch_task(request: TaskDispatchRequest) -> dict[str, Any]:
+        tenant_id = request.tenant_id or "default"
+        try:
+            finops_autopilot.enforce_budget(tenant_id, request.task)
+        except RuntimeError as exc:
+            return JSONResponse(
+                status_code=429,
+                content={"detail": str(exc), "tenant_id": tenant_id},
+            )
+
         task_key = request.idempotency_key or request.task
         existing_task = task_store.get_by_idempotency_key(task_key)
         if existing_task is not None:
@@ -167,6 +199,12 @@ def create_app() -> FastAPI:
                     record["task_id"],
                     lambda: ai_core.dispatch(record["task"]),
                 )
+                usage = finops_autopilot.record_usage(
+                    tenant_id,
+                    record["task"],
+                    selected_result["agent_name"],
+                    prompt_tokens=len(record["task"].split()),
+                )
                 workflow = retry_guard.execute(
                     f"{record['task_id']}-workflow",
                     lambda: ai_core.run_workflow(record["task"]),
@@ -187,6 +225,7 @@ def create_app() -> FastAPI:
                         "platform_status": platform_status(),
                         "quality_gate": quality_gate,
                         "response": selected_result["response"],
+                        "finops": usage,
                     },
                     telemetry={
                         "request": record["task"],
@@ -194,6 +233,7 @@ def create_app() -> FastAPI:
                         "quality_gate": quality_gate,
                         "timestamp": datetime.now(timezone.utc).isoformat(),
                         "retry_state": retry_guard.snapshot(record["task_id"]),
+                        "finops": usage,
                     },
                 )
             except RuntimeError as exc:

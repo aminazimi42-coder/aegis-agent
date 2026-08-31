@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from core.agent_registry import AGENT_REGISTRY
 from core.ai_core import AICore
+from core.finops_autopilot import FinOpsAutopilot
 from core.quality import ProductionQualityGate
 from core.recovery.self_recovery import SelfRecovery
 from core.retry_guard import RetryGuard
@@ -20,14 +21,22 @@ def orchestrate_platform() -> str:
     )
 
 
-def run_agent_workflow(task: str) -> dict:
+def run_agent_workflow(task: str, tenant_id: str = "default") -> dict:
     """Execute the AI coordination workflow for a single task."""
     ai_core = AICore()
     retry_guard = RetryGuard(max_retries=2)
+    finops_autopilot = FinOpsAutopilot()
+    finops_autopilot.enforce_budget(tenant_id, task)
 
     def execute_workflow() -> dict:
         selected_result = ai_core.dispatch(task)
         workflow_results = ai_core.run_workflow(task)
+        finops_usage = finops_autopilot.record_usage(
+            tenant_id,
+            task,
+            selected_result["agent_name"],
+            prompt_tokens=max(1, len(task.split())),
+        )
         quality_gate = ProductionQualityGate.evaluate(
             task,
             selected_result["agent_name"],
@@ -40,6 +49,7 @@ def run_agent_workflow(task: str) -> dict:
             "results": workflow_results,
             "quality_gate": quality_gate,
             "retry_state": retry_guard.snapshot(task),
+            "finops": finops_usage,
         }
 
     return retry_guard.execute(task, execute_workflow)
