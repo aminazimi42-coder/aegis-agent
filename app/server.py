@@ -20,6 +20,7 @@ from core.quality import ProductionQualityGate
 from core.retry_guard import RetryGuard
 from core.security import SecurityPolicy, sanitize_payload
 from core.task_store import TaskStore
+from core.tenant_memory import TenantMemoryVault
 from core.tool_tokens import ToolTokenManager
 from core.token_optimizer import TokenOptimizer
 from fastapi import FastAPI, Request
@@ -100,6 +101,7 @@ def create_app() -> FastAPI:
     finops_autopilot = FinOpsAutopilot()
     model_router = TrustAwareModelRouter()
     tool_token_manager = ToolTokenManager()
+    tenant_memory = TenantMemoryVault(default_ttl_seconds=3600)
     retry_guard = RetryGuard(max_retries=2)
     app.state.task_store = task_store
     app.state.db_session = task_store
@@ -108,6 +110,7 @@ def create_app() -> FastAPI:
     app.state.finops_autopilot = finops_autopilot
     app.state.model_router = model_router
     app.state.tool_token_manager = tool_token_manager
+    app.state.tenant_memory = tenant_memory
     app.state.retry_guard = retry_guard
 
     @app.middleware("http")
@@ -137,6 +140,26 @@ def create_app() -> FastAPI:
                                 parsed["model_name"] = request.state.route_decision[
                                     "selected_model"
                                 ]
+
+                            memory_key = parsed.get("memory_key")
+                            memory_namespace = str(
+                                parsed.get("memory_namespace") or "default"
+                            )
+                            if memory_key is not None:
+                                if parsed.get("memory_value") is not None:
+                                    tenant_memory.store(
+                                        tenant_id=tenant_id,
+                                        key=str(memory_key),
+                                        value=parsed["memory_value"],
+                                        namespace=memory_namespace,
+                                        ttl_seconds=parsed.get("memory_ttl_seconds"),
+                                    )
+                                else:
+                                    tenant_memory.authorize_access(
+                                        tenant_id,
+                                        str(memory_key),
+                                        namespace=memory_namespace,
+                                    )
                     except json.JSONDecodeError:
                         sanitized_text = raw_body.decode("utf-8", errors="ignore")
                         if sanitized_text:

@@ -1,7 +1,8 @@
-Phase 3 Execution Directive: Full Implementation of Zero-Trust Tool Capability Tokens Objective
-Implement dynamic, short-lived, scoped tool execution tokens to enforce least-privilege tool access per tenant and task. Step-by-Step Instructions for Agent
-Create the token issuance and scope validation logic in core/tool_tokens.py.
-Integrate token authorization into tool execution handlers in server.py.
-Add regression tests in tests/test_tool_tokens.py to verify access control.
-Commit changes with message: "feat(tokens-phase3): implement zero-trust tool capability tokens".
+Phase 4 Execution Directive: Full Implementation of Sovereign Tenant Memory Vault Objective
+Implement tenant-isolated memory vaults with encryption key management, TTL controls, and secure namespace segregation. Step-by-Step Instructions for Agent
+Create tenant-scoped memory and vault management in core/tenant_memory.py.
+Integrate memory isolation checks into agent execution and server middleware.
+Add robust unit tests in tests/test_tenant_memory.py to verify zero cross-tenant memory leakage.
+Run validation checks.
+Commit changes with message: "feat(memory-phase4): implement sovereign tenant memory vault".
 Push changes to origin main.
