@@ -1,0 +1,7 @@
+target-version = "py311"
+line-length = 100
+src = ["app", "tests"]
+
+[lint]
+select = ["E", "F", "B", "I"]
+ignore = []
