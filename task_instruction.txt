@@ -1,8 +1,7 @@
-Phase 28 Directive: Advanced Autonomous Execution, Authority Matrix & Financial/Task Bridge
-Objective: Implement the foundational architecture for high-impact autonomous actions (including bounded authority checks, financial transfer workflows with screenshot/Telegram verification, and automated task-to-execution pipelines) while strictly preserving local governance and evidence logging.
+Phase 29 Directive: Cognitive Identity Engine & Advanced Episodic/Semantic Memory Graph
+Objective: Implement IDEA 01 (Cognitive Identity Engine with Versioned Decision DNA) and IDEA 07 (Personal Knowledge Graph + Provenance-aware Memory), establishing an unprecedented psychological and context-aware digital twin core.
 Tasks to Execute:
-Authority Matrix & Risk-Tier Enforcer: Build the decision gatekeeper (authority_matrix.py) enforcing L0-L3 autonomy levels based on financial impact, irreversibility, and policy rules.
-Autonomous Financial & Task Execution Hook: Implement secure structured transaction scaffolding that executes pre-approved scheduled operations (such as transfers), captures cryptographic evidence, generates automated verification screenshots/logs, and triggers omnichannel dispatch (Telegram/Email).
-Executive Task & Commitment Engine: Build the core structure for tracking "I Owe / They Owe" obligations and automated daily reconciliation triggers.
-Cumulative Protocol Enforcement: Verify absolute zero regressions across all 27 prior protocols, unit tests, and the extension runtime.
-Verification: Run ruff linter (clean), execute the entire test suite successfully, commit changes with message "feat(phase28): authority matrix, financial execution bridge, and task governance", and push to origin main.
+Cognitive Identity & DNA Engine: Build dynamic versioned profiles for user decision principles, risk tolerances, and red lines with rollback mechanisms.
+Provenance-Aware Knowledge Graph: Implement semantic, episodic, and procedural memory stores with strict source, confidence, and TTL tracking.
+Cumulative Protocol Enforcement: Ensure zero regressions across all 28 prior enterprise protocols, security ledgers, and token optimizations.
+Verification: Run ruff linter (clean), execute the complete test suite successfully, commit changes with message "feat(phase29): cognitive identity engine and advanced knowledge graph", and push to origin main.
