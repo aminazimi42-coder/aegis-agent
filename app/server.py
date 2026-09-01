@@ -13,12 +13,15 @@ from datetime import datetime, timezone
 from typing import Any
 
 from core.ai_core import AICore
+from core.evidence_ledger import EvidenceLedgerSingleton
 from core.finops_autopilot import FinOpsAutopilot
+from core.human_authority import HumanAuthority
 from core.model_router import TrustAwareModelRouter
 from core.monitoring.metrics import PlatformMetrics
 from core.observability import CausalSwarmObservability
 from core.quality import ProductionQualityGate
 from core.retry_guard import RetryGuard
+from core.scorecard import ScorecardSingleton
 from core.security import SecurityPolicy, sanitize_payload
 from core.task_store import TaskStore
 from core.tenant_memory import TenantMemoryVault
@@ -103,6 +106,7 @@ def create_app() -> FastAPI:
     model_router = TrustAwareModelRouter()
     tool_token_manager = ToolTokenManager()
     tenant_memory = TenantMemoryVault(default_ttl_seconds=3600)
+    human_authority = HumanAuthority()
     observability = CausalSwarmObservability(default_ttl_seconds=3600)
     retry_guard = RetryGuard(max_retries=2)
     app.state.task_store = task_store
@@ -115,6 +119,9 @@ def create_app() -> FastAPI:
     app.state.tenant_memory = tenant_memory
     app.state.observability = observability
     app.state.retry_guard = retry_guard
+    app.state.human_authority = human_authority
+    # lightweight in-memory approval store for Phase16
+    app.state.approvals: dict[str, dict] = {}
 
     @app.middleware("http")
     async def security_middleware(request: Request, call_next):
@@ -381,6 +388,65 @@ def create_app() -> FastAPI:
             "message": "The task was accepted and queued for asynchronous execution.",
             "duplicate": False,
         }
+
+    # --- Approval endpoints (Phase16 governance) ---
+
+    @app.post("/approvals/request", tags=["diagnostics"])
+    async def request_approval(request: Request) -> dict[str, Any]:
+        body = await request.json()
+        action = body.get("action", "")
+        tenant_id = body.get("tenant_id", "default")
+        # evaluate risk
+        tenant_sensitive = body.get("tenant_sensitive", False)
+        profile = human_authority.evaluate_risk(action, {"tenant_sensitive": tenant_sensitive})
+        approval_id = f"appr-{len(app.state.approvals)+1}"
+        status = "pending"
+        if profile.level.name == "AUTO":
+            status = "approved"
+        app.state.approvals[approval_id] = {
+            "action": action,
+            "tenant_id": tenant_id,
+            "profile": profile.__dict__,
+            "status": status,
+        }
+        # record evidence and scorecard
+        try:
+            EvidenceLedgerSingleton.append_entry(
+                tenant_id=tenant_id,
+                actor=body.get("requester", "system"),
+                action="approval_requested",
+                payload={"approval_id": approval_id, "status": status, "action": action},
+            )
+            ScorecardSingleton.record_approval(tenant_id, required=(profile.level.name != "AUTO"))
+        except Exception:
+            pass
+        return {"approval_id": approval_id, "status": status, "profile": profile.__dict__}
+
+    @app.post("/approvals/{approval_id}/decide", tags=["diagnostics"]) 
+    async def decide_approval(approval_id: str, request: Request) -> dict[str, Any]:
+        body = await request.json()
+        decision = body.get("decision")
+        approver = body.get("approver", "unknown")
+        if approval_id not in app.state.approvals:
+            return JSONResponse(status_code=404, content={"detail": "approval_id not found"})
+        if decision not in {"approve", "deny"}:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "decision must be 'approve' or 'deny'"},
+            )
+        record = app.state.approvals[approval_id]
+        record["status"] = "approved" if decision == "approve" else "denied"
+        # ledger evidence
+        try:
+            EvidenceLedgerSingleton.append_entry(
+                tenant_id=record.get("tenant_id", "default"),
+                actor=approver,
+                action="approval_decision",
+                payload={"approval_id": approval_id, "decision": decision},
+            )
+        except Exception:
+            pass
+        return {"approval_id": approval_id, "decision": decision}
 
     @app.get("/tasks/{task_id}", tags=["tasks"])
     @app.get("/api/v1/tasks/{task_id}", tags=["tasks"])
