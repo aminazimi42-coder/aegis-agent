@@ -1,8 +1,8 @@
-Phase 7 Execution Directive: Implement Counterfactual Shadow Swarm Objective
-Build an independent adversarial and shadow agent execution layer that runs alongside the primary swarm to evaluate assumptions, risks, and output divergences. Step-by-Step Instructions for Agent
-Create core/shadow_swarm.py to handle shadow execution mapping, divergence scoring, and counterfactual validation logs.
-Integrate shadow team routing and comparison hooks into the main task execution and orchestration loop.
-Add robust regression tests in tests/test_shadow_swarm.py verifying shadow consensus and discrepancy handling.
+Phase 8 Execution Directive: Implement Cryptographic Evidence Ledger Objective
+Build a hash-chained cryptographic ledger in core/evidence_ledger.py to securely record and verify task evidence, model outputs, tool executions, and policy decisions. Step-by-Step Instructions for Agent
+Create core/evidence_ledger.py containing ledger entry structures, SHA-256 hash chaining, and verification methods.
+Integrate evidence logging hooks into the main task execution or orchestration pipeline.
+Add comprehensive unit tests in tests/test_evidence_ledger.py to validate ledger integrity and tamper-detection.
 Run full test suite, lint, and security checks to ensure zero regressions.
-Commit changes with message: "feat(shadow-phase7): implement counterfactual shadow swarm layer".
+Commit changes with message: "feat(evidence-phase8): implement cryptographic evidence ledger".
 Push changes to origin main.

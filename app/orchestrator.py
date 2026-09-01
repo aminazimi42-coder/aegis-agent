@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from core.agent_registry import AGENT_REGISTRY
 from core.ai_core import AICore
+from core.evidence_ledger import EvidenceLedgerSingleton
 from core.finops_autopilot import FinOpsAutopilot
 from core.quality import ProductionQualityGate
 from core.recovery.self_recovery import SelfRecovery
@@ -26,6 +27,7 @@ def orchestrate_platform() -> str:
 def run_agent_workflow(task: str, tenant_id: str = "default") -> dict:
     """Execute the AI coordination workflow for a single task."""
     ai_core = AICore()
+    ledger = EvidenceLedgerSingleton
     retry_guard = RetryGuard(max_retries=2)
     finops_autopilot = FinOpsAutopilot()
     tenant_memory = TenantMemoryVault(default_ttl_seconds=3600)
@@ -33,6 +35,17 @@ def run_agent_workflow(task: str, tenant_id: str = "default") -> dict:
     finops_autopilot.enforce_budget(tenant_id, task)
 
     def execute_workflow() -> dict:
+        # Record task submission to evidence ledger
+        try:
+            ledger.append_entry(
+                tenant_id=tenant_id,
+                actor="orchestrator",
+                action="task_submitted",
+                payload={"task": task},
+            )
+        except Exception:
+            pass
+
         tenant_memory.store(
             tenant_id=tenant_id,
             key="workflow-context",
@@ -47,9 +60,32 @@ def run_agent_workflow(task: str, tenant_id: str = "default") -> dict:
         )
 
         selected_result = ai_core.dispatch(task)
+        # Record agent dispatch evidence
+        try:
+            ledger.append_entry(
+                tenant_id=tenant_id,
+                actor=selected_result.get("agent_name", "unknown"),
+                action="agent_dispatch",
+                payload={"response": selected_result.get("response"), "task": task},
+            )
+        except Exception:
+            pass
         workflow_results = ai_core.run_workflow(task)
         # Run the shadow swarm in-process to capture divergence and consensus
         shadow_result = shadow_runner.execute_and_compare(task)
+        # Record shadow comparison evidence
+        try:
+            ledger.append_entry(
+                tenant_id=tenant_id,
+                actor="shadow_runner",
+                action="shadow_comparison",
+                payload={
+                    "divergence": shadow_result.divergence_score,
+                    "consensus": shadow_result.consensus,
+                },
+            )
+        except Exception:
+            pass
         finops_usage = finops_autopilot.record_usage(
             tenant_id,
             task,
@@ -68,6 +104,16 @@ def run_agent_workflow(task: str, tenant_id: str = "default") -> dict:
             namespace="agent-workflow",
             ttl_seconds=300,
         )
+        # Record workflow completion evidence
+        try:
+            ledger.append_entry(
+                tenant_id=tenant_id,
+                actor="orchestrator",
+                action="workflow_completed",
+                payload={"task": task, "selected_agent": selected_result.get("agent_name")},
+            )
+        except Exception:
+            pass
         return {
             "platform_name": "Aegis Agent Platform",
             "agent_count": len(AGENT_REGISTRY),
