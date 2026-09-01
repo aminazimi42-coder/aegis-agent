@@ -1,7 +1,7 @@
-Phase 29 Directive: Cognitive Identity Engine & Advanced Episodic/Semantic Memory Graph
-Objective: Implement IDEA 01 (Cognitive Identity Engine with Versioned Decision DNA) and IDEA 07 (Personal Knowledge Graph + Provenance-aware Memory), establishing an unprecedented psychological and context-aware digital twin core.
+Phase 31 Directive: Autonomous Work Planner & Commitment Engine
+Objective: Implement IDEA 03 (Autonomous Work Planner & Commitment Engine) for intelligent time blocking, critical path analysis, and daily execution reconciliation.
 Tasks to Execute:
-Cognitive Identity & DNA Engine: Build dynamic versioned profiles for user decision principles, risk tolerances, and red lines with rollback mechanisms.
-Provenance-Aware Knowledge Graph: Implement semantic, episodic, and procedural memory stores with strict source, confidence, and TTL tracking.
-Cumulative Protocol Enforcement: Ensure zero regressions across all 28 prior enterprise protocols, security ledgers, and token optimizations.
-Verification: Run ruff linter (clean), execute the complete test suite successfully, commit changes with message "feat(phase29): cognitive identity engine and advanced knowledge graph", and push to origin main.
+Autonomous Work Planner: Build the scheduling and time-blocking module that parses tasks, deadlines, and focus preferences.
+Commitment Engine: Implement tracking for active obligations, critical path risks, and carry-over management.
+Cumulative Protocol Enforcement: Verify absolute zero regressions across all 30 prior enterprise protocols and test suites.
+Verification: Run ruff linter (clean), execute the complete test suite successfully, commit changes with message "feat(phase31): autonomous work planner and commitment engine", and push to origin main.
