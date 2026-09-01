@@ -1,0 +1,3 @@
+include charts/aegis-agent/**
+include infra/README.md
+include README.md

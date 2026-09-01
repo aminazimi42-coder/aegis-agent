@@ -1,11 +1,8 @@
-Phase 23 Directive: Comprehensive Enterprise Infrastructure & All-in-Purpose Desktop Twin Core Architecture
-Objective: Simultaneously implement advanced production infrastructure layers (resilient KMS abstractions, local cluster orchestrators) and build the core engines for the All-in-Purpose Desktop Companion (Adaptive Learning, Omnichannel Bridges, Autonomous Task Planner, and Local Cryptographic Governance).
+Phase 24 Directive: Helm Charts Conversion, Python Wheel Packaging, and Desktop Release CI Automation
+Objective: Convert docker-compose configurations into robust Helm charts for Kubernetes, package the platform as an installable Python wheel, and configure automated CI release jobs for the desktop companion.
 Tasks to Execute:
-Enterprise & Local Cluster Infrastructure: Build robust, production-grade abstraction layers for KMS (Vault/AWS wrapper fallbacks) and local containerized orchestration checks to ensure enterprise-level fault tolerance.
-Desktop Companion Core Engines:
-Implement Adaptive Personalization & Learning Engine (local in-context state adjustment for user patterns).
-Build Omnichannel Integration Bridges (modules for safe automated messaging, email hooks, and task syncing).
-Deploy Autonomous Task Planner (macro-command execution engine to handle automated weekly planning and summaries).
-Establish Local Cryptographic Governance & Evidence Ledger (secure local database encryption and local audit trails for user privacy).
-Protocol & Telemetry Enforcement: Ensure all cumulative protocols (Asymmetric Signing, Evidence Ledger, Scorecard Telemetry, Circuit Breakers, and Self-Healing) remain fully operational and integrated with the new desktop companion core.
-Verification: Run ruff linter (clean), execute the complete unit and integration test suite ensuring zero regressions, commit changes with message "feat(phase23): enterprise infrastructure and all-in-purpose desktop twin core architecture", and push to origin main.
+Helm Chart Scaffolding: Create production-grade Helm chart templates for local/enterprise cluster deployments.
+Python Wheel & Package Build: Structure setup.py or pyproject.toml distribution scripts to package the desktop engine and core modules as a standard installable wheel.
+Desktop Release CI Pipeline: Update GitHub Actions workflows to automate release artifact publishing, wheel compilation, and deployment tests.
+Protocol Enforcement: Ensure all cumulative protocols (Asymmetric Signing, Evidence Ledger, Scorecard Telemetry, Circuit Breakers, and Self-Healing) remain fully active and tested.
+Verification: Run ruff linter (clean), execute the complete test suite ensuring zero regressions, commit changes with message "feat(phase24): helm charts, wheel packaging, and release CI automation", and push to origin main.

@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aegis-agent.fullname" . | default "aegis-agent" }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: aegis-agent
+  template:
+    metadata:
+      labels:
+        app: aegis-agent
+    spec:
+      containers:
+        - name: aegis-agent
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8000
+          resources: {{ toYaml .Values.resources | nindent 10 }}

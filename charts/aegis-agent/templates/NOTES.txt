@@ -1,0 +1,5 @@
+Thank you for installing Aegis Agent.
+
+The application is available at:
+
+  http://<cluster-ip>:{{ .Values.service.port }}

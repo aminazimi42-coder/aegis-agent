@@ -1,3 +1,14 @@
+[build-system]
+requires = ["setuptools>=61", "wheel", "build"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aegis-agent"
+version = "0.1.0"
+description = "Aegis Agent platform"
+authors = [ { name = "Amin Azimi" } ]
+readme = "README.md"
+requires-python = ">=3.11"
 [project]
 name = "aegis-agent-platform"
 version = "0.6.0-a"
