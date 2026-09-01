@@ -29,7 +29,20 @@ jobs:
       - name: Run security script (ruff + bandit)
         run: |
           bash tools/run_security_checks.sh
+      - name: Upload Bandit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report
+          path: /tmp/bandit-report.json
 
       - name: Run unit tests
         run: |
-          python -m unittest discover -s tests -p 'test*.py'
+          mkdir -p /tmp/test-output
+          python -m unittest discover -s tests -p 'test*.py' 2>&1 | tee /tmp/test-output/tests.txt
+      - name: Upload test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-output
+          path: /tmp/test-output/tests.txt

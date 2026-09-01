@@ -4,8 +4,19 @@ from . import asymmetric_signing
 from .asymmetric_signing import sign_asymmetric, verify_asymmetric
 from .evidence_ledger import EvidenceLedgerSingleton
 from .kms_adapter import rotate_key as kms_rotate_key
-from .kms_adapter import store_key
+from .kms_adapter import store_key as kms_store_key
 from .scorecard import ScorecardSingleton
+
+try:
+    from .kms_enterprise import load_key as enterprise_load_key
+    from .kms_enterprise import rotate_key as enterprise_rotate_key
+    from .kms_enterprise import store_key as enterprise_store_key
+    _HAS_ENTERPRISE_KMS = True
+except Exception:
+    enterprise_store_key = None  # type: ignore
+    enterprise_load_key = None  # type: ignore
+    enterprise_rotate_key = None  # type: ignore
+    _HAS_ENTERPRISE_KMS = False
 
 
 class KeyManager:
@@ -25,9 +36,12 @@ class KeyManager:
 
     def register_private_key(self, name: str, pem: bytes) -> None:
         self._privkeys[name] = pem
-        # persist to KMS for durability
+        # persist to KMS for durability (enterprise preferred)
         try:
-            store_key(name, pem)
+            if _HAS_ENTERPRISE_KMS and enterprise_store_key is not None:
+                enterprise_store_key(name, pem)
+            else:
+                kms_store_key(name, pem)
         except Exception:
             pass
 
@@ -53,7 +67,10 @@ class KeyManager:
             self._pubkeys[name] = new_public_pem
         # persist rotation to KMS
         try:
-            kms_rotate_key(name, new_private_pem)
+            if _HAS_ENTERPRISE_KMS and enterprise_rotate_key is not None:
+                enterprise_rotate_key(name, new_private_pem)
+            else:
+                kms_rotate_key(name, new_private_pem)
             EvidenceLedgerSingleton.append_entry(
                 tenant_id="system",
                 actor="key_manager",

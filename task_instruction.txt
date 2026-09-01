@@ -1,8 +1,8 @@
-Phase 19 Directive: Final Comprehensive Integration & Outstanding Proposals Execution
-Objective: Completely implement all remaining technical proposals, including rigorous Bandit threshold rules, approval flow integration tests, and production KMS-backed key management persistence.
+Phase 20 Directive: Enterprise KMS Integration, End-to-End Integration Tests, and CI Artifact Publishing
+Objective: Transition from file-backed key management to real enterprise KMS, build robust integration tests for approval flows, and configure advanced CI artifact reporting.
 Tasks to Execute:
-Add comprehensive unit tests in tests/test_approval_flows.py covering all approval endpoints, risk evaluation triggers, and ledger attestations.
-Tighten security scanning by updating .github/workflows/security.yml or run_security_checks.sh with strict Bandit thresholds and artifact reporting.
-Finalize key_manager.py to fully support production KMS-backed secure storage structures (or robust encrypted payload backups) integrated with audit ledger entries.
-Ensure zero open items, clean ruff linting, and complete success of all unit test suites (76+ tests).
-Verification: Run all local tests and linter checks, commit changes with message "feat(phase19): finalize outstanding proposals, approval tests, and security hardening", and push to origin main.
+Enterprise KMS Integration: Upgrade kms_adapter.py and key_manager.py to support secure external KMS integrations (such as Vault or AWS/GCP KMS wrappers) alongside secure fallback storage.
+End-to-End Integration Tests: Create comprehensive integration tests (e.g., tests/test_integration_approvals.py) verifying the complete lifecycle of approval requests, risk evaluation, evidence ledger logging, and scorecard metrics.
+CI Artifact Publishing: Update .github/workflows/security.yml to generate, store, and publish Bandit security scan reports and test coverage artifacts.
+Protocol Enforcement: Ensure all cumulative protocols (Asymmetric Signing, Evidence Ledger, Scorecard Telemetry, Risk-weighted Human Authority) remain fully intact and validated.
+Verification: Run ruff linter (clean), execute the full unit and integration test suite ensuring zero regressions, commit changes with message "feat(phase20): enterprise KMS integration, integration tests, and CI artifact publishing", and push to origin main.
