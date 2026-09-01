@@ -1,20 +1,14 @@
 [build-system]
-requires = ["setuptools>=61", "wheel", "build"]
+requires = ["setuptools>=68", "wheel", "build"]
 build-backend = "setuptools.build_meta"
 
-[project]
-name = "aegis-agent"
-version = "0.1.0"
-description = "Aegis Agent platform"
-authors = [ { name = "Amin Azimi" } ]
-readme = "README.md"
-requires-python = ">=3.11"
 [project]
 name = "aegis-agent-platform"
 version = "0.6.0-a"
 description = "Foundation multi-agent SaaS framework for enterprise orchestration"
+authors = [ { name = "Amin Azimi" } ]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.110.0",
   "uvicorn>=0.29.0",
@@ -58,7 +52,3 @@ packages = [
   "core.recovery",
   "core.runtime",
 ]
-
-[build-system]
-requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.build_meta"
