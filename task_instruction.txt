@@ -1,8 +1,8 @@
-Phase 9 Execution Directive: Implement Reversible Agentic Workflows Objective
-Build a compensating/rollback action stack in core/reversible_workflow.py so that every side-effecting agent action defines a safe rollback procedure. Step-by-Step Instructions for Agent
-Create core/reversible_workflow.py to handle transaction-like execution states, action logging, and automated/manual rollback triggers.
-Integrate workflow rollback hooks into the core task execution pipeline.
-Add robust unit tests in tests/test_reversible_workflow.py ensuring proper rollback behavior under simulated failure conditions.
-Run full test suite, lint, and security checks to ensure zero regressions.
-Commit changes with message: "feat(workflow-phase9): implement reversible agentic workflows".
+Phase 11 Execution Directive: Implement Enterprise Agent Capsule Marketplace & Final Integration Audit Objective
+Build core/capsule_marketplace.py to handle signed, installable agent packages containing manifests, prompt bundles, allowed tools, and verification schemas, and perform a full integration audit across all new modules. Step-by-Step Instructions for Agent
+Create core/capsule_marketplace.py to support agent capsule registration, cryptographic signature validation, and capability verification.
+Integrate capsule loading and verification hooks into the main registry and orchestration pipelines.
+Add exhaustive unit tests in tests/test_capsule_marketplace.py covering valid, tampered, and unauthorized capsule installs.
+Run full test suite across all modules, linter, and security scans to guarantee 100% pass rates and zero regressions.
+Commit changes with message: "feat(marketplace-phase11): implement enterprise agent capsule marketplace and final integration".
 Push changes to origin main.
