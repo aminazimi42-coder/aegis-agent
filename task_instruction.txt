@@ -1,9 +1,7 @@
-Phase 17 Directive: Advanced Enterprise Hardening & Cumulative Proposals Integration
-Objective: Implement the 4 major accumulated architectural proposals from previous phases to achieve production-grade hardening.
-Core Tasks to Execute:
-Production Approvals & OAuth UI: Persist approvals to durable storage, implement OAuth-protected approver UI hooks, and sign approval attestations.
-Enterprise KMS Integration: Replace local key management with secure KMS lifecycle integration (Vault/AWS KMS/GCP KMS) and automated key rotation.
-True Runtime Sandboxing: Upgrade runtime_sandbox.py from a stub to a container/process-based isolated runtime (runc, seccomp profiles, or gVisor) with resource limits.
-Operations Hardening: Add automated Bandit security scanning in CI, signed encrypted backups for the durable registry, and PostgreSQL migration scripts with WAL replication.
-Cumulative Enforcement: Enforce all existing protocols (Asymmetric Signing, Evidence Ledger, Scorecard Telemetry, Risk-weighted Human Authority, and Atomic Rollbacks).
-Verification: Run ruff linter, execute full test suite ensuring zero regressions, add exhaustive unit tests for new subsystems, commit changes with message "feat(phase17): enterprise hardening, KMS integration, runtime sandbox, and robust approvals", and push to origin main.
+Phase 18 Directive: Complete Security CI Integration and Key Manager Unit Tests
+Objective: Address the agent's follow-up recommendations by fully integrating the security script into CI workflows and adding comprehensive unit tests.
+Tasks:
+Create a GitHub Actions workflow file (.github/workflows/security.yml) that invokes run_security_checks.sh (running ruff and bandit).
+Add rigorous unit tests in tests/test_key_manager.py covering KeyManager.rotate_key, export, import, and cryptographic signing/verification failure modes.
+Enforce all cumulative protocol checks (ledger audit, scorecard updates, and atomic safety).
+Verification: Run ruff linter, ensure all unit tests pass (74+ tests), commit with message "feat(phase18): add CI security workflow and key manager unit tests", and push to origin main.
