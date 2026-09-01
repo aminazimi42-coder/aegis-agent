@@ -12,10 +12,32 @@ spec:
       labels:
         app: aegis-agent
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: aegis-agent
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: 8000
+          env:
+            - name: KMS_MASTER_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "aegis-agent.fullname" . }}-kms
+                  key: master.key
           resources: {{ toYaml .Values.resources | nindent 10 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10

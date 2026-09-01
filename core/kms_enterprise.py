@@ -62,3 +62,19 @@ def rotate_key(name: str, new_pem: bytes) -> None:
 
 def list_keys() -> list[str]:
     return [p.stem.replace("enterprise-", "") for p in KMS_DIR.glob("enterprise-*.enc")]
+
+
+def validate_rotation(name: str, max_age_days: int = 90) -> bool:
+    """Validate that a stored key was rotated recently enough.
+
+    This is a pragmatic check used by CI/helm hooks to detect stale keys.
+    Returns False if the key or master key is missing.
+    """
+    import datetime
+
+    p = _key_path(name)
+    if not p.exists() or not MASTER_KEY_PATH.exists():
+        return False
+    mtime = datetime.datetime.fromtimestamp(p.stat().st_mtime)
+    age_days = (datetime.datetime.now() - mtime).days
+    return age_days <= int(max_age_days)
