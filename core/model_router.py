@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any, Callable, List
 
 from pydantic import ValidationError
 
 from core.agent_registry import AGENT_REGISTRY
 from core.ai_core import AICore
+from core.circuit_breaker import CircuitBreakerSingleton
+from core.evidence_ledger import EvidenceLedgerSingleton
 from core.schemas import AgentResponse
+from core.scorecard import ScorecardSingleton
 
 
 class TrustAwareModelRouter:
@@ -133,20 +136,61 @@ class TrustAwareModelRouter:
         model_name: str | None = None,
     ) -> AgentResponse:
         """Route a task with bounded retries and strict schema validation."""
+        # Build a candidate list: preferred selected first, then fallbacks
         selected_model = self.decide_model(task, model_name)
+        candidates: List[str] = [selected_model] + [n for n in self.role_map if n != selected_model]
 
-        for attempt in range(self.max_retries + 1):
-            try:
-                payload = self._build_payload(task, selected_model, factory)
-                validated = AgentResponse.model_validate(payload)
-                validated.status = "completed"
-                return validated
-            except ValidationError as exc:
-                if attempt >= self.max_retries:
-                    raise ValueError(
-                        f"Schema validation failed after {self.max_retries} retry "
-                        f"attempts: {exc}"
-                    ) from exc
+        last_exc: Exception | None = None
+        for candidate in candidates:
+            # check circuit breaker
+            if not CircuitBreakerSingleton.allow_request(candidate):
+                EvidenceLedgerSingleton.append_entry(
+                    tenant_id="system",
+                    actor="model_router",
+                    action="circuit_open",
+                    payload={"model": candidate},
+                )
+                ScorecardSingleton.record_rollback(candidate)
                 continue
 
+            for attempt in range(self.max_retries + 1):
+                try:
+                    payload = self._build_payload(task, candidate, factory)
+                    validated = AgentResponse.model_validate(payload)
+                    validated.status = "completed"
+                    # success: reset breaker and record signature-free evidence
+                    CircuitBreakerSingleton.record_success(candidate)
+                    EvidenceLedgerSingleton.append_entry(
+                        tenant_id="system",
+                        actor="model_router",
+                        action="route_success",
+                        payload={"model": candidate},
+                    )
+                    return validated
+                except ValidationError as exc:
+                    last_exc = exc
+                    # mark failure and retry
+                    CircuitBreakerSingleton.record_failure(candidate)
+                    if attempt >= self.max_retries:
+                        EvidenceLedgerSingleton.append_entry(
+                            tenant_id="system",
+                            actor="model_router",
+                            action="route_failure",
+                            payload={"model": candidate, "error": str(exc)},
+                        )
+                        break
+                    continue
+                except Exception as exc:  # unexpected runtime error from model
+                    last_exc = exc
+                    CircuitBreakerSingleton.record_failure(candidate)
+                    EvidenceLedgerSingleton.append_entry(
+                        tenant_id="system",
+                        actor="model_router",
+                        action="route_exception",
+                        payload={"model": candidate, "error": str(exc)},
+                    )
+                    break
+
+        if last_exc is not None:
+            raise last_exc
         raise ValueError("Model routing failed without producing a valid schema payload.")

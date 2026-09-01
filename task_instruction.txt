@@ -1,8 +1,8 @@
-Phase 20 Directive: Enterprise KMS Integration, End-to-End Integration Tests, and CI Artifact Publishing
-Objective: Transition from file-backed key management to real enterprise KMS, build robust integration tests for approval flows, and configure advanced CI artifact reporting.
+Phase 21 Directive: Cloud Resilience, Dynamic Fallbacks, and Business/Engineering Innovation
+Objective: Implement cloud resilience (multi-model fallback and circuit breakers), while generating high-value architectural and business proposals.
 Tasks to Execute:
-Enterprise KMS Integration: Upgrade kms_adapter.py and key_manager.py to support secure external KMS integrations (such as Vault or AWS/GCP KMS wrappers) alongside secure fallback storage.
-End-to-End Integration Tests: Create comprehensive integration tests (e.g., tests/test_integration_approvals.py) verifying the complete lifecycle of approval requests, risk evaluation, evidence ledger logging, and scorecard metrics.
-CI Artifact Publishing: Update .github/workflows/security.yml to generate, store, and publish Bandit security scan reports and test coverage artifacts.
-Protocol Enforcement: Ensure all cumulative protocols (Asymmetric Signing, Evidence Ledger, Scorecard Telemetry, Risk-weighted Human Authority) remain fully intact and validated.
-Verification: Run ruff linter (clean), execute the full unit and integration test suite ensuring zero regressions, commit changes with message "feat(phase20): enterprise KMS integration, integration tests, and CI artifact publishing", and push to origin main.
+Cloud Resilience & Circuit Breakers: Implement dynamic multi-model fallback mechanics and circuit breaker patterns to guarantee continuous uptime and system fault tolerance.
+Cost-Efficient Optimization: Optimize token consumption patterns across core agentic workflows to maximize business viability and lower operational overhead.
+Strategic Feature Generation: At the end of execution, provide 5 exceptional professional proposals: 3 business-driven strategies for product market growth, monetization, and cost-efficiency, and 2 engineering-focused options tailored for software developers and digital twin workflows.
+Cumulative Protocol Enforcement: Ensure all prior security, asymmetric signing, evidence ledger, scorecard metrics, and enterprise KMS protocols remain fully intact.
+Verification: Run ruff linter (clean), execute all unit and integration tests successfully, commit with message "feat(phase21): cloud resilience, dynamic fallbacks, and strategic proposals", and push to origin main.
