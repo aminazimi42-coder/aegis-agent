@@ -33,6 +33,18 @@ class TestKeyManager(unittest.TestCase):
         km.remove_key(name)
         self.assertNotIn(name, km.list_keys())
 
+    def test_kms_persistence_after_register(self):
+        # Ensure KMS adapter persisted the key on register
+        from core.kms_adapter import load_key
+
+        km = KeyManager()
+        name = "kms-test"
+        priv = b"persistme"
+        km.register_private_key(name, priv)
+        stored = load_key(name)
+        self.assertIsNotNone(stored)
+        self.assertEqual(stored, priv)
+
     def test_crypto_sign_verify_if_available(self):
         if not asymmetric_signing._HAS_CRYPTO:
             self.skipTest("cryptography not available; skipping crypto path test")

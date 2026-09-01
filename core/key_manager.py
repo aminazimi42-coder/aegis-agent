@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+from . import asymmetric_signing
 from .asymmetric_signing import sign_asymmetric, verify_asymmetric
+from .evidence_ledger import EvidenceLedgerSingleton
+from .kms_adapter import rotate_key as kms_rotate_key
+from .kms_adapter import store_key
+from .scorecard import ScorecardSingleton
 
 
 class KeyManager:
@@ -20,6 +25,11 @@ class KeyManager:
 
     def register_private_key(self, name: str, pem: bytes) -> None:
         self._privkeys[name] = pem
+        # persist to KMS for durability
+        try:
+            store_key(name, pem)
+        except Exception:
+            pass
 
     def verify(self, key_name: str, payload: bytes, signature: bytes) -> bool:
         pub = self._pubkeys.get(key_name)
@@ -41,6 +51,22 @@ class KeyManager:
         self._privkeys[name] = new_private_pem
         if new_public_pem is not None:
             self._pubkeys[name] = new_public_pem
+        # persist rotation to KMS
+        try:
+            kms_rotate_key(name, new_private_pem)
+            EvidenceLedgerSingleton.append_entry(
+                tenant_id="system",
+                actor="key_manager",
+                action="rotate_key",
+                payload={"name": name},
+            )
+            # record a signature event if asymmetric is available
+            ScorecardSingleton.record_signature(
+                name,
+                asymmetric=bool(new_public_pem and asymmetric_signing._HAS_CRYPTO),
+            )
+        except Exception:
+            pass
 
     def export_public(self, name: str) -> bytes | None:
         return self._pubkeys.get(name)

@@ -1,7 +1,8 @@
-Phase 18 Directive: Complete Security CI Integration and Key Manager Unit Tests
-Objective: Address the agent's follow-up recommendations by fully integrating the security script into CI workflows and adding comprehensive unit tests.
-Tasks:
-Create a GitHub Actions workflow file (.github/workflows/security.yml) that invokes run_security_checks.sh (running ruff and bandit).
-Add rigorous unit tests in tests/test_key_manager.py covering KeyManager.rotate_key, export, import, and cryptographic signing/verification failure modes.
-Enforce all cumulative protocol checks (ledger audit, scorecard updates, and atomic safety).
-Verification: Run ruff linter, ensure all unit tests pass (74+ tests), commit with message "feat(phase18): add CI security workflow and key manager unit tests", and push to origin main.
+Phase 19 Directive: Final Comprehensive Integration & Outstanding Proposals Execution
+Objective: Completely implement all remaining technical proposals, including rigorous Bandit threshold rules, approval flow integration tests, and production KMS-backed key management persistence.
+Tasks to Execute:
+Add comprehensive unit tests in tests/test_approval_flows.py covering all approval endpoints, risk evaluation triggers, and ledger attestations.
+Tighten security scanning by updating .github/workflows/security.yml or run_security_checks.sh with strict Bandit thresholds and artifact reporting.
+Finalize key_manager.py to fully support production KMS-backed secure storage structures (or robust encrypted payload backups) integrated with audit ledger entries.
+Ensure zero open items, clean ruff linting, and complete success of all unit test suites (76+ tests).
+Verification: Run all local tests and linter checks, commit changes with message "feat(phase19): finalize outstanding proposals, approval tests, and security hardening", and push to origin main.
