@@ -1,8 +1,7 @@
-Phase 21 Directive: Cloud Resilience, Dynamic Fallbacks, and Business/Engineering Innovation
-Objective: Implement cloud resilience (multi-model fallback and circuit breakers), while generating high-value architectural and business proposals.
+Phase 22 Directive: Autonomous Self-Healing Pipelines and Adversarial Agent Red-Teaming
+Objective: Implement self-healing CI execution logic and an adversarial red-teaming subsystem to achieve maximum architectural autonomy and security resilience.
 Tasks to Execute:
-Cloud Resilience & Circuit Breakers: Implement dynamic multi-model fallback mechanics and circuit breaker patterns to guarantee continuous uptime and system fault tolerance.
-Cost-Efficient Optimization: Optimize token consumption patterns across core agentic workflows to maximize business viability and lower operational overhead.
-Strategic Feature Generation: At the end of execution, provide 5 exceptional professional proposals: 3 business-driven strategies for product market growth, monetization, and cost-efficiency, and 2 engineering-focused options tailored for software developers and digital twin workflows.
-Cumulative Protocol Enforcement: Ensure all prior security, asymmetric signing, evidence ledger, scorecard metrics, and enterprise KMS protocols remain fully intact.
-Verification: Run ruff linter (clean), execute all unit and integration tests successfully, commit with message "feat(phase21): cloud resilience, dynamic fallbacks, and strategic proposals", and push to origin main.
+Self-Healing Execution Engine: Implement an automated diagnostics handler that intercepts test/linter failures, analyzes logs, applies safe code patches, and re-runs validations.
+Adversarial Red-Teaming Subsystem: Build an independent security-focused agent capability that simulates prompt injection and sandbox escape attempts against internal capsules and workflows.
+Protocol & Metric Enforcement: Ensure all cumulative protocols (Asymmetric Signing, Evidence Ledger, Scorecard Telemetry, Circuit Breakers, and Enterprise KMS) remain fully active and logged.
+Verification: Run ruff linter (clean), execute the complete test suite ensuring zero regressions, commit changes with message "feat(phase22): self-healing pipeline and adversarial red-teaming", and push to origin main.
