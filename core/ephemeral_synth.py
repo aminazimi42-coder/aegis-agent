@@ -6,6 +6,8 @@ from .agent_registry import AGENT_REGISTRY
 from .capsule_marketplace import CapsuleMarketplace, CapsuleVerificationError
 from .human_authority import HumanAuthority
 from .reversible_workflow import ReversibleWorkflowManager
+from .sandbox import SandboxRunner, SandboxValidationError
+from .tenant_memory import TenantMemory
 from .types import AgentSpec
 
 
@@ -54,6 +56,13 @@ class EphemeralSynthEngine:
             self.reversible.rollback()
             raise
 
+        # Validate sandbox constraints before instantiation
+        try:
+            SandboxRunner.validate_manifest(manifest)
+        except SandboxValidationError as exc:
+            self.reversible.rollback()
+            raise EphemeralSynthError("Manifest failed sandbox validation") from exc
+
         # Instantiate agent spec and register into global registry
         spec = AgentSpec(
             name=manifest["name"],
@@ -86,6 +95,25 @@ class EphemeralSynthEngine:
             # if commit fails, try rollback
             self.reversible.rollback()
             raise
+
+        # Optionally prepare a RAG storage path for tenant-scoped persistence
+        tenant_id = manifest.get("tenant_id")
+        if manifest.get("persist_rag") and tenant_id:
+            tm = TenantMemory()
+            try:
+                rag_path = tm.rag_storage_path(
+                    tenant_id, namespace=manifest.get("rag_namespace", "default")
+                )
+                # record the path in tenant memory for discovery
+                tm.store(
+                    tenant_id=tenant_id,
+                    key=f"rag:{name}",
+                    value={"path": rag_path},
+                    namespace=manifest.get("rag_namespace", "default"),
+                )
+            except Exception:
+                # best-effort; do not fail the whole flow if path creation fails
+                pass
 
         return spec
 

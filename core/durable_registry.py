@@ -30,7 +30,10 @@ def save_agent(spec) -> None:
     init_db()
     with _conn() as c:
         c.execute(
-            "INSERT OR REPLACE INTO agents (name, role, description, capabilities) VALUES (?, ?, ?, ?)",
+            (
+                "INSERT OR REPLACE INTO agents (name, role, description, "
+                "capabilities) VALUES (?, ?, ?, ?)"
+            ),
             (
                 spec.name,
                 spec.role,

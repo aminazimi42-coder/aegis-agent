@@ -7,9 +7,11 @@ from dataclasses import dataclass
 from typing import Any, Dict, List
 
 from .agent_registry import AGENT_REGISTRY
+from .asymmetric_signing import verify_asymmetric
 from .durable_registry import remove_agent, save_agent
 from .human_authority import HumanAuthority
 from .reversible_workflow import ReversibleWorkflowManager
+from .sandbox import SandboxRunner
 from .types import AgentSpec
 
 
@@ -57,14 +59,27 @@ class CapsuleMarketplace:
         bundle = capsule.get("bundle", {})
         signature = capsule["signature"]
         signer = capsule["signer"]
+        sig_type = capsule.get("signature_type", "hmac")
 
         if signer not in trusted_keys:
             raise CapsuleVerificationError("Unknown signer or untrusted key")
 
         payload = self._canonical_payload(manifest, bundle)
         key = trusted_keys[signer]
-        if not self._verify_hmac(payload, signature, key):
-            raise CapsuleVerificationError("Signature verification failed")
+        if sig_type == "asymmetric":
+            # signature expected as bytes; tests may provide hex
+            if isinstance(signature, (bytes, bytearray)):
+                sig_bytes = signature
+            else:
+                sig_bytes = bytes.fromhex(signature)
+
+            if not verify_asymmetric(key, payload, sig_bytes):
+                raise CapsuleVerificationError(
+                    "Asymmetric signature verification failed"
+                )
+        else:
+            if not self._verify_hmac(payload, signature, key):
+                raise CapsuleVerificationError("Signature verification failed")
 
         # Basic manifest schema checks
         required = {"name", "role", "description", "capabilities", "allowed_tools"}
@@ -75,6 +90,12 @@ class CapsuleMarketplace:
         for t in manifest.get("allowed_tools", []):
             if t not in self.ALLOWED_TOOLS:
                 raise CapsuleVerificationError(f"Tool not allowed: {t}")
+
+        # Sandbox-level manifest validation
+        try:
+            SandboxRunner.validate_manifest(manifest)
+        except Exception as exc:  # pragma: no cover - defensive
+            raise CapsuleVerificationError(f"Sandbox validation failed: {exc}") from exc
 
     def register_capsule(
         self, capsule: Dict[str, Any], trusted_keys: Dict[str, bytes]

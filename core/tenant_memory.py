@@ -182,5 +182,76 @@ class TenantMemoryVault:
         tenant_id, namespace, key = item
         return self.authorize_access(tenant_id, key, namespace=namespace)
 
+    # --- Extended vault capabilities for Phase 14: sovereign tenant memory vault ---
+
+    def get_encryption_metadata(self) -> dict[str, str]:
+        """Return basic encryption metadata for auditing and key management."""
+        return {
+            "algorithm": "xor-shared-key-sha256",
+            "master_key_fingerprint": hashlib.sha256(self.master_key.encode("utf-8")).hexdigest(),
+        }
+
+    def forget_namespace(self, tenant_id: str, namespace: str = "default") -> int:
+        """Delete all keys in a tenant namespace. Returns number of keys removed."""
+        tenant_key = self._normalize_tenant(tenant_id)
+        namespace_key = self._normalize_namespace(namespace)
+        tenant_bucket = self._vault.get(tenant_key, {})
+        namespace_bucket = tenant_bucket.pop(namespace_key, {})
+        removed = len(namespace_bucket)
+        if not tenant_bucket:
+            self._vault.pop(tenant_key, None)
+        return removed
+
+    def forget_matching(self, tenant_id: str, predicate) -> int:
+        """Delete keys in all namespaces for a tenant where predicate(key, value) is True.
+
+        Predicate receives (key, decrypted_value) and returns bool.
+        Returns count of removed items.
+        """
+        tenant_key = self._normalize_tenant(tenant_id)
+        tenant_bucket = self._vault.get(tenant_key, {})
+        removed = 0
+        for namespace_key in list(tenant_bucket.keys()):
+            namespace_bucket = tenant_bucket.get(namespace_key, {})
+            for key in list(namespace_bucket.keys()):
+                try:
+                    val = self._decrypt(namespace_bucket[key]["value"])
+                except Exception:
+                    val = None
+                if predicate(key, val):
+                    del namespace_bucket[key]
+                    removed += 1
+            if not namespace_bucket:
+                tenant_bucket.pop(namespace_key, None)
+        if not tenant_bucket:
+            self._vault.pop(tenant_key, None)
+        return removed
+
+    def rag_storage_path(self, tenant_id: str, namespace: str = "default") -> str:
+        """Return a secure, namespaced path for RAG storage for the given tenant.
+
+        This produces a deterministic path under `.tenant_rag/` with a hashed
+        directory name to avoid leaking tenant identifiers in plain text.
+        The path is created on disk if it does not exist.
+        """
+        tenant_key = self._normalize_tenant(tenant_id)
+        namespace_key = self._normalize_namespace(namespace)
+        base = ".tenant_rag"
+        fingerprint_source = f"{tenant_key}:{namespace_key}:{self.master_key}"
+        fingerprint = hashlib.sha256(fingerprint_source.encode("utf-8")).hexdigest()
+        path = os.path.join(base, fingerprint[:2], fingerprint[2:])
+        try:
+            os.makedirs(path, exist_ok=True)
+        except OSError:
+            # best-effort directory creation; callers should handle IO errors
+            pass
+        return path
+
+    def rotate_master_key(self, new_key: str) -> None:
+        """Rotate the master key used for XOR encryption. This does NOT re-encrypt
+        existing entries — a safe rotation should export/import data with re-encryption.
+        """
+        self.master_key = new_key
+
 
 TenantMemory = TenantMemoryVault

@@ -1,4 +1,4 @@
-Phase 13 Directive: Implement Agent Capability Graph
-Build core/capability_graph.py to represent agents, models, tools, datasets, and policies as an interactive graph supporting CAN_USE, REQUIRES, VERIFIES, and FALLBACK_TO relations.
-Integrate cumulative protocols (Asymmetric Signing, Durable Registry, Sandboxing, Risk-weighted Approvals, Atomic Rollback, and Ephemeral Synthesis).
-Add unit tests in tests/test_capability_graph.py, pass all checks (ruff), include 4 new architectural proposals at the end, and push to origin main.
+Phase 14 Directive: Implement Sovereign Tenant Memory Vault
+Build core/tenant_memory.py to manage tenant-specific isolated namespaces, encryption metadata, memory TTL, selective forgetting, and secure RAG storage paths.
+Integrate cumulative protocols (Asymmetric Signing, Durable Registry, Tool Sandboxing, Risk-weighted Approvals, Atomic Rollback, and Ephemeral Synthesis).
+Add unit tests in tests/test_tenant_memory.py, pass all checks (ruff), include 4 new architectural proposals at the end, and push to origin main.
