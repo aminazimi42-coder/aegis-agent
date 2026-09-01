@@ -12,6 +12,7 @@ from .durable_registry import remove_agent, save_agent
 from .evidence_ledger import EvidenceLedgerSingleton
 from .human_authority import HumanAuthority
 from .reversible_workflow import ReversibleWorkflowManager
+from .runtime_sandbox import RuntimeSandboxSingleton
 from .sandbox import SandboxRunner
 from .scorecard import ScorecardSingleton
 from .types import AgentSpec
@@ -128,6 +129,22 @@ class CapsuleMarketplace:
             description=manifest.get("description", ""),
             capabilities=list(manifest.get("capabilities", [])),
         )
+
+        # Optional sandbox probe: perform a dry-run execution in the runtime sandbox
+        if manifest.get("sandbox_probe"):
+            try:
+                RuntimeSandboxSingleton.execute(manifest, {})
+                ScorecardSingleton.record_sandbox(manifest.get("tenant_id", "default"), passed=True)
+                EvidenceLedgerSingleton.append_entry(
+                    tenant_id=manifest.get("tenant_id", "default"),
+                    actor=capsule.get("signer", "unknown"),
+                    action="sandbox_probe",
+                    payload={"name": manifest.get("name")},
+                )
+            except Exception:
+                # treat probe failures as verification failure
+                self._reversible.rollback()
+                raise CapsuleVerificationError("Sandbox probe failed") from None
 
         def do_register():
             AGENT_REGISTRY.append(spec)

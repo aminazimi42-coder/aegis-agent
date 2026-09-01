@@ -1,14 +1,9 @@
-Phase 16-Final Directive: Comprehensive Implementation of Remaining Platform Ideas & Final SaaS Hardening Objective
-Implement the final 6 core architectural modules to complete the 15-idea enterprise platform specification:
-core/capability_graph.py (IDEA 05: Agent Capability Graph for agents, models, tools, and policies relations).
-core/regression_lab.py (IDEA 09: Autonomous Regression Replay Lab to test golden workflows against updates).
-core/tool_tokens.py (IDEA 11: Zero-Trust Tool Capability Tokens with scoped permissions and cost limits).
-core/finops_autopilot.py (IDEA 12: Agentic FinOps Autopilot for token, cost, and budget optimization).
-core/swarm_observability.py (IDEA 13: Causal Swarm Observability graph showing execution telemetry).
-core/consensus_engine.py (IDEA 15: Adaptive Consensus & Disagreement Engine for multi-expert validation).
-Enforce all cumulative engineering protocols: Asymmetric Signing Hardening, True Runtime Sandboxing, Durable Registry & Vault migrations, and Approval Services. Step-by-Step Instructions for Agent
-Build the 6 missing core modules with robust error handling and type safety.
-Integrate all new modules into the main routing, registry, and execution pipelines.
-Add comprehensive unit tests for each module in tests/ directory, ensuring 100% feature coverage.
-Run ruff linter and full test suite to guarantee zero regressions and complete test success.
-Commit changes with message: "feat(final-phase16): implement remaining core ideas and complete enterprise feature set" and push to origin main.
+Phase 17 Directive: Advanced Enterprise Hardening & Cumulative Proposals Integration
+Objective: Implement the 4 major accumulated architectural proposals from previous phases to achieve production-grade hardening.
+Core Tasks to Execute:
+Production Approvals & OAuth UI: Persist approvals to durable storage, implement OAuth-protected approver UI hooks, and sign approval attestations.
+Enterprise KMS Integration: Replace local key management with secure KMS lifecycle integration (Vault/AWS KMS/GCP KMS) and automated key rotation.
+True Runtime Sandboxing: Upgrade runtime_sandbox.py from a stub to a container/process-based isolated runtime (runc, seccomp profiles, or gVisor) with resource limits.
+Operations Hardening: Add automated Bandit security scanning in CI, signed encrypted backups for the durable registry, and PostgreSQL migration scripts with WAL replication.
+Cumulative Enforcement: Enforce all existing protocols (Asymmetric Signing, Evidence Ledger, Scorecard Telemetry, Risk-weighted Human Authority, and Atomic Rollbacks).
+Verification: Run ruff linter, execute full test suite ensuring zero regressions, add exhaustive unit tests for new subsystems, commit changes with message "feat(phase17): enterprise hardening, KMS integration, runtime sandbox, and robust approvals", and push to origin main.

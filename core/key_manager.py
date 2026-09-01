@@ -31,5 +31,26 @@ class KeyManager:
         priv = self._privkeys.get(key_name)
         return sign_asymmetric(priv, payload)
 
+    def rotate_key(
+        self,
+        name: str,
+        new_private_pem: bytes,
+        new_public_pem: bytes | None = None,
+    ) -> None:
+        """Rotate a private key for `name`. Optionally update public key too."""
+        self._privkeys[name] = new_private_pem
+        if new_public_pem is not None:
+            self._pubkeys[name] = new_public_pem
+
+    def export_public(self, name: str) -> bytes | None:
+        return self._pubkeys.get(name)
+
+    def list_keys(self) -> list[str]:
+        return sorted(set(list(self._pubkeys.keys()) + list(self._privkeys.keys())))
+
+    def remove_key(self, name: str) -> None:
+        self._pubkeys.pop(name, None)
+        self._privkeys.pop(name, None)
+
 
 KeyManagerSingleton = KeyManager()

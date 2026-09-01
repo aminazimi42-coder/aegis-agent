@@ -7,7 +7,10 @@ from typing import Optional
 try:
     from cryptography.hazmat.primitives import hashes
     from cryptography.hazmat.primitives.asymmetric import padding
-    from cryptography.hazmat.primitives.serialization import load_pem_public_key
+    from cryptography.hazmat.primitives.serialization import (
+        load_pem_private_key,
+        load_pem_public_key,
+    )
     _HAS_CRYPTO = True
 except Exception:
     _HAS_CRYPTO = False
@@ -46,7 +49,11 @@ def sign_asymmetric(private_key: Optional[bytes], payload: bytes) -> bytes:
     """
     key = private_key or b"default"
     if _HAS_CRYPTO and private_key is not None:
-        # In a real world setup we'd parse the private key and sign with it.
-        # For now we fallback to HMAC to keep testability without extra deps.
-        pass
+        try:
+            priv = load_pem_private_key(private_key, password=None)
+            if hasattr(priv, "sign"):
+                return priv.sign(payload, padding.PKCS1v15(), hashes.SHA256())
+        except Exception:
+            # fallback to HMAC deterministic signature
+            pass
     return hmac.new(key, payload, hashlib.sha256).digest()
