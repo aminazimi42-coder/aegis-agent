@@ -1,7 +1,8 @@
-Phase 27 Directive: Extensible Desktop Extension Runtime & Plugin Architecture
-Objective: Build a modular extension runtime for the desktop companion that allows seamless integration of future features, advanced custom workflows, and incoming modules without freezing the codebase.
+Phase 28 Directive: Advanced Autonomous Execution, Authority Matrix & Financial/Task Bridge
+Objective: Implement the foundational architecture for high-impact autonomous actions (including bounded authority checks, financial transfer workflows with screenshot/Telegram verification, and automated task-to-execution pipelines) while strictly preserving local governance and evidence logging.
 Tasks to Execute:
-Extension Runtime Core: Implement a dynamic plugin loader and execution interface within desktop_engine.py to dynamically register new features, tools, and options.
-Extensibility Hooks: Ensure all core layers (governance, omnichannel, token economy, and memory) expose clean interfaces for future integrations.
-Cumulative Protocol Enforcement: Verify absolute zero regressions across all 26 prior protocols and ensure all unit tests remain fully green.
-Verification: Run ruff linter (clean), execute the entire test suite successfully, commit changes with message "feat(phase27): extensible desktop extension runtime and plugin architecture", and push to origin main.
+Authority Matrix & Risk-Tier Enforcer: Build the decision gatekeeper (authority_matrix.py) enforcing L0-L3 autonomy levels based on financial impact, irreversibility, and policy rules.
+Autonomous Financial & Task Execution Hook: Implement secure structured transaction scaffolding that executes pre-approved scheduled operations (such as transfers), captures cryptographic evidence, generates automated verification screenshots/logs, and triggers omnichannel dispatch (Telegram/Email).
+Executive Task & Commitment Engine: Build the core structure for tracking "I Owe / They Owe" obligations and automated daily reconciliation triggers.
+Cumulative Protocol Enforcement: Verify absolute zero regressions across all 27 prior protocols, unit tests, and the extension runtime.
+Verification: Run ruff linter (clean), execute the entire test suite successfully, commit changes with message "feat(phase28): authority matrix, financial execution bridge, and task governance", and push to origin main.
