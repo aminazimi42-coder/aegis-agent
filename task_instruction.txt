@@ -1,8 +1,7 @@
-Phase 26 Directive: Local Data Governance, Secure Vault Storage, Omnichannel Bridges, and Capsule Marketplace Sync
-Objective: Implement secure local database encryption, automated evidence ledger backups, omnichannel messaging/email integration bridges, and dynamic capsule marketplace synchronization for the desktop companion.
+Phase 27 Directive: Extensible Desktop Extension Runtime & Plugin Architecture
+Objective: Build a modular extension runtime for the desktop companion that allows seamless integration of future features, advanced custom workflows, and incoming modules without freezing the codebase.
 Tasks to Execute:
-Local Data Governance & Vault Storage: Implement secure local SQLite/encrypted storage for user data, automated local backups, and strict privacy-first encryption of local logs and audit trails.
-Omnichannel Integration Bridges: Build robust communication hooks for automated messaging, email notifications, and task calendar synchronization.
-Capsule Marketplace Sync: Develop the dynamic loading and verification engine for third-party modules and secure sandbox capsules.
-Cumulative Protocol Enforcement: Ensure absolute zero regressions across all 25 prior protocols (Asymmetric Signing, Evidence Ledger, Token Economy, Circuit Breakers, and Self-Healing).
-Verification: Run ruff linter (clean), execute the entire test suite successfully, commit changes with message "feat(phase26): local data governance, omnichannel bridges, and capsule marketplace sync", and push to origin main.
+Extension Runtime Core: Implement a dynamic plugin loader and execution interface within desktop_engine.py to dynamically register new features, tools, and options.
+Extensibility Hooks: Ensure all core layers (governance, omnichannel, token economy, and memory) expose clean interfaces for future integrations.
+Cumulative Protocol Enforcement: Verify absolute zero regressions across all 26 prior protocols and ensure all unit tests remain fully green.
+Verification: Run ruff linter (clean), execute the entire test suite successfully, commit changes with message "feat(phase27): extensible desktop extension runtime and plugin architecture", and push to origin main.
