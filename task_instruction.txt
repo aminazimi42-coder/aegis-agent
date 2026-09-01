@@ -1,13 +1,4 @@
-Phase 12 Execution Directive: Implement Dynamic Ephemeral Agent Synthesis with Cumulative Engineering Protocols Objective
-Build core/ephemeral_synth.py to dynamically instantiate temporary specialized agent instances from approved base templates based on runtime task capabilities, and auto-destroy them upon task completion. Cumulative Protocols & Recommendations to Integrate
-Asymmetric Signing (RSA/ECDSA) for capsule verification.
-Durable Registry storage using persistent indices.
-Tool Allowlist and Sandboxing enforcement.
-Risk-weighted Approvals and Celery/Cron Scheduler integration.
-Reversible/Atomic Install and Rollback management via ReversibleManager. Step-by-Step Instructions for Agent
-Create core/ephemeral_synth.py incorporating all cumulative engineering recommendations, template registration, dynamic skill-based parameter injection, and lifecycle teardown.
-Integrate ephemeral synthesis triggers into the agent dispatch pipeline with full security and audit logging.
-Add comprehensive unit tests in tests/test_ephemeral_synth.py covering successful synthesis, missing capability rejection, audit integrity, and automated teardown.
-Run full test suite across all modules, linter (ruff), and security checks to guarantee 100% pass rates.
-Include 4 new high-level architectural proposals at the end of the execution output to feed the next phase sequence.
-Commit changes with message: "feat(ephemeral-phase12): implement dynamic ephemeral agent synthesis with cumulative protocols" and push to origin main.
+Phase 13 Directive: Implement Agent Capability Graph
+Build core/capability_graph.py to represent agents, models, tools, datasets, and policies as an interactive graph supporting CAN_USE, REQUIRES, VERIFIES, and FALLBACK_TO relations.
+Integrate cumulative protocols (Asymmetric Signing, Durable Registry, Sandboxing, Risk-weighted Approvals, Atomic Rollback, and Ephemeral Synthesis).
+Add unit tests in tests/test_capability_graph.py, pass all checks (ruff), include 4 new architectural proposals at the end, and push to origin main.

@@ -7,6 +7,9 @@ from dataclasses import dataclass
 from typing import Any, Dict, List
 
 from .agent_registry import AGENT_REGISTRY
+from .durable_registry import remove_agent, save_agent
+from .human_authority import HumanAuthority
+from .reversible_workflow import ReversibleWorkflowManager
 from .types import AgentSpec
 
 
@@ -33,6 +36,8 @@ class CapsuleMarketplace:
 
     def __init__(self) -> None:
         self._installed: List[Capsule] = []
+        self._auth = HumanAuthority()
+        self._reversible = ReversibleWorkflowManager()
 
     @staticmethod
     def _canonical_payload(manifest: Dict[str, Any], bundle: Dict[str, Any]) -> bytes:
@@ -74,16 +79,54 @@ class CapsuleMarketplace:
     def register_capsule(
         self, capsule: Dict[str, Any], trusted_keys: Dict[str, bytes]
     ) -> AgentSpec:
+        # Use reversible manager to make capsule install atomic
+        self._reversible.begin()
+        # verify signature/schema
         self.verify_capsule(capsule, trusted_keys)
         manifest = capsule["manifest"]
+
+        # run authority check for install
+        action_text = f"install {manifest.get('name')}: {manifest.get('description', '')}"
+        try:
+            self._auth.check_authorization(
+                action_text, {"tenant_sensitive": manifest.get("tenant_sensitive", False)}
+            )
+        except Exception:
+            self._reversible.rollback()
+            raise
+
         spec = AgentSpec(
             name=manifest["name"],
-            role=manifest["role"],
-            description=manifest["description"],
+            role=manifest.get("role", "capsule"),
+            description=manifest.get("description", ""),
             capabilities=list(manifest.get("capabilities", [])),
         )
-        # Append to global registry
-        AGENT_REGISTRY.append(spec)
+
+        def do_register():
+            AGENT_REGISTRY.append(spec)
+            save_agent(spec)
+
+        def undo_register():
+            # remove from memory registry and durable registry
+            for i in range(len(AGENT_REGISTRY) - 1, -1, -1):
+                if AGENT_REGISTRY[i].name == spec.name:
+                    AGENT_REGISTRY.pop(i)
+                    break
+            remove_agent(spec.name)
+
+        try:
+            self._reversible.execute(do_register, undo_register)
+        except Exception:
+            self._reversible.rollback()
+            raise
+
+        # commit install
+        try:
+            self._reversible.commit()
+        except Exception:
+            self._reversible.rollback()
+            raise
+
         installed_capsule = Capsule(
             manifest=manifest,
             bundle=capsule.get("bundle", {}),
