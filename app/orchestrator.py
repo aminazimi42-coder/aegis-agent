@@ -7,6 +7,7 @@ from core.finops_autopilot import FinOpsAutopilot
 from core.quality import ProductionQualityGate
 from core.recovery.self_recovery import SelfRecovery
 from core.retry_guard import RetryGuard
+from core.reversible_workflow import ReversibleManager
 from core.shadow_swarm import ShadowSwarmRunner
 from core.tenant_memory import TenantMemoryVault
 
@@ -28,6 +29,7 @@ def run_agent_workflow(task: str, tenant_id: str = "default") -> dict:
     """Execute the AI coordination workflow for a single task."""
     ai_core = AICore()
     ledger = EvidenceLedgerSingleton
+    reversible = ReversibleManager()
     retry_guard = RetryGuard(max_retries=2)
     finops_autopilot = FinOpsAutopilot()
     tenant_memory = TenantMemoryVault(default_ttl_seconds=3600)
@@ -35,7 +37,8 @@ def run_agent_workflow(task: str, tenant_id: str = "default") -> dict:
     finops_autopilot.enforce_budget(tenant_id, task)
 
     def execute_workflow() -> dict:
-        # Record task submission to evidence ledger
+        # Start reversible workflow and record task submission to evidence ledger
+        reversible.begin()
         try:
             ledger.append_entry(
                 tenant_id=tenant_id,
@@ -43,9 +46,10 @@ def run_agent_workflow(task: str, tenant_id: str = "default") -> dict:
                 action="task_submitted",
                 payload={"task": task},
             )
+            # rollback for ledger entry: remove last appended
+            reversible.execute(lambda: None, lambda: ledger.remove_last(1))
         except Exception:
             pass
-
         tenant_memory.store(
             tenant_id=tenant_id,
             key="workflow-context",
@@ -60,7 +64,7 @@ def run_agent_workflow(task: str, tenant_id: str = "default") -> dict:
         )
 
         selected_result = ai_core.dispatch(task)
-        # Record agent dispatch evidence
+        # Record agent dispatch evidence and register rollback to delete memory entry
         try:
             ledger.append_entry(
                 tenant_id=tenant_id,
@@ -68,6 +72,7 @@ def run_agent_workflow(task: str, tenant_id: str = "default") -> dict:
                 action="agent_dispatch",
                 payload={"response": selected_result.get("response"), "task": task},
             )
+            reversible.execute(lambda: None, lambda: ledger.remove_last(1))
         except Exception:
             pass
         workflow_results = ai_core.run_workflow(task)
@@ -84,6 +89,7 @@ def run_agent_workflow(task: str, tenant_id: str = "default") -> dict:
                     "consensus": shadow_result.consensus,
                 },
             )
+            reversible.execute(lambda: None, lambda: ledger.remove_last(1))
         except Exception:
             pass
         finops_usage = finops_autopilot.record_usage(
@@ -97,6 +103,7 @@ def run_agent_workflow(task: str, tenant_id: str = "default") -> dict:
             selected_result["agent_name"],
             selected_result["response"],
         )
+        # Store completion state and register rollback to delete the memory key
         tenant_memory.store(
             tenant_id=tenant_id,
             key="workflow-context",
@@ -104,6 +111,15 @@ def run_agent_workflow(task: str, tenant_id: str = "default") -> dict:
             namespace="agent-workflow",
             ttl_seconds=300,
         )
+        try:
+            reversible.execute(
+                lambda: None,
+                lambda: tenant_memory.delete(
+                    tenant_id, "workflow-context", namespace="agent-workflow"
+                ),
+            )
+        except Exception:
+            pass
         # Record workflow completion evidence
         try:
             ledger.append_entry(
@@ -112,8 +128,15 @@ def run_agent_workflow(task: str, tenant_id: str = "default") -> dict:
                 action="workflow_completed",
                 payload={"task": task, "selected_agent": selected_result.get("agent_name")},
             )
+            reversible.execute(lambda: None, lambda: ledger.remove_last(1))
         except Exception:
             pass
+
+        # Commit reversible steps now that workflow is complete
+        try:
+            reversible.commit()
+        except Exception:
+            reversible.rollback()
         return {
             "platform_name": "Aegis Agent Platform",
             "agent_count": len(AGENT_REGISTRY),

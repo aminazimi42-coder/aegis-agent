@@ -114,5 +114,18 @@ class EvidenceLedger:
             prev_hash = e.hash
         return bad
 
+    def remove_last(self, n: int = 1) -> int:
+        """Remove the last `n` entries from the ledger and return how many removed.
+
+        Useful for compensating rollbacks in tests or orchestrated rollback flows.
+        """
+        if n <= 0:
+            return 0
+        removed = 0
+        for _ in range(min(n, len(self._entries))):
+            self._entries.pop()
+            removed += 1
+        return removed
+
 
 EvidenceLedgerSingleton = EvidenceLedger()

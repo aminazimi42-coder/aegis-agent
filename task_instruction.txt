@@ -1,8 +1,8 @@
-Phase 8 Execution Directive: Implement Cryptographic Evidence Ledger Objective
-Build a hash-chained cryptographic ledger in core/evidence_ledger.py to securely record and verify task evidence, model outputs, tool executions, and policy decisions. Step-by-Step Instructions for Agent
-Create core/evidence_ledger.py containing ledger entry structures, SHA-256 hash chaining, and verification methods.
-Integrate evidence logging hooks into the main task execution or orchestration pipeline.
-Add comprehensive unit tests in tests/test_evidence_ledger.py to validate ledger integrity and tamper-detection.
+Phase 9 Execution Directive: Implement Reversible Agentic Workflows Objective
+Build a compensating/rollback action stack in core/reversible_workflow.py so that every side-effecting agent action defines a safe rollback procedure. Step-by-Step Instructions for Agent
+Create core/reversible_workflow.py to handle transaction-like execution states, action logging, and automated/manual rollback triggers.
+Integrate workflow rollback hooks into the core task execution pipeline.
+Add robust unit tests in tests/test_reversible_workflow.py ensuring proper rollback behavior under simulated failure conditions.
 Run full test suite, lint, and security checks to ensure zero regressions.
-Commit changes with message: "feat(evidence-phase8): implement cryptographic evidence ledger".
+Commit changes with message: "feat(workflow-phase9): implement reversible agentic workflows".
 Push changes to origin main.
