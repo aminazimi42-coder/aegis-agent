@@ -7,6 +7,7 @@ from core.quality import ProductionQualityGate
 from core.recovery.self_recovery import SelfRecovery
 from core.retry_guard import RetryGuard
 from core.tenant_memory import TenantMemoryVault
+from core.shadow_swarm import ShadowSwarmRunner
 
 
 def orchestrate_platform() -> str:
@@ -28,6 +29,7 @@ def run_agent_workflow(task: str, tenant_id: str = "default") -> dict:
     retry_guard = RetryGuard(max_retries=2)
     finops_autopilot = FinOpsAutopilot()
     tenant_memory = TenantMemoryVault(default_ttl_seconds=3600)
+    shadow_runner = ShadowSwarmRunner()
     finops_autopilot.enforce_budget(tenant_id, task)
 
     def execute_workflow() -> dict:
@@ -46,6 +48,8 @@ def run_agent_workflow(task: str, tenant_id: str = "default") -> dict:
 
         selected_result = ai_core.dispatch(task)
         workflow_results = ai_core.run_workflow(task)
+        # Run the shadow swarm in-process to capture divergence and consensus
+        shadow_result = shadow_runner.execute_and_compare(task)
         finops_usage = finops_autopilot.record_usage(
             tenant_id,
             task,
@@ -72,6 +76,11 @@ def run_agent_workflow(task: str, tenant_id: str = "default") -> dict:
             "quality_gate": quality_gate,
             "retry_state": retry_guard.snapshot(task),
             "finops": finops_usage,
+            "shadow": {
+                "divergence_score": shadow_result.divergence_score,
+                "consensus": shadow_result.consensus,
+                "details": shadow_result.details,
+            },
             "tenant_memory": tenant_memory.read(
                 tenant_id,
                 "workflow-context",
