@@ -4,9 +4,11 @@ from typing import Any, Dict
 
 from .agent_registry import AGENT_REGISTRY
 from .capsule_marketplace import CapsuleMarketplace, CapsuleVerificationError
+from .evidence_ledger import EvidenceLedgerSingleton
 from .human_authority import HumanAuthority
 from .reversible_workflow import ReversibleWorkflowManager
 from .sandbox import SandboxRunner, SandboxValidationError
+from .scorecard import ScorecardSingleton
 from .tenant_memory import TenantMemory
 from .types import AgentSpec
 
@@ -63,6 +65,10 @@ class EphemeralSynthEngine:
             self.reversible.rollback()
             raise EphemeralSynthError("Manifest failed sandbox validation") from exc
 
+        tenant_id = manifest.get("tenant_id", "default")
+        # record sandbox pass
+        ScorecardSingleton.record_sandbox(tenant_id, passed=True)
+
         # Instantiate agent spec and register into global registry
         spec = AgentSpec(
             name=manifest["name"],
@@ -73,6 +79,15 @@ class EphemeralSynthEngine:
 
         def do_register():
             AGENT_REGISTRY.append(spec)
+            try:
+                EvidenceLedgerSingleton.append_entry(
+                    tenant_id=tenant_id,
+                    actor=capsule.get("signer", "unknown"),
+                    action="synthesize_ephemeral",
+                    payload={"name": spec.name, "role": spec.role},
+                )
+            except Exception:
+                pass
 
         def undo_register():
             # remove first matching by name
@@ -80,6 +95,12 @@ class EphemeralSynthEngine:
                 if AGENT_REGISTRY[i].name == spec.name:
                     AGENT_REGISTRY.pop(i)
                     break
+
+            # remove last ledger entry as part of rollback
+            try:
+                EvidenceLedgerSingleton.remove_last(1)
+            except Exception:
+                pass
 
         # perform registration and register rollback
         try:

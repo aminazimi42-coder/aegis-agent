@@ -1,4 +1,4 @@
-Phase 14 Directive: Implement Sovereign Tenant Memory Vault
-Build core/tenant_memory.py to manage tenant-specific isolated namespaces, encryption metadata, memory TTL, selective forgetting, and secure RAG storage paths.
-Integrate cumulative protocols (Asymmetric Signing, Durable Registry, Tool Sandboxing, Risk-weighted Approvals, Atomic Rollback, and Ephemeral Synthesis).
-Add unit tests in tests/test_tenant_memory.py, pass all checks (ruff), include 4 new architectural proposals at the end, and push to origin main.
+Phase 15 Directive: Implement Agent Reliability Scorecard & Cumulative Integration
+Build core/reliability_scorecard.py to track and score agent/model metrics (success rate, hallucination rate, tool errors, latency, cost, and reviewer overrides) for routing decisions.
+Enforce all accumulated protocols: Asymmetric Signing Hardening (ECDSA/RSA + trust store), True Runtime Sandboxing & Attestation, Secure Backup/Migration for Durable Registry & Vaults, and Approval Service & Audit Trail.
+Add exhaustive unit tests in tests/test_reliability_scorecard.py, run ruff linter, pass all checks, include 4 new architectural proposals, and push to origin main.

@@ -9,9 +9,11 @@ from typing import Any, Dict, List
 from .agent_registry import AGENT_REGISTRY
 from .asymmetric_signing import verify_asymmetric
 from .durable_registry import remove_agent, save_agent
+from .evidence_ledger import EvidenceLedgerSingleton
 from .human_authority import HumanAuthority
 from .reversible_workflow import ReversibleWorkflowManager
 from .sandbox import SandboxRunner
+from .scorecard import ScorecardSingleton
 from .types import AgentSpec
 
 
@@ -102,8 +104,12 @@ class CapsuleMarketplace:
     ) -> AgentSpec:
         # Use reversible manager to make capsule install atomic
         self._reversible.begin()
+        tenant_id = capsule.get("manifest", {}).get("tenant_id", "default")
         # verify signature/schema
         self.verify_capsule(capsule, trusted_keys)
+        # record signature in scorecard
+        sig_type = capsule.get("signature_type", "hmac")
+        ScorecardSingleton.record_signature(tenant_id, asymmetric=(sig_type == "asymmetric"))
         manifest = capsule["manifest"]
 
         # run authority check for install
@@ -126,6 +132,17 @@ class CapsuleMarketplace:
         def do_register():
             AGENT_REGISTRY.append(spec)
             save_agent(spec)
+            # ledger evidence for successful install
+            try:
+                EvidenceLedgerSingleton.append_entry(
+                    tenant_id=tenant_id,
+                    actor=capsule.get("signer", "unknown"),
+                    action="install_capsule",
+                    payload={"name": spec.name, "role": spec.role},
+                )
+            except Exception:
+                # ledger is best-effort; do not fail install solely due to ledger
+                pass
 
         def undo_register():
             # remove from memory registry and durable registry
@@ -134,6 +151,11 @@ class CapsuleMarketplace:
                     AGENT_REGISTRY.pop(i)
                     break
             remove_agent(spec.name)
+            # remove last ledger entry as part of rollback
+            try:
+                EvidenceLedgerSingleton.remove_last(1)
+            except Exception:
+                pass
 
         try:
             self._reversible.execute(do_register, undo_register)
