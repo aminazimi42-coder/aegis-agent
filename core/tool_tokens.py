@@ -42,7 +42,14 @@ class ToolAccessToken:
     def has_capability(self, capability: str) -> bool:
         return capability in self.capabilities
 
-    def allows(self, *, tool_name: str | None = None, required_capabilities: Sequence[str] | None = None, tenant_id: str | None = None, task_id: str | None = None) -> bool:
+    def allows(
+        self,
+        *,
+        tool_name: str | None = None,
+        required_capabilities: Sequence[str] | None = None,
+        tenant_id: str | None = None,
+        task_id: str | None = None,
+    ) -> bool:
         if tool_name is not None and self.tool_name != tool_name:
             return False
         if tenant_id is not None and self.tenant_id != tenant_id:
@@ -81,7 +88,9 @@ class ToolTokenManager:
 
     def _serialize(self, payload: dict[str, Any]) -> str:
         signature = self._sign(payload)
-        token = base64.urlsafe_b64encode(json.dumps({**payload, "signature": signature}, separators=(",", ":")).encode("utf-8")).decode("utf-8").rstrip("=")
+        merged = {**payload, "signature": signature}
+        raw = json.dumps(merged, separators=(",", ":")).encode("utf-8")
+        token = base64.urlsafe_b64encode(raw).decode("utf-8").rstrip("=")
         return token
 
     def _deserialize(self, token: str) -> dict[str, Any]:
@@ -113,10 +122,11 @@ class ToolTokenManager:
             str(capability).lower() for capability in (capabilities or ["read"])
         )
         issued_at = time.time()
-        expires_at = issued_at + float(ttl_seconds if ttl_seconds is not None else self.ttl_seconds)
-        token_id = hashlib.sha256(
-            f"{tenant_id}:{task_id}:{tool_name}:{issued_at}:{os.urandom(4).hex()}".encode("utf-8")
-        ).hexdigest()[:32]
+        expires_at = issued_at + float(
+            ttl_seconds if ttl_seconds is not None else self.ttl_seconds
+        )
+        token_seed = f"{tenant_id}:{task_id}:{tool_name}:{issued_at}:{os.urandom(4).hex()}"
+        token_id = hashlib.sha256(token_seed.encode("utf-8")).hexdigest()[:32]
         payload = {
             "token_id": token_id,
             "tenant_id": str(tenant_id),
@@ -143,7 +153,9 @@ class ToolTokenManager:
             tenant_id=str(body["tenant_id"]),
             task_id=str(body["task_id"]),
             tool_name=str(body["tool_name"]),
-            capabilities=tuple(str(capability).lower() for capability in body.get("capabilities", [])),
+            capabilities=tuple(
+                str(capability).lower() for capability in body.get("capabilities", [])
+            ),
             issued_at=float(body["issued_at"]),
             expires_at=float(body["expires_at"]),
             token_id=str(body["token_id"]),
@@ -165,8 +177,9 @@ class ToolTokenManager:
             requested = {str(capability).lower() for capability in required_capabilities}
             available = {str(capability).lower() for capability in access.capabilities}
             if not requested.issubset(available):
+                missing = sorted(requested - available)
                 raise TokenScopeError(
-                    f"The tool token lacks required capability. Missing: {sorted(requested - available)}"
+                    f"The tool token lacks required capability. Missing: {missing}"
                 )
 
         return access
@@ -232,7 +245,14 @@ class ToolTokenManager:
 ZeroTrustToolTokenManager = ToolTokenManager
 
 
-def issue_tool_token(*, tenant_id: str, task_id: str, tool_name: str, capabilities: Iterable[str] | None = None, ttl_seconds: int | None = None) -> str:
+def issue_tool_token(
+    *,
+    tenant_id: str,
+    task_id: str,
+    tool_name: str,
+    capabilities: Iterable[str] | None = None,
+    ttl_seconds: int | None = None,
+) -> str:
     return ToolTokenManager(ttl_seconds=ttl_seconds or 300).issue_token(
         tenant_id=tenant_id,
         task_id=task_id,

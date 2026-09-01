@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from core.types import AgentSpec
-
+from .types import AgentSpec
 
 AGENT_REGISTRY: list[AgentSpec] = [
     AgentSpec(

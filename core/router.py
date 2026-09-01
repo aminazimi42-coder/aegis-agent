@@ -22,13 +22,25 @@ class SmartModelRouter:
             return preferred_model
 
         normalized = task.lower()
-        if any(keyword in normalized for keyword in ["plan", "strategy", "coordinate", "prioritize"]):
+        if any(
+            keyword in normalized
+            for keyword in ["plan", "strategy", "coordinate", "prioritize"]
+        ):
             return "Alina"
-        if any(keyword in normalized for keyword in ["execute", "deploy", "run", "operate", "monitor"]):
+        if any(
+            keyword in normalized
+            for keyword in ["execute", "deploy", "run", "operate", "monitor"]
+        ):
             return "Kian"
-        if any(keyword in normalized for keyword in ["analyze", "reason", "synthesize", "risk", "insight"]):
+        if any(
+            keyword in normalized
+            for keyword in ["analyze", "reason", "synthesize", "risk", "insight"]
+        ):
             return "Bita"
-        if any(keyword in normalized for keyword in ["validate", "verify", "check", "quality", "audit"]):
+        if any(
+            keyword in normalized
+            for keyword in ["validate", "verify", "check", "quality", "audit"]
+        ):
             return "Aylin"
         return "Alina"
 
@@ -50,7 +62,12 @@ class SmartModelRouter:
                 error=str(exc),
             )
 
-    def _build_payload(self, task: str, model_name: str | None = None, factory: Callable | None = None) -> dict[str, Any]:
+    def _build_payload(
+        self,
+        task: str,
+        model_name: str | None = None,
+        factory: Callable | None = None,
+    ) -> dict[str, Any]:
         selected_model = self.choose_model(task, model_name)
 
         if factory is not None:
@@ -70,7 +87,12 @@ class SmartModelRouter:
             "model": selected_model,
         }
 
-    def route(self, task: str, factory: Callable | None = None, model_name: str | None = None) -> AgentResponse:
+    def route(
+        self,
+        task: str,
+        factory: Callable | None = None,
+        model_name: str | None = None,
+    ) -> AgentResponse:
         """Attempt a task route with bounded retry handling for schema mismatch."""
         selected_model = self.choose_model(task, model_name)
 

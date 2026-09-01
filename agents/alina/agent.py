@@ -12,4 +12,7 @@ class AlinaAgent(BaseAgent):
     capabilities = ["planning", "coordination", "routing", "prioritization"]
 
     def handle(self, task: str) -> str:
-        return f"{self.name} strategic coordination: define a clear execution strategy, route priorities, and align stakeholders for {task}"
+        return (
+            f"{self.name} strategic coordination: define a clear execution "
+            f"strategy, route priorities, and align stakeholders for {task}"
+        )

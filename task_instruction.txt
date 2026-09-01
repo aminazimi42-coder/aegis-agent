@@ -1,7 +1,8 @@
-Phase 6 Final Verification and Repository Sign-Off Directive Objective
-Perform a complete end-to-end audit, verify the integrity of all 5 newly implemented core modules (FinOps, Router, Tool Tokens, Tenant Memory, and Observability), and execute final release tagging. Step-by-Step Instructions for Agent
-Run the entire test suite across all modules and confirm 100% test pass rates without errors.
-Generate a comprehensive architecture and execution summary report in docs/phase-reports/phase-6-final-audit.md.
-Tag the repository with the final production-candidate tag (v1.0.0-rc2).
-Commit changes with message: "feat(release-phase6): complete final multi-agent platform hardening and verification".
-Push commits and tags to origin main.
+Phase 7 Execution Directive: Implement Counterfactual Shadow Swarm Objective
+Build an independent adversarial and shadow agent execution layer that runs alongside the primary swarm to evaluate assumptions, risks, and output divergences. Step-by-Step Instructions for Agent
+Create core/shadow_swarm.py to handle shadow execution mapping, divergence scoring, and counterfactual validation logs.
+Integrate shadow team routing and comparison hooks into the main task execution and orchestration loop.
+Add robust regression tests in tests/test_shadow_swarm.py verifying shadow consensus and discrepancy handling.
+Run full test suite, lint, and security checks to ensure zero regressions.
+Commit changes with message: "feat(shadow-phase7): implement counterfactual shadow swarm layer".
+Push changes to origin main.

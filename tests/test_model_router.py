@@ -7,10 +7,24 @@ class TrustAwareModelRouterTests(unittest.TestCase):
     def test_router_selects_model_based_on_task_signal(self):
         router = TrustAwareModelRouter()
 
-        self.assertEqual(router.decide_model("Plan the launch and coordinate strategy"), "Alina")
-        self.assertEqual(router.decide_model("Deploy the platform and monitor runtime"), "Kian")
-        self.assertEqual(router.decide_model("Analyze the risk profile and synthesize insight"), "Bita")
-        self.assertEqual(router.decide_model("Validate the release and audit the final state"), "Aylin")
+        self.assertEqual(
+            router.decide_model("Plan the launch and coordinate strategy"),
+            "Alina",
+        )
+        self.assertEqual(
+            router.decide_model("Deploy the platform and monitor runtime"),
+            "Kian",
+        )
+        self.assertEqual(
+            router.decide_model(
+                "Analyze the risk profile and synthesize insight"
+            ),
+            "Bita",
+        )
+        self.assertEqual(
+            router.decide_model("Validate the release and audit the final state"),
+            "Aylin",
+        )
 
     def test_router_includes_cost_and_latency_metadata(self):
         router = TrustAwareModelRouter()

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import math
 import time
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict
 
 from core.ai_core import AICore
 
@@ -25,7 +24,10 @@ class ShadowSwarmRunner:
     score plus a simple consensus boolean.
     """
 
-    def __init__(self, comparator: Callable[[Dict[str, Any], Dict[str, Any]], float] | None = None) -> None:
+    def __init__(
+        self,
+        comparator: Callable[[Dict[str, Any], Dict[str, Any]], float] | None = None,
+    ) -> None:
         self.ai_core = AICore()
         # comparator(primary, shadow) -> divergence 0.0-1.0
         self.comparator = comparator or self._default_comparator
@@ -38,7 +40,12 @@ class ShadowSwarmRunner:
             return 0.0
         return min(1.0, abs(p - s) / max(1, max(p, s)))
 
-    def execute_and_compare(self, task: str, *, shadow_modifier: Callable[[str], str] | None = None) -> ShadowResult:
+    def execute_and_compare(
+        self,
+        task: str,
+        *,
+        shadow_modifier: Callable[[str], str] | None = None,
+    ) -> ShadowResult:
         """Execute primary swarm and shadow swarm, then compare outputs.
 
         shadow_modifier, if provided, transforms the task into a counterfactual

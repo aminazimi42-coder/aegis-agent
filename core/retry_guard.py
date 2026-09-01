@@ -45,7 +45,9 @@ class RetryGuard:
         with self._lock:
             task_state = self._ensure_task_state(task_key)
             task_state["failures"] += 1
-            task_state["status"] = "degraded" if task_state["failures"] <= self.max_retries else "open"
+            task_state["status"] = (
+                "degraded" if task_state["failures"] <= self.max_retries else "open"
+            )
             task_state["retry_count"] = task_state["failures"]
             task_state["last_error"] = str(error) if error is not None else "unknown error"
             task_state["telemetry"]["attempts"] += 1
@@ -68,7 +70,10 @@ class RetryGuard:
                 if attempt >= self.max_retries:
                     self.state[task_key]["status"] = "open"
                     raise RuntimeError(
-                        f"Retry budget exceeded for task '{task_key}' after {self.max_retries} retries."
+                        (
+                            f"Retry budget exceeded for task '{task_key}' "
+                            f"after {self.max_retries} retries."
+                        )
                     ) from exc
         raise RuntimeError(f"Execution halted for task '{task_key}' due to retry limits.")
 

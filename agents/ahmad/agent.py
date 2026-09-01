@@ -8,7 +8,10 @@ class AhmedAgent(BaseAgent):
 
     name = "Ahmed"
     role = "Ahmed oversight"
-    description = "Provides governance, stewardship, and oversight coverage for elevated authority workflows."
+    description = (
+        "Provides governance, stewardship, and oversight coverage "
+        "for elevated authority workflows."
+    )
     capabilities = ["oversight", "governance", "review", "escalation"]
     metadata = {
         "log": {
@@ -26,4 +29,7 @@ class AhmedAgent(BaseAgent):
     }
 
     def handle(self, task: str) -> str:
-        return f"{self.name} governance: maintain the strategic oversight view and confirm the authority path for {task}"
+        return (
+            f"{self.name} governance: maintain the strategic oversight view "
+            f"and confirm the authority path for {task}"
+        )

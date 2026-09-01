@@ -5,7 +5,6 @@ import hashlib
 import json
 import os
 import time
-from collections.abc import MutableMapping
 from typing import Any
 
 
@@ -61,7 +60,11 @@ class TenantMemoryVault:
         tenant_bucket = self._vault.get(tenant_id, {})
         namespace_bucket = tenant_bucket.get(namespace, {})
         now = time.time()
-        expired_keys = [key for key, value in namespace_bucket.items() if value["expires_at"] <= now]
+        expired_keys = [
+            key
+            for key, value in namespace_bucket.items()
+            if value["expires_at"] <= now
+        ]
         for key in expired_keys:
             del namespace_bucket[key]
 
@@ -115,7 +118,9 @@ class TenantMemoryVault:
                     raise PermissionError(
                         "Memory access denied: the requested key is scoped to a different tenant."
                     )
-            raise KeyError(f"Memory key '{memory_key}' is not present in namespace '{namespace_key}'.")
+            raise KeyError(
+                f"Memory key '{memory_key}' is not present in namespace '{namespace_key}'."
+            )
 
         entry = bucket[memory_key]
         if entry["expires_at"] <= time.time():

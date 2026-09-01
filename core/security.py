@@ -31,7 +31,10 @@ class SecurityPolicy:
         if len(cleaned) > 2000:
             raise ValueError("Task input exceeds the maximum allowed size.")
         if self._contains_threat(cleaned):
-            raise ValueError("Task input contains suspicious content and was rejected by the security firewall.")
+            raise ValueError(
+                "Task input contains suspicious content and was rejected "
+                "by the security firewall."
+            )
         return cleaned
 
 

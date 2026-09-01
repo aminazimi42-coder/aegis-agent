@@ -33,7 +33,10 @@ class SelfRecovery:
         actions: List[str] = []
 
         if self.environment != normalized_environment:
-            actions.append(f"Normalized runtime environment from {self.environment} to {normalized_environment}.")
+            actions.append(
+                "Normalized runtime environment from "
+                f"{self.environment} to {normalized_environment}."
+            )
 
         if self.agent_count != 4:
             actions.append("Adjusted agent count to the production-safe default of four agents.")

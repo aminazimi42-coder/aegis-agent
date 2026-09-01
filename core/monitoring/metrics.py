@@ -5,6 +5,7 @@ from typing import Any
 
 from agents.ahmad.agent import AhmedAgent
 from agents.amin.agent import AminAgent
+
 from core.agent_registry import AGENT_REGISTRY
 from core.config import load_config
 

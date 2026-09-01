@@ -45,7 +45,9 @@ class CausalSwarmObservability:
     def _make_trace_id(self) -> str:
         return uuid.uuid4().hex[:24]
 
-    def _span_record(self, span: SpanContext, tenant_id: str, metadata: dict[str, Any]) -> dict[str, Any]:
+    def _span_record(
+        self, span: SpanContext, tenant_id: str, metadata: dict[str, Any]
+    ) -> dict[str, Any]:
         record = {
             "trace_id": span.trace_id,
             "span_id": span.span_id,
@@ -80,13 +82,29 @@ class CausalSwarmObservability:
         self._span_record(span, tenant_id, metadata or {})
         return span
 
-    def record_event(self, span: SpanContext, name: str, payload: dict[str, Any] | None = None) -> TraceEvent:
+    def record_event(
+        self,
+        span: SpanContext,
+        name: str,
+        payload: dict[str, Any] | None = None,
+    ) -> TraceEvent:
         event = TraceEvent(name=name, payload=dict(payload or {}))
         self._events.setdefault(span.span_id, []).append(event)
         return event
 
-    def record_metric(self, name: str, value: float | int, *, unit: str | None = None) -> dict[str, Any]:
-        metric_entry = {"name": name, "value": float(value), "unit": unit or "count", "timestamp": self._now()}
+    def record_metric(
+        self,
+        name: str,
+        value: float | int,
+        *,
+        unit: str | None = None,
+    ) -> dict[str, Any]:
+        metric_entry = {
+            "name": name,
+            "value": float(value),
+            "unit": unit or "count",
+            "timestamp": self._now(),
+        }
         self._metrics.setdefault(name, []).append(float(value))
         return metric_entry
 
@@ -123,7 +141,9 @@ class CausalSwarmObservability:
             "metrics": metrics,
         }
 
-    def trace_request(self, *, tenant_id: str, kind: str = "request", metadata: dict[str, Any] | None = None) -> SpanContext:
+    def trace_request(
+        self, *, tenant_id: str, kind: str = "request", metadata: dict[str, Any] | None = None
+    ) -> SpanContext:
         return self.start_span(kind, tenant_id, metadata=metadata)
 
 

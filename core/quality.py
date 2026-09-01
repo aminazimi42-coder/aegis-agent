@@ -17,7 +17,15 @@ class ProductionQualityGate:
             "agent_allowed": policy.is_allowed(agent_name),
             "response_has_specialized_context": any(
                 keyword in str(response).lower()
-                for keyword in ["strategy", "execution", "analysis", "validation", "orchestration", "quality", "synthesis"]
+                for keyword in [
+                    "strategy",
+                    "execution",
+                    "analysis",
+                    "validation",
+                    "orchestration",
+                    "quality",
+                    "synthesis",
+                ]
             ),
         }
         passed = all(checks.values())

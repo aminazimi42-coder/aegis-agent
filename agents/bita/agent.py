@@ -12,4 +12,8 @@ class BitaAgent(BaseAgent):
     capabilities = ["analysis", "synthesis", "risk", "reporting"]
 
     def handle(self, task: str) -> str:
-        return f"{self.name} analysis and synthesis: evaluate the context, synthesize insight, clarify the dependencies, and summarize the key risks for {task}"
+        return (
+            f"{self.name} analysis and synthesis: evaluate the context, "
+            f"synthesize insight, clarify the dependencies, and summarize "
+            f"the key risks for {task}"
+        )

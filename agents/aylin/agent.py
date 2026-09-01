@@ -12,4 +12,8 @@ class AylinAgent(BaseAgent):
     capabilities = ["validation", "quality", "audit", "assurance"]
 
     def handle(self, task: str) -> str:
-        return f"{self.name} validation and quality review: check compliance, verify the final outcome, and confirm the release-ready result for {task}"
+        return (
+            f"{self.name} validation and quality review: check compliance, "
+            f"verify the final outcome, and confirm the release-ready result "
+            f"for {task}"
+        )

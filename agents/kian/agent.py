@@ -12,4 +12,7 @@ class KianAgent(BaseAgent):
     capabilities = ["execution", "monitoring", "optimization", "delivery"]
 
     def handle(self, task: str) -> str:
-        return f"{self.name} operational execution: run the delivery path, monitor throughput, and stabilize execution for {task}"
+        return (
+            f"{self.name} operational execution: run the delivery path, "
+            f"monitor throughput, and stabilize execution for {task}"
+        )

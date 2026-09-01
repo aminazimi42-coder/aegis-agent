@@ -8,7 +8,10 @@ class AminAgent(BaseAgent):
 
     name = "Amin"
     role = "Amin oversight"
-    description = "Provides secondary authority, review checkpoints, and governance coverage for supervision loops."
+    description = (
+        "Provides secondary authority, review checkpoints, and governance "
+        "coverage for supervision loops."
+    )
     capabilities = ["oversight", "review", "audit", "governance"]
     metadata = {
         "log": {
@@ -26,4 +29,7 @@ class AminAgent(BaseAgent):
     }
 
     def handle(self, task: str) -> str:
-        return f"{self.name} review: confirm the oversight checkpoint, audit the path, and validate readiness for {task}"
+        return (
+            f"{self.name} review: confirm the oversight checkpoint, audit "
+            f"the path, and validate readiness for {task}"
+        )

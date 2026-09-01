@@ -6,6 +6,7 @@ from agents.alina.agent import AlinaAgent
 from agents.aylin.agent import AylinAgent
 from agents.bita.agent import BitaAgent
 from agents.kian.agent import KianAgent
+
 from core.agent_registry import AGENT_REGISTRY
 from core.token_optimizer import TokenOptimizer
 
@@ -27,13 +28,25 @@ class AICore:
         """Select the most appropriate agent for a given task string."""
         lower_task = task.lower()
 
-        if any(keyword in lower_task for keyword in ["plan", "strategy", "coordinate", "prioritize", "route"]):
+        if any(
+            keyword in lower_task
+            for keyword in ["plan", "strategy", "coordinate", "prioritize", "route"]
+        ):
             return "Alina"
-        if any(keyword in lower_task for keyword in ["execute", "deploy", "run", "operate", "monitor", "optimize"]):
+        if any(
+            keyword in lower_task
+            for keyword in ["execute", "deploy", "run", "operate", "monitor", "optimize"]
+        ):
             return "Kian"
-        if any(keyword in lower_task for keyword in ["analyze", "reason", "synthesize", "summarize", "risk", "insight"]):
+        if any(
+            keyword in lower_task
+            for keyword in ["analyze", "reason", "synthesize", "summarize", "risk", "insight"]
+        ):
             return "Bita"
-        if any(keyword in lower_task for keyword in ["validate", "verify", "check", "quality", "audit", "test"]):
+        if any(
+            keyword in lower_task
+            for keyword in ["validate", "verify", "check", "quality", "audit", "test"]
+        ):
             return "Aylin"
         return "Alina"
 

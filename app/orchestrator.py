@@ -6,8 +6,8 @@ from core.finops_autopilot import FinOpsAutopilot
 from core.quality import ProductionQualityGate
 from core.recovery.self_recovery import SelfRecovery
 from core.retry_guard import RetryGuard
-from core.tenant_memory import TenantMemoryVault
 from core.shadow_swarm import ShadowSwarmRunner
+from core.tenant_memory import TenantMemoryVault
 
 
 def orchestrate_platform() -> str:

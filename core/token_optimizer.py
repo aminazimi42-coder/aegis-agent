@@ -57,7 +57,12 @@ class TokenOptimizer:
                 return None
             return cached["response"]
 
-    def record_usage(self, task: str, agent_name: str, response: str | None = None) -> dict[str, Any]:
+    def record_usage(
+        self,
+        task: str,
+        agent_name: str,
+        response: str | None = None,
+    ) -> dict[str, Any]:
         task_tokens = self.estimate_tokens(task)
         response_tokens = self.estimate_tokens(response)
         total_tokens = task_tokens + response_tokens
