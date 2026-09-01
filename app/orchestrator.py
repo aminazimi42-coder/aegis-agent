@@ -4,11 +4,13 @@ from core.agent_registry import AGENT_REGISTRY
 from core.ai_core import AICore
 from core.evidence_ledger import EvidenceLedgerSingleton
 from core.finops_autopilot import FinOpsAutopilot
+from core.human_authority import HumanAuthority
 from core.quality import ProductionQualityGate
 from core.recovery.self_recovery import SelfRecovery
 from core.retry_guard import RetryGuard
 from core.reversible_workflow import ReversibleManager
 from core.shadow_swarm import ShadowSwarmRunner
+from core.super_prompt_engine import SuperPromptEngine
 from core.tenant_memory import TenantMemoryVault
 
 
@@ -30,6 +32,7 @@ def run_agent_workflow(task: str, tenant_id: str = "default") -> dict:
     ai_core = AICore()
     ledger = EvidenceLedgerSingleton
     reversible = ReversibleManager()
+    human_authority = HumanAuthority()
     retry_guard = RetryGuard(max_retries=2)
     finops_autopilot = FinOpsAutopilot()
     tenant_memory = TenantMemoryVault(default_ttl_seconds=3600)
@@ -62,6 +65,23 @@ def run_agent_workflow(task: str, tenant_id: str = "default") -> dict:
             "workflow-context",
             namespace="agent-workflow",
         )
+
+        # Evaluate human authority risk for this action
+        try:
+            profile = human_authority.check_authorization(task, {"tenant_sensitive": False})
+        except PermissionError:
+            # Block execution if policy denies
+            raise
+
+        # If approval is required, record it in context but allow execution to proceed
+        if human_authority.requires_approval(profile):
+            tenant_memory.store(
+                tenant_id=tenant_id,
+                key="approval-required",
+                value={"task": task, "level": profile.level.name, "reason": profile.reason},
+                namespace="agent-workflow",
+                ttl_seconds=600,
+            )
 
         selected_result = ai_core.dispatch(task)
         # Record agent dispatch evidence and register rollback to delete memory entry
@@ -158,3 +178,13 @@ def run_agent_workflow(task: str, tenant_id: str = "default") -> dict:
         }
 
     return retry_guard.execute(task, execute_workflow)
+
+
+def run_scheduled_super_prompts(at_datetime, executor_callback):
+    """Helper to run due super-prompts at a given datetime using an executor callback.
+
+    This allows external schedulers or tests to call into the orchestrator to
+    run stored weekly super-prompts.
+    """
+    engine = SuperPromptEngine()
+    return engine.execute_due(at_datetime, executor_callback)
