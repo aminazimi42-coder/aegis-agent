@@ -6,7 +6,11 @@ from core.usage_meter import UsageMeterSingleton
 
 class TokenEconomyTest(unittest.TestCase):
     def test_cache_and_usage(self):
-        te = TokenEconomy()
+        import tempfile
+        from pathlib import Path
+
+        td = tempfile.TemporaryDirectory()
+        te = TokenEconomy(cache_path=str(Path(td.name) / "token_cache.db"))
         tenant = "tenant_phase25"
         model = "gpt-test"
         prompt = "hello world " + ("x" * 120)
