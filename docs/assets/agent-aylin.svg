@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="640" height="640" role="img" aria-label="Aylin — Quality and Validation portrait">
+  <defs>
+    <radialGradient id="aylinBg" cx="50%" cy="45%" r="65%">
+      <stop offset="0%" stop-color="#332a08"/>
+      <stop offset="100%" stop-color="#1f1a0a"/>
+    </radialGradient>
+    <linearGradient id="aylinAccent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f5c842"/>
+      <stop offset="100%" stop-color="#c79718"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="640" fill="url(#aylinBg)"/>
+  <rect width="640" height="640" fill="none" stroke="#f0a93b" stroke-width="3" opacity="0.6"/>
+  <g transform="translate(320, 320)">
+    <path d="M-120 120 Q-120 50 -60 30 Q-30 20 0 20 Q30 20 60 30 Q120 50 120 120 Z" fill="#2a230d" stroke="url(#aylinAccent)" stroke-width="3"/>
+    <circle cx="0" cy="-30" r="55" fill="#332b0f" stroke="url(#aylinAccent)" stroke-width="3"/>
+    <!-- Quality checkmark shield -->
+    <g opacity="0.9">
+      <path d="M-22 -52 L22 -52 L22 -22 Q22 0 0 12 Q-22 0 -22 -22 Z" fill="none" stroke="#f5c842" stroke-width="2.5" opacity="0.7"/>
+      <path d="M-10 -38 L-3 -28 L12 -44" fill="none" stroke="#f5c842" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <circle cx="-12" cy="-32" r="2.5" fill="#fff5d0"/>
+    <circle cx="12" cy="-32" r="2.5" fill="#fff5d0"/>
+  </g>
+  <rect x="120" y="500" width="400" height="100" rx="12" fill="#251f0a" stroke="#f0a93b" stroke-width="2" opacity="0.9"/>
+  <text x="320" y="545" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="26" font-weight="700" fill="#e6f0ff">Aylin</text>
+  <text x="320" y="575" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="15" fill="#f5c842">Quality &amp; Validation</text>
+</svg>

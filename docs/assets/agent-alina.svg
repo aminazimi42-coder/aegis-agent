@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="640" height="640" role="img" aria-label="Alina — Strategic Orchestrator portrait">
+  <defs>
+    <radialGradient id="alinaBg" cx="50%" cy="45%" r="65%">
+      <stop offset="0%" stop-color="#0a2244"/>
+      <stop offset="100%" stop-color="#0a1224"/>
+    </radialGradient>
+    <linearGradient id="alinaAccent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4a9eff"/>
+      <stop offset="100%" stop-color="#1a5fbf"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="640" fill="url(#alinaBg)"/>
+  <rect width="640" height="640" fill="none" stroke="#3a7fe0" stroke-width="3" opacity="0.6"/>
+  <g transform="translate(320, 320)">
+    <path d="M-120 120 Q-120 50 -60 30 Q-30 20 0 20 Q30 20 60 30 Q120 50 120 120 Z" fill="#0d2042" stroke="url(#alinaAccent)" stroke-width="3"/>
+    <circle cx="0" cy="-30" r="55" fill="#102a52" stroke="url(#alinaAccent)" stroke-width="3"/>
+    <!-- Strategy compass motif -->
+    <g opacity="0.85">
+      <circle cx="0" cy="-30" r="30" fill="none" stroke="#4a9eff" stroke-width="1.5" opacity="0.4"/>
+      <path d="M0 -55 L5 -35 L0 -30 L-5 -35 Z" fill="#4a9eff" opacity="0.8"/>
+      <path d="M0 -5 L5 -25 L0 -30 L-5 -25 Z" fill="#1a5fbf" opacity="0.6"/>
+      <circle cx="0" cy="-30" r="4" fill="#a0d0ff"/>
+    </g>
+    <circle cx="-12" cy="-32" r="2.5" fill="#7cc3ff"/>
+    <circle cx="12" cy="-32" r="2.5" fill="#7cc3ff"/>
+  </g>
+  <rect x="120" y="500" width="400" height="100" rx="12" fill="#0a1d38" stroke="#3a7fe0" stroke-width="2" opacity="0.9"/>
+  <text x="320" y="545" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="26" font-weight="700" fill="#e6f0ff">Alina</text>
+  <text x="320" y="575" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="15" fill="#4a9eff">Strategic Orchestrator</text>
+</svg>

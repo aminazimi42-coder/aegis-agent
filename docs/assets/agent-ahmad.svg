@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="640" height="640" role="img" aria-label="Ahmad — Security and Oversight portrait">
+  <defs>
+    <radialGradient id="ahmadBg" cx="50%" cy="45%" r="65%">
+      <stop offset="0%" stop-color="#3a0f0f"/>
+      <stop offset="100%" stop-color="#1a0a0a"/>
+    </radialGradient>
+    <linearGradient id="ahmadAccent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e0533d"/>
+      <stop offset="100%" stop-color="#9c2a1a"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="640" fill="url(#ahmadBg)"/>
+  <rect width="640" height="640" fill="none" stroke="#e0533d" stroke-width="3" opacity="0.6"/>
+  <g transform="translate(320, 320)">
+    <path d="M-120 120 Q-120 50 -60 30 Q-30 20 0 20 Q30 20 60 30 Q120 50 120 120 Z" fill="#2e1010" stroke="url(#ahmadAccent)" stroke-width="3"/>
+    <circle cx="0" cy="-30" r="55" fill="#3d1414" stroke="url(#ahmadAccent)" stroke-width="3"/>
+    <!-- Security lock motif -->
+    <g opacity="0.9">
+      <rect x="-16" y="-45" width="32" height="24" rx="4" fill="none" stroke="#e0533d" stroke-width="2.5" opacity="0.8"/>
+      <path d="M-10 -45 V-52 Q-10 -62 0 -62 Q10 -62 10 -52 V-45" fill="none" stroke="#e0533d" stroke-width="2.5"/>
+      <circle cx="0" cy="-33" r="4" fill="#ff8870"/>
+    </g>
+    <circle cx="-12" cy="-32" r="2.5" fill="#ffb0a0"/>
+    <circle cx="12" cy="-32" r="2.5" fill="#ffb0a0"/>
+  </g>
+  <rect x="120" y="500" width="400" height="100" rx="12" fill="#2a0e0e" stroke="#e0533d" stroke-width="2" opacity="0.9"/>
+  <text x="320" y="545" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="26" font-weight="700" fill="#e6f0ff">Ahmad</text>
+  <text x="320" y="575" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="15" fill="#e0533d">Security &amp; Oversight</text>
+</svg>

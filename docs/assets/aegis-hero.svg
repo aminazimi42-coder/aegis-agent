@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 420" width="1600" height="420" role="img" aria-label="Aegis Agent hero banner — shield and node constellation">
+  <defs>
+    <linearGradient id="heroBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#070b1f"/>
+      <stop offset="55%" stop-color="#0d1230"/>
+      <stop offset="100%" stop-color="#120a2e"/>
+    </linearGradient>
+    <linearGradient id="shieldGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7c5cff"/>
+      <stop offset="100%" stop-color="#2a1d6e"/>
+    </linearGradient>
+    <radialGradient id="nodeGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00e5ff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#00e5ff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="cyanStroke" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00e5ff"/>
+      <stop offset="100%" stop-color="#7c5cff"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1600" height="420" fill="url(#heroBg)"/>
+  <rect width="1600" height="420" fill="none" stroke="#1a2a5e" stroke-width="1" opacity="0.5"/>
+
+  <!-- Subtle grid -->
+  <g opacity="0.08">
+    <path d="M0 60 H1600 M0 120 H1600 M0 180 H1600 M0 240 H1600 M0 300 H1600 M0 360 H1600" stroke="#3a4a8e" stroke-width="1"/>
+    <path d="M100 0 V420 M300 0 V420 M500 0 V420 M700 0 V420 M900 0 V420 M1100 0 V420 M1300 0 V420 M1500 0 V420" stroke="#3a4a8e" stroke-width="1"/>
+  </g>
+
+  <!-- Central shield -->
+  <g transform="translate(770, 70)">
+    <path d="M30 20 L150 20 L150 150 Q150 220 90 270 Q30 220 30 150 Z"
+          fill="url(#shieldGrad)" stroke="#9d8aff" stroke-width="2" opacity="0.95"/>
+    <path d="M30 20 L150 20 L150 150 Q150 220 90 270 Q30 220 30 150 Z"
+          fill="none" stroke="#cfc6ff" stroke-width="1" opacity="0.4"/>
+    <!-- Inner emblem: interlocking nodes -->
+    <circle cx="90" cy="90" r="12" fill="#00e5ff" opacity="0.9"/>
+    <circle cx="60" cy="140" r="8" fill="#e6f0ff" opacity="0.8"/>
+    <circle cx="120" cy="140" r="8" fill="#e6f0ff" opacity="0.8"/>
+    <circle cx="90" cy="190" r="10" fill="#00e5ff" opacity="0.7"/>
+    <line x1="90" y1="90" x2="60" y2="140" stroke="#00e5ff" stroke-width="2" opacity="0.6"/>
+    <line x1="90" y1="90" x2="120" y2="140" stroke="#7c5cff" stroke-width="2" opacity="0.6"/>
+    <line x1="60" y1="140" x2="90" y2="190" stroke="#e6f0ff" stroke-width="1.5" opacity="0.5"/>
+    <line x1="120" y1="140" x2="90" y2="190" stroke="#e6f0ff" stroke-width="1.5" opacity="0.5"/>
+  </g>
+
+  <!-- Orbiting node constellation left -->
+  <g transform="translate(200, 210)">
+    <circle cx="0" cy="0" r="70" fill="url(#nodeGlow)" opacity="0.4"/>
+    <circle cx="0" cy="0" r="14" fill="#7c5cff"/>
+    <circle cx="-60" cy="-40" r="8" fill="#00e5ff"/>
+    <circle cx="70" cy="-30" r="9" fill="#e6f0ff"/>
+    <circle cx="-50" cy="50" r="7" fill="#7c5cff"/>
+    <circle cx="60" cy="55" r="8" fill="#00e5ff"/>
+    <line x1="0" y1="0" x2="-60" y2="-40" stroke="url(#cyanStroke)" stroke-width="2" opacity="0.7"/>
+    <line x1="0" y1="0" x2="70" y2="-30" stroke="url(#cyanStroke)" stroke-width="2" opacity="0.7"/>
+    <line x1="0" y1="0" x2="-50" y2="50" stroke="url(#cyanStroke)" stroke-width="2" opacity="0.7"/>
+    <line x1="0" y1="0" x2="60" y2="55" stroke="url(#cyanStroke)" stroke-width="2" opacity="0.7"/>
+  </g>
+
+  <!-- Orbiting node constellation right -->
+  <g transform="translate(1400, 210)">
+    <circle cx="0" cy="0" r="70" fill="url(#nodeGlow)" opacity="0.4"/>
+    <circle cx="0" cy="0" r="14" fill="#00e5ff"/>
+    <circle cx="60" cy="-40" r="8" fill="#7c5cff"/>
+    <circle cx="-70" cy="-30" r="9" fill="#e6f0ff"/>
+    <circle cx="50" cy="50" r="7" fill="#00e5ff"/>
+    <circle cx="-60" cy="55" r="8" fill="#7c5cff"/>
+    <line x1="0" y1="0" x2="60" y2="-40" stroke="url(#cyanStroke)" stroke-width="2" opacity="0.7"/>
+    <line x1="0" y1="0" x2="-70" y2="-30" stroke="url(#cyanStroke)" stroke-width="2" opacity="0.7"/>
+    <line x1="0" y1="0" x2="50" y2="50" stroke="url(#cyanStroke)" stroke-width="2" opacity="0.7"/>
+    <line x1="0" y1="0" x2="-60" y2="55" stroke="url(#cyanStroke)" stroke-width="2" opacity="0.7"/>
+  </g>
+
+  <!-- Connecting data streams -->
+  <g opacity="0.35">
+    <path d="M270 210 Q500 120 770 210" fill="none" stroke="#00e5ff" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <path d="M870 210 Q1100 300 1330 210" fill="none" stroke="#7c5cff" stroke-width="1.5" stroke-dasharray="6 4"/>
+  </g>
+
+  <!-- Title text -->
+  <text x="800" y="370" text-anchor="middle" font-family="'Segoe UI', Helvetica, Arial, sans-serif" font-size="28" font-weight="700" fill="#e6f0ff" letter-spacing="3">AEGIS AGENT</text>
+  <text x="800" y="398" text-anchor="middle" font-family="'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#8aa0e0" letter-spacing="1">Multi-Agent SaaS Orchestration Platform</text>
+</svg>

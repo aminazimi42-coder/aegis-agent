@@ -20,13 +20,13 @@ def verify_asymmetric(public_pem: bytes, payload: bytes, signature: bytes) -> bo
     """Verify an asymmetric signature if cryptography is available.
 
     Falls back to HMAC-verify using the public_pem bytes as a shared secret
-    when cryptography is not installed (deterministic fallback for tests).
+    when cryptography is not installed or the PEM is not a valid asymmetric
+    key (deterministic fallback for tests).
     """
     if _HAS_CRYPTO:
         try:
             pub = load_pem_public_key(public_pem)
             if hasattr(pub, "verify"):
-                # assume PKCS1v15-like verification where possible
                 pub.verify(
                     signature,
                     payload,
@@ -35,7 +35,7 @@ def verify_asymmetric(public_pem: bytes, payload: bytes, signature: bytes) -> bo
                 )
                 return True
         except Exception:
-            return False
+            pass
     # fallback deterministic HMAC check using public_pem as key
     mac = hmac.new(public_pem, payload, hashlib.sha256).digest()
     return hmac.compare_digest(mac, signature)

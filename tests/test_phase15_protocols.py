@@ -2,9 +2,19 @@ import hashlib
 import hmac
 import json
 
+import pytest
+from core.agent_registry import AGENT_REGISTRY
 from core.capsule_marketplace import CapsuleMarketplace
 from core.evidence_ledger import EvidenceLedgerSingleton
 from core.scorecard import ScorecardSingleton
+
+
+@pytest.fixture(autouse=True)
+def _restore_agent_registry():
+    """Snapshot AGENT_REGISTRY before each test and restore it after."""
+    snapshot = list(AGENT_REGISTRY)
+    yield
+    AGENT_REGISTRY[:] = snapshot
 
 
 def make_hmac_sig(key: bytes, manifest: dict, bundle: dict) -> str:

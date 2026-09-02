@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 420" width="1600" height="420" role="img" aria-label="Aegis Agent cinematic acts workflow strip">
+  <defs>
+    <linearGradient id="actsBg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#070b1f"/>
+      <stop offset="100%" stop-color="#0d1230"/>
+    </linearGradient>
+    <linearGradient id="actFlow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7c5cff"/>
+      <stop offset="20%" stop-color="#00e5ff"/>
+      <stop offset="40%" stop-color="#2bb3a3"/>
+      <stop offset="60%" stop-color="#f0a93b"/>
+      <stop offset="80%" stop-color="#e0533d"/>
+      <stop offset="100%" stop-color="#b0b8c6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1600" height="420" fill="url(#actsBg)"/>
+
+  <!-- Timeline rail -->
+  <rect x="80" y="205" width="1440" height="10" rx="5" fill="url(#actFlow)" opacity="0.85"/>
+
+  <!-- Act I -->
+  <g transform="translate(160, 210)">
+    <circle cx="0" cy="0" r="26" fill="#7c5cff" stroke="#1a2a5e" stroke-width="2"/>
+    <text x="0" y="6" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="18" font-weight="700" fill="#fff">I</text>
+    <text x="0" y="-45" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="13" font-weight="600" fill="#cfc6ff">Signal &amp; Strategy</text>
+    <text x="0" y="55" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="11" fill="#8aa0e0">capture · prioritize · envelope</text>
+  </g>
+
+  <!-- Act II -->
+  <g transform="translate(420, 210)">
+    <circle cx="0" cy="0" r="26" fill="#00e5ff" stroke="#1a2a5e" stroke-width="2"/>
+    <text x="0" y="6" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="18" font-weight="700" fill="#071a2e">II</text>
+    <text x="0" y="-45" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="13" font-weight="600" fill="#a0e8ff">Execution Fabric</text>
+    <text x="0" y="55" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="11" fill="#8aa0e0">resilient runtime · routing · enforcement</text>
+  </g>
+
+  <!-- Act III -->
+  <g transform="translate(680, 210)">
+    <circle cx="0" cy="0" r="26" fill="#2bb3a3" stroke="#1a2a5e" stroke-width="2"/>
+    <text x="0" y="6" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="18" font-weight="700" fill="#fff">III</text>
+    <text x="0" y="-45" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="13" font-weight="600" fill="#8fe0d2">Insight &amp; Reconciliation</text>
+    <text x="0" y="55" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="11" fill="#8aa0e0">telemetry · ledger · synthesis</text>
+  </g>
+
+  <!-- Act IV -->
+  <g transform="translate(940, 210)">
+    <circle cx="0" cy="0" r="26" fill="#f0a93b" stroke="#1a2a5e" stroke-width="2"/>
+    <text x="0" y="6" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="18" font-weight="700" fill="#2e1f08">IV</text>
+    <text x="0" y="-45" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="13" font-weight="600" fill="#f5c878">Governance &amp; Assent</text>
+    <text x="0" y="55" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="11" fill="#8aa0e0">authority · consent · post-conditions</text>
+  </g>
+
+  <!-- Act V -->
+  <g transform="translate(1200, 210)">
+    <circle cx="0" cy="0" r="26" fill="#e0533d" stroke="#1a2a5e" stroke-width="2"/>
+    <text x="0" y="6" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="18" font-weight="700" fill="#fff">V</text>
+    <text x="0" y="-45" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="13" font-weight="600" fill="#f08a76">Monetization &amp; Finance</text>
+    <text x="0" y="55" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="11" fill="#8aa0e0">token economy · invoicing · settlement</text>
+  </g>
+
+  <!-- Act VI -->
+  <g transform="translate(1440, 210)">
+    <circle cx="0" cy="0" r="26" fill="#b0b8c6" stroke="#1a2a5e" stroke-width="2"/>
+    <text x="0" y="6" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="18" font-weight="700" fill="#1a2030">VI</text>
+    <text x="0" y="-45" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="13" font-weight="600" fill="#d6dce8">Commitment &amp; Autonomy</text>
+    <text x="0" y="55" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="11" fill="#8aa0e0">planner · commitment engine · closure</text>
+  </g>
+
+  <!-- Header -->
+  <text x="800" y="60" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="20" font-weight="700" fill="#e6f0ff" letter-spacing="2">Cinematic Acts — Operational Journey</text>
+  <text x="800" y="84" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="12" fill="#8aa0e0">Six phases from strategic signal capture to autonomous commitment closure</text>
+</svg>

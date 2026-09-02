@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="640" height="640" role="img" aria-label="Bita — Insight Architect portrait">
+  <defs>
+    <radialGradient id="bitaBg" cx="50%" cy="45%" r="65%">
+      <stop offset="0%" stop-color="#1d1148"/>
+      <stop offset="100%" stop-color="#0a0a1f"/>
+    </radialGradient>
+    <linearGradient id="bitaAccent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a87cff"/>
+      <stop offset="100%" stop-color="#5a3dde"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="640" fill="url(#bitaBg)"/>
+  <rect width="640" height="640" fill="none" stroke="#7c5cff" stroke-width="3" opacity="0.6"/>
+  <!-- Portrait silhouette -->
+  <g transform="translate(320, 320)">
+    <!-- Shoulders -->
+    <path d="M-120 120 Q-120 50 -60 30 Q-30 20 0 20 Q30 20 60 30 Q120 50 120 120 Z" fill="#151535" stroke="url(#bitaAccent)" stroke-width="3"/>
+    <!-- Head -->
+    <circle cx="0" cy="-30" r="55" fill="#1a1442" stroke="url(#bitaAccent)" stroke-width="3"/>
+    <!-- Insight overlay: neural lattice -->
+    <g opacity="0.8">
+      <circle cx="-20" cy="-40" r="5" fill="#7c5cff"/>
+      <circle cx="15" cy="-25" r="4" fill="#cfc6ff"/>
+      <circle cx="-10" cy="-10" r="4" fill="#a87cff"/>
+      <circle cx="20" cy="-50" r="3" fill="#e6f0ff"/>
+      <line x1="-20" y1="-40" x2="15" y2="-25" stroke="#7c5cff" stroke-width="1.5" opacity="0.7"/>
+      <line x1="15" y1="-25" x2="-10" y2="-10" stroke="#7c5cff" stroke-width="1.5" opacity="0.7"/>
+      <line x1="-20" y1="-40" x2="20" y2="-50" stroke="#cfc6ff" stroke-width="1.5" opacity="0.5"/>
+      <line x1="-10" y1="-10" x2="20" y2="-50" stroke="#cfc6ff" stroke-width="1" opacity="0.4"/>
+    </g>
+    <!-- Eye glints -->
+    <circle cx="-12" cy="-32" r="2.5" fill="#00e5ff"/>
+    <circle cx="12" cy="-32" r="2.5" fill="#00e5ff"/>
+  </g>
+  <!-- Name plate -->
+  <rect x="120" y="500" width="400" height="100" rx="12" fill="#0d0d2e" stroke="#7c5cff" stroke-width="2" opacity="0.9"/>
+  <text x="320" y="545" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="26" font-weight="700" fill="#e6f0ff">Bita</text>
+  <text x="320" y="575" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="15" fill="#a87cff">Insight Architect</text>
+</svg>

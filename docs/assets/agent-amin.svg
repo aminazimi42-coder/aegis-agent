@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="640" height="640" role="img" aria-label="Amin — Finance and Executive Bridge portrait">
+  <defs>
+    <radialGradient id="aminBg" cx="50%" cy="45%" r="65%">
+      <stop offset="0%" stop-color="#2e2e36"/>
+      <stop offset="100%" stop-color="#16161c"/>
+    </radialGradient>
+    <linearGradient id="aminAccent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c8ccd6"/>
+      <stop offset="100%" stop-color="#868c9c"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="640" fill="url(#aminBg)"/>
+  <rect width="640" height="640" fill="none" stroke="#b0b8c6" stroke-width="3" opacity="0.6"/>
+  <g transform="translate(320, 320)">
+    <path d="M-120 120 Q-120 50 -60 30 Q-30 20 0 20 Q30 20 60 30 Q120 50 120 120 Z" fill="#22222a" stroke="url(#aminAccent)" stroke-width="3"/>
+    <circle cx="0" cy="-30" r="55" fill="#2a2a32" stroke="url(#aminAccent)" stroke-width="3"/>
+    <!-- Finance bridge motif -->
+    <g opacity="0.9">
+      <path d="M-30 -45 L30 -45 M-30 -45 Q-45 -45 -45 -35 L-45 -20 Q-45 -10 -30 -10 M30 -45 Q45 -45 45 -35 L45 -20 Q45 -10 30 -10" fill="none" stroke="#b0b8c6" stroke-width="2.5" opacity="0.7"/>
+      <line x1="-30" y1="-10" x2="30" y2="-10" stroke="#c8ccd6" stroke-width="2.5"/>
+      <circle cx="0" cy="-27" r="5" fill="#e6e8f0"/>
+    </g>
+    <circle cx="-12" cy="-32" r="2.5" fill="#e6e8f0"/>
+    <circle cx="12" cy="-32" r="2.5" fill="#e6e8f0"/>
+  </g>
+  <rect x="120" y="500" width="400" height="100" rx="12" fill="#1c1c22" stroke="#b0b8c6" stroke-width="2" opacity="0.9"/>
+  <text x="320" y="545" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="26" font-weight="700" fill="#e6f0ff">Amin</text>
+  <text x="320" y="575" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-size="15" fill="#b0b8c6">Finance &amp; Executive Bridge</text>
+</svg>
