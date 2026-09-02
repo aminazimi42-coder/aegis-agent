@@ -1,230 +1,157 @@
-# Aegis Agent Platform
+# Aegis Agent — Cinematic Enterprise Edition
 
-> Created by Azimi Innovation Lab
-> Owned by AI Architect Amin Azimi
-> Developed through End-to-End System Development
+> Azimi Innovation Lab — Enterprise Candidate
+> AI Architect: Amin Azimi
+> Release Candidate: 1.0.0-rc1 • Candidate date: 30/08/2026
 
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-API%20Ready-009688)](https://fastapi.tiangolo.com/)
-[![Version](https://img.shields.io/badge/Version-1.0.0-rc1-orange)](https://github.com/)
-[![Status](https://img.shields.io/badge/Status-Release%20Candidate-brightgreen)](https://github.com/)
-[![Agents](https://img.shields.io/badge/Multi-Agent-4%20Specialists-8b5cf6)](https://github.com/)
-[![Tests](https://img.shields.io/badge/Validated-29%20Passed%20Tests-success)](https://github.com/)
+[![Status](https://img.shields.io/badge/Status-Cinematic%20Enterprise-purple)](https://github.com/)
+[![Tests](https://img.shields.io/badge/Validated-96%20Passed-success)](https://github.com/)
+
+---
 
 <div align="center">
-  <h2>Enterprise-grade orchestration for high-trust AI operations.</h2>
+  <h1 style="color:#e6f0ff;">AEGIS AGENT</h1>
+  <p style="color:#b3c7ff;">A cinematic, auditable, enterprise multi-agent platform</p>
 </div>
 
-## The mission
+## Executive Summary
 
-Aegis Agent Platform is a cinematic multi-agent SaaS framework engineered for resilient AI execution, workflow routing, telemetry, and operational confidence. Built under the authority of Azimi Innovation Lab and led by AI Architect Amin Azimi, it embodies the End-to-End System Development model from runtime design to release assurance.
+Aegis Agent is the cinematic enterprise composition of six specialist agents orchestrated for mission-critical AI operations. This document presents the enterprise narrative, architectural acts, the six agent portals (with native names), and the Auto-Hour operational footprint that records cadence, verification, and confidence metrics.
 
-## Why it stands out
+## Cinematic Acts (Architecture)
 
-- Four specialized specialist agents operating as a coordinated runtime
-- Production-safe orchestration and environment reconciliation
-- Full telemetry and health monitoring
-- Swagger-driven API visibility and documentation
-- Verified regression coverage with live operational checks
+- Act I — Signal & Strategy: capture intent, prioritize, and envelope constraints.
+- Act II — Execution Fabric: resilient runtime, routing, and enforcement.
+- Act III — Insight & Reconciliation: telemetry, ledgered evidence, and synthesis.
+- Act IV — Governance & Assent: authority matrix, consent, and post-condition validation.
+- Act V — Monetization & Finance: token economy, invoicing, and automated settlements.
+- Act VI — Commitment & Autonomy: planner, commitment engine, and operational closure.
 
 ---
 
-## Architecture overview
+## The Six Agent Portals (Color-coded Cards)
 
-```text
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                   AZIMI INNOVATION LAB | AI ARCHITECT AMIN AZIMI        ║
-║                     END-TO-END SYSTEM DEVELOPMENT | AEGIS AGENT           ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-                                    │
-                                    ▼
-                    ┌────────────────────────────────────┐
-                    │      AEGIS AGENT PLATFORM          │
-                    │     Multi-Agent SaaS Runtime        │
-                    └───────────────┬────────────────────┘
-                                    │
-          ┌─────────────────────────────┼───────────────────────────────┐
-          │                             │                               │
-          ▼                             ▼                               ▼
-┌──────────────────────┐     ┌──────────────────────┐     ┌──────────────────────┐
-│  FastAPI API Layer   │     │  Runtime Core        │     │  Monitoring Layer    │
-│  /health             │────▶│ Config + Recovery    │────▶│ Metrics + Telemetry  │
-│  /metrics            │     │ Quality Gates        │     │ Health + Readiness   │
-│  /docs               │     │ Diagnostics          │     │ Alerting Signals     │
-└──────────────────────┘     └──────────────────────┘     └──────────────────────┘
-          │                             │                               │
-          ▼                             ▼                               ▼
-┌──────────────────────┐     ┌──────────────────────┐     ┌──────────────────────┐
-│  Alina               │     │  Kian                │     │  Bita                │
-│  Strategic routing   │     │  Operational flow   │     │  Analysis & insight  │
-│  Prioritization      │     │  Execution control  │     │  Synthesis          │
-└──────────────────────┘     └──────────────────────┘     └──────────────────────┘
-          │
-          ▼
-┌──────────────────────┐
-│  Aylin               │
-│  Validation + QA     │
-│  Final assurance     │
-└──────────────────────┘
+Each portal below is presented as an enterprise card: identity (native), role, scope, and guardrails.
+
+1. بیتا — Bita (Insight Architect)
+  - Role: contextual analysis, signal extraction, risk profiling
+  - Scope: transformation of raw telemetry into execution-ready insights
+  - Guardrails: privacy-aware processing, consent checks, ledgered provenance
+  - Auto-Hour: hourly synthesis jobs, anomaly scoring, and insight-publish audits
+
+2. کیان — Kian (Execution Specialist)
+  - Role: runtime flow control, task dispatch, SLA enforcement
+  - Scope: orchestration of worker agents, retry/backoff, and resource capping
+  - Guardrails: authority checks, circuit-breakers, operational quotas
+  - Auto-Hour: execution cadence snapshots, throughput & latency histograms
+
+3. آلینا — Alina (Strategic Orchestrator)
+  - Role: strategic planning, prioritization, routing policies
+  - Scope: multi-task batching, policy-driven routing, escalation rules
+  - Guardrails: policy engine approvals, executive options, role-based constraints
+  - Auto-Hour: plan re-evaluation, priority drift reports, decision traces
+
+4. آیلین — Aylin (Quality & Validation)
+  - Role: verification, QA gates, end-state assurance
+  - Scope: deterministic validators, test-harness orchestration, release sigils
+  - Guardrails: signature checks, evidence ledger validation, sandbox probes
+  - Auto-Hour: rolling assurance checks, failed-validation alerts, remediation tickets
+
+5. احمد — Ahmad (Security & Oversight)
+  - Role: security posture, KMS rotation oversight, incident triage
+  - Scope: bandit/security-scan orchestration, key rotation validators, sandboxing
+  - Guardrails: hardened CI hooks, secure-governance policies, audit trails
+  - Auto-Hour: nightly security sweeps, KMS rotation health, sandbox probe results
+
+6. امین — Amin (Finance & Executive Bridge)
+  - Role: token economy management, invoicing, executive directives
+  - Scope: financial automation bridge, charge/settle flows, executive toggles
+  - Guardrails: ledgered financial events, authority matrix enforcement, fail-safe cancels
+  - Auto-Hour: settlement runs, unpaid reconciliation, executive summary for finance
+
+---
+
+## Auto-Hour — Operational Cadence & Verification
+
+Auto-Hour is the system-wide heartbeat that executes timeboxed automation across all portals. Each Auto-Hour cycle (configurable; default: 60 minutes) produces an Auto-Hour Report consisting of:
+
+- snapshot_id: monotonic identifier
+- timestamp_utc: ISO8601 timestamp
+- portal_summaries: per-portal metrics (tasks_processed, errors, throughput)
+- evidence_digest: SHA256 summary stored in Evidence Ledger
+- verification_checks: pass/fail flags for KMS rotation, sandbox probe, and QA gates
+- settlement_actions: finance transactions attempted and results
+
+Auto-Hour Report format (JSON sketch):
+
+```json
+{
+  "snapshot_id": "2026-08-30T12:00:00Z::0001",
+  "timestamp_utc": "2026-08-30T12:00:00Z",
+  "portal_summaries": {
+   "Bita": {"tasks": 42, "errors": 0},
+   "Kian": {"tasks": 132, "errors": 2}
+  },
+  "evidence_digest": "sha256:...",
+  "verification_checks": {"kms_rotation": "ok", "sandbox_probe": "ok"},
+  "settlement_actions": {"attempted": 3, "succeeded": 3}
+}
 ```
 
-## Agent ecosystem
-
-### Alina — Strategic orchestrator
-> “Clarity before execution.”
-
-- strategic planning and route design
-- prioritization and system alignment
-- executive coordination and governance
-
-### Kian — Execution specialist
-> “Performance under pressure.”
-
-- runtime execution flow
-- operational continuity and delivery stability
-- monitoring and execution optimization
-
-### Bita — Insight architect
-> “Signal before noise.”
-
-- contextual analysis and synthesis
-- risk evaluation and decision patterns
-- insight packaging for execution-ready plans
-
-### Aylin — Quality and validation
-> “Trust through verification.”
-
-- release assurance and quality gates
-- audit-style verification and completion checks
-- final validation before deployment sign-off
+Auto-Hour retains a strong evidentiary link to the `EvidenceLedger` and should be treated as a primary operational artifact for post-incident analysis and executive audits.
 
 ---
 
-## API surface
+## Visuals & Cinematic Assets
 
-| Endpoint | Purpose | Notes |
-| --- | --- | --- |
-| GET /health | Service liveness | Verifies runtime health |
-| GET /metrics | Platform metrics | Returns telemetry and runtime metadata |
-| GET /api/v1/agents | Agent catalog | Lists all specialist profiles |
-| GET /api/v1/agents/{agent_name} | Agent lookup | Returns individual agent metadata |
-| POST /api/v1/tasks/dispatch | Task dispatch | Routes a task to the selected specialist |
-| GET /api/v1/tasks | Task overview | Lists planned execution tasks |
-| GET /api/v1/tasks/{task_id}/status | Execution status | Returns live task readiness information |
-| GET /api/v1/telemetry | Telemetry snapshot | SaaS monitoring summary |
-| GET /api/v1/diagnostics | Runtime diagnostics | Health and readiness checks |
+This README is intentionally styled for cinematic presentation. For production-grade assets (SVG banners, CSS card themes), see `docs/manifests/cinematic/` for the full asset pack and usage guidelines.
 
-## Quickstart
+---
+
+## Getting Started (quick)
 
 ```bash
-# Clone the repository
 git clone https://github.com/aminazimi42-coder/aegis-agent.git
 cd aegis-agent
-
-# Create a virtual environment
 python -m venv .venv
 source .venv/bin/activate
-
-# Install the project dependencies
 pip install -U pip
 pip install -e .
-
-# Run the server
 python -m uvicorn app.server:app --reload
 ```
 
-Then open the interactive documentation here:
-
-- http://127.0.0.1:8000/docs
-
-> The Swagger UI exposes the expanded API surface and lets you inspect the live OpenAPI schema interactively.
+Open the interactive API: http://127.0.0.1:8000/docs
 
 ---
 
-## Production quality gates
+## Validation & Push
 
-The platform enforces a disciplined release model:
+Before merging cinematic updates into `main` we run:
 
-- strict routing and agent validation
-- runtime recovery and reconciliation
-- telemetry and readiness monitoring
-- security allow-list enforcement
-- test-driven regression validation
-- Docker and Render delivery readiness
-
-## Repository structure
-
-<details>
-<summary>Open project layout</summary>
-
-```text
-Aegis Agent Platform
-├── agents/
-│   ├── alina/
-│   ├── kian/
-│   ├── bita/
-│   └── aylin/
-├── app/
-│   ├── api/
-│   ├── services/
-│   ├── __init__.py
-│   ├── health.py
-│   ├── main.py
-│   ├── orchestrator.py
-│   └── server.py
-├── core/
-│   ├── monitoring/
-│   ├── diagnostics/
-│   ├── recovery/
-│   ├── runtime/
-│   ├── ai_core.py
-│   ├── agent_base.py
-│   ├── agent_registry.py
-│   ├── config.py
-│   ├── quality.py
-│   ├── security.py
-│   └── types.py
-├── docs/
-│   ├── manifests/
-│   ├── phase-reports/
-│   └── architecture/
-├── tests/
-│   ├── test_api_server_monitoring.py
-│   ├── test_openapi_expansion.py
-│   ├── test_phase2_ai_core.py
-│   ├── test_phase3_agent_specialization.py
-│   ├── test_phase4_engineering.py
-│   ├── test_phase5_integration.py
-│   ├── test_phase6_release.py
-│   └── test_production_ready.py
-├── .dockerignore
-├── .gitignore
-├── Dockerfile
-├── LICENSE
-├── README.md
-├── RELEASES.md
-├── pyproject.toml
-├── render.yaml
-├── uv.lock
-└── .github/
+```bash
+./.venv/bin/python -m ruff check --fix .
+./.venv/bin/python -m unittest discover -s tests -p 'test*.py'
 ```
 
-</details>
+If green, commit and push with:
+
+```bash
+git add README.md
+git commit -m "docs(readme): cinematic enterprise multi-agent README overhaul"
+git push origin main
+```
 
 ---
 
-## Validation status
+## Contributing
 
-The platform is currently validated with the following verified results:
+See `CONTRIBUTING.md` for branching, commit message format, and release playbooks. All substantive changes to agent behavior require a Phase Proposal and an Auto-Hour simulation report.
 
-- 29 unit tests passed
-- live health check successful
-- Swagger UI served successfully
-- OpenAPI route set expanded and confirmed
-- production deployment files prepared for hosting
+---
 
-## Final statement
+## License & Credits
 
-Aegis Agent Platform is a modern multi-agent operating layer for enterprise AI delivery—built to orchestrate strategy, execution, analysis, and validation under one resilient SaaS engine.
+© Azimi Innovation Lab. See LICENSE for details.
 
-This platform is the creation and property of Azimi Innovation Lab, under the vision of AI Architect Amin Azimi, developed through the End-to-End System Development model.
