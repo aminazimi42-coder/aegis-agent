@@ -27,6 +27,18 @@ from core.task_store import TaskStore
 from core.tenant_memory import TenantMemoryVault
 from core.token_optimizer import TokenOptimizer
 from core.tool_tokens import ToolTokenManager
+from core.twin_interview import (
+    answer as twin_answer,
+)
+from core.twin_interview import (
+    commit as twin_commit,
+)
+from core.twin_interview import (
+    get_latest_profile as twin_get_latest,
+)
+from core.twin_interview import (
+    start_session as twin_start,
+)
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -62,6 +74,25 @@ class ToolExecutionRequest(BaseModel):
     required_capabilities: list[str] | None = None
     payload: dict[str, Any] | None = None
     token: str | None = None
+
+
+class TwinSessionStartRequest(BaseModel):
+    """Body for starting a cognitive-twin interview session."""
+
+    tenant_id: str
+
+
+class TwinAnswerRequest(BaseModel):
+    """Body for submitting a single interview answer."""
+
+    question_id: str
+    text: str
+
+
+class TwinCommitRequest(BaseModel):
+    """Body for committing a completed interview as a profile."""
+
+    consent: bool
 
 
 def create_app() -> FastAPI:
@@ -472,6 +503,38 @@ def create_app() -> FastAPI:
     @app.get("/api/v1/tasks/{task_id}/status", tags=["tasks"])
     def task_status_detail(task_id: str) -> dict[str, Any]:
         return task_status(task_id)
+
+    # --- Cognitive-twin interview (T03) ---
+
+    @app.post("/api/v1/twin/session/start", tags=["twin"], status_code=200)
+    def twin_session_start(request: TwinSessionStartRequest) -> dict[str, Any]:
+        return twin_start(request.tenant_id)
+
+    @app.post(
+        "/api/v1/twin/session/{session_id}/answer", tags=["twin"], status_code=200
+    )
+    def twin_session_answer(
+        session_id: str, request: TwinAnswerRequest
+    ) -> dict[str, Any]:
+        return twin_answer(session_id, request.question_id, request.text)
+
+    @app.post(
+        "/api/v1/twin/session/{session_id}/commit", tags=["twin"], status_code=200
+    )
+    def twin_session_commit(
+        session_id: str, request: TwinCommitRequest
+    ) -> dict[str, Any]:
+        return twin_commit(session_id, request.consent)
+
+    @app.get("/api/v1/twin/profile/{tenant_id}", tags=["twin"])
+    def twin_profile_get(tenant_id: str) -> Any:
+        profile = twin_get_latest(tenant_id)
+        if profile is None:
+            return JSONResponse(
+                status_code=404,
+                content={"detail": "no committed profile for this tenant"},
+            )
+        return profile
 
     return app
 

@@ -1,2 +1,59 @@
-NO ACTIVE DIRECTIVE
-Replace this entire file with the next T0N instruction. Never append. Never delete this file.
+T03 — Day-0 cognitive twin interview. Do ONLY this directive. Do not start T04. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 1fde4a5. Do not rewrite README. Do not add GitHub learning, billing, Auth/KMS productization, or desktop UI.
+
+Baseline on main (do not regress): six agents, version 1.0.0-rc1, SQLite ledger/task store, Echo LLM provider, cheap/expensive router, _directive.txt slot. pytest was 116 green after T02.
+
+GOAL: first-install interview that builds a versioned cognitive profile of the user. Offline. No paid LLM required. Echo provider may help phrase follow-ups but answers must be stored as structured fields, not as raw chat only.
+
+Implement:
+
+1) core/twin_schema.py
+- TwinProfile dataclass/dict: tenant_id, profile_id, version (int, start at 1), consent (bool), created_at, updated_at
+- layers: role, decision_style, tools, risk_posture, work_ethics, repositories (all str or list[str])
+- fingerprint = sha256 of canonical JSON of layers (not timestamps)
+
+2) core/twin_interview.py
+- Ordered question bank, exactly these ids in order:
+  q_role, q_decision_style, q_tools, q_risk, q_ethics, q_repos
+- start_session(tenant_id) -> session with session_id, next_question, answers={}
+- answer(session_id, question_id, text) -> next question or {complete: true}
+- Reject answer if question_id is not the current question
+- commit(session_id, consent: bool) -> TwinProfile only if complete and consent is True. If consent False raise PermissionError("consent required")
+- Persist sessions and committed profiles in SQLite via core.persistence (tables twin_sessions, twin_profiles). Isolate tests with AEGIS_DATA_DIR temp dir.
+
+3) API in app/server.py (same FastAPI app, prefix /api/v1/twin)
+- POST /api/v1/twin/session/start  body {tenant_id}
+- POST /api/v1/twin/session/{session_id}/answer  body {question_id, text}
+- POST /api/v1/twin/session/{session_id}/commit  body {consent: bool}
+- GET /api/v1/twin/profile/{tenant_id}  latest committed profile or 404
+Keep existing routes working.
+
+4) tests/test_t03_day0_cognitive_twin.py
+- start -> six answers in order -> commit consent=True creates profile version 1 with fingerprint
+- wrong question_id is rejected
+- commit consent=False raises PermissionError
+- new Twin interview store instance with same AEGIS_DATA_DIR sees the committed profile
+- FastAPI test client: start, answer all six, commit, GET profile 200
+- No live LLM/network
+
+Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
+
+1. ./.venv/bin/python -m ruff check --fix .
+2. ./.venv/bin/python -m ruff check .
+3. Proof:
+   ./.venv/bin/python -c "from core.twin_interview import start_session, answer, commit; import os,tempfile; os.environ['AEGIS_DATA_DIR']=tempfile.mkdtemp(); s=start_session('t1'); qid=s['next_question']['id'];
+ids=[]; 
+from core.twin_interview import QUESTIONS
+sid=s['session_id']
+state=s
+for q in QUESTIONS:
+    state=answer(sid,q['id'],'ans-'+q['id'])
+print(state.get('complete'), commit(sid, True)['version'])"
+   Required: True then 1
+4. ./.venv/bin/python -m pytest -q
+   Required: 0 failed, count > 116
+5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
+6. git commit -m "feat(t03): day0 twin interview, versioned profile, consent commit"
+7. git push origin main
+8. Print new SHA, pytest count, proof output.
+
+Stop after push. Do nothing else.
