@@ -1,40 +1,34 @@
-T35 — Unified twin API error body. Do ONLY this directive. Do not start T36. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend cd1fb63. Do not rewrite README. Source, comments, commit message: English only.
+T36 — README from the real repo. Do ONLY this directive. Do not start T37. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 1594428. Do not add payments or live LLM. Source and commit message: English only.
 
-Baseline on main (do not regress): T01–T34. HEAD cd1fb63. pytest was 313 green after T34.
+Baseline on main: T01–T35. HEAD 1594428. pytest was 320 green after T35.
 
-GOAL: every twin route that catches ValueError returns the same JSON shape without breaking existing 400 tests.
+GOAL: rewrite README.md so it matches files that exist today. No feature that is not in this tree.
 
 Implement:
 
-1) core/api_errors.py
-- KNOWN = map exact messages to codes:
-  "no consented profile" -> TWIN_NO_PROFILE
-  "action not found" -> TWIN_ACTION_MISSING
-  "not approved" -> TWIN_NOT_APPROVED
-  "samples dir not found" -> TWIN_SAMPLES_MISSING
-  "diff not found" -> TWIN_DIFF_MISSING
-  "receipts dir not found" -> TWIN_RECEIPTS_MISSING
-  "export not found" -> TWIN_EXPORT_MISSING
-  "transcript not found" -> TWIN_TRANSCRIPT_MISSING
-  "audio not found" -> TWIN_AUDIO_MISSING
-  "transcript sidecar not found" -> TWIN_SIDECAR_MISSING
-  "invalid duration" -> TWIN_BAD_DURATION
-- error_payload(exc: Exception, request_id: str | None = None) -> dict
-  detail MUST remain str(exc) unchanged
-  code from KNOWN or TWIN_ERROR
-  request_id = given or uuid4 hex
-- twin_value_error_response(exc) -> JSONResponse status 400 with that payload
+1) Inventory first (read-only):
+- tools/twin_cli.py subparsers
+- @app.post/@app.get paths under /api/v1/twin in app/server.py
+- core/twin_*.py module names
+- pytest count from running pytest -q is allowed
+- Keep existing hero svg if docs/assets/aegis-hero.svg exists
 
-2) app/server.py
-- Replace twin-route `JSONResponse(content={"detail": str(exc)}, status_code=400)` with twin_value_error_response(exc)
-- Do not change 200 paths
-- Do not change non-twin routes unless they already use the same one-liner
+2) Rewrite README.md in English, short:
+- Title + one sentence of what the tree actually is (FastAPI + local twin work products + human approve gate)
+- Quick start: venv, pytest, uvicorn if those files exist
+- Table of twin CLI commands that are in twin_cli.py (not invented)
+- Table of twin POST routes that are in server.py (not invented)
+- State EchoProvider / no paid LLM unless you find a real paid adapter wired as default
+- State SQLite under AEGIS_DATA_DIR
+- State free Render may cold-start
+- Do not claim a desktop UI unless you find one
+- Do not delete LICENSE badge if LICENSE exists
 
-3) tests/test_t35_api_errors.py
-- error_payload(ValueError("no consented profile"))["detail"] == "no consented profile"
-- same payload ["code"] == "TWIN_NO_PROFILE"
-- payload has request_id non-empty
-- FastAPI POST /api/v1/twin/resume/render without profile still 400 and detail contains consented
+3) tests/test_t36_readme.py
+- README.md exists
+- contains "EchoProvider" or "no paid LLM"
+- contains "brief-morning" and "email-send" and "audio-task"
+- contains "/api/v1/twin/resume/render"
 - No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -42,12 +36,11 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.api_errors import error_payload, twin_value_error_response; print(callable(error_payload))"
-   Required: True
+   ./.venv/bin/python -c "from pathlib import Path; t=Path('README.md').read_text(); print('brief-morning' in t and 'EchoProvider' in t or 'no paid LLM' in t.lower())"
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 313
+   Required: 0 failed, count > 320
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t35): unified twin API error payload with stable detail"
+6. git commit -m "docs(t36): README matches twin CLI routes and local constraints"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
