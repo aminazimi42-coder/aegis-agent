@@ -1,27 +1,33 @@
-T22 — Delegate pack for an assistant. Do ONLY this directive. Do not start T23. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend df91f6a. Do not rewrite README. Do not send email or add payments. Source, comments, commit message: English only.
+T23 — Searchable decision log. Do ONLY this directive. Do not start T24. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 954e3f7. Do not rewrite README. Do not send email or add payments. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T21. HEAD df91f6a. pytest was 223 green after T21.
+Baseline on main (do not regress): T01–T22. HEAD 954e3f7. pytest was 230 green after T22.
 
-GOAL: one page a principal can hand to an assistant today. Local markdown. No live LLM.
+GOAL: the principal records yes/no decisions with a reason and can list them later. Local SQLite. No live LLM.
 
 Implement:
 
-1) core/twin_delegate_pack.py
-- render_pack(tenant_id) -> dict {tenant_id, path}
-- Require consented profile or raise ValueError("no consented profile")
-- Sections: Meetings (calendar events up to 5), Follow-ups (email subjects up to 8), Pending actions (proposed/approved up to 8), Repos (from behavior or git payloads up to 5)
-- Write work_products/{tenant_id}/delegate_pack.md
-- Include a header "Do not send mail or move money without my written approval."
-- Overwrite on each call
+1) core/twin_decisions.py
+- record(tenant_id, title, decision, reason) -> dict
+  decision must be "yes" or "no" else ValueError("invalid decision")
+  Require consented profile or raise ValueError("no consented profile")
+  Persist table twin_decisions (id, tenant_id, title, decision, reason, created_at)
+- list_decisions(tenant_id, *, query="") -> list[dict]
+  if query, case-insensitive match on title or reason
+- Also write work_products/{tenant_id}/decision_log.md on each record (full list)
 
-2) API POST /api/v1/twin/delegate/render body {tenant_id}
-3) CLI delegate --tenant ID
+2) API
+- POST /api/v1/twin/decisions body {tenant_id, title, decision, reason}
+- GET  /api/v1/twin/decisions/{tenant_id}?q=
+3) CLI
+- decision-record --tenant ID --title T --decision yes|no --reason R
+- decision-list --tenant ID [--query Q]
 
-4) tests/test_t22_twin_delegate_pack.py
+4) tests/test_t23_twin_decisions.py
 - AEGIS_DATA_DIR temp
 - without profile ValueError
-- after T03 commit + ingest calendar Standup: file contains Standup and written approval
-- FastAPI 200
+- after T03 commit: record yes "Hire analyst" reason "bandwidth"; list contains Hire analyst; query bandwidth returns 1
+- invalid decision raises
+- FastAPI POST 200
 - No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -29,12 +35,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_delegate_pack import render_pack; print(callable(render_pack))"
-   Required: True
+   ./.venv/bin/python -c "from core.twin_decisions import record, list_decisions; print(callable(record), callable(list_decisions))"
+   Required: True True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 223
+   Required: 0 failed, count > 230
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t22): assistant delegate pack from meetings followups actions"
+6. git commit -m "feat(t23): searchable yes-no decision log"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

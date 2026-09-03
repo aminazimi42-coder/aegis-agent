@@ -49,6 +49,8 @@ from core.twin_behavior import (
     rebuild as twin_rebuild_behavior,
 )
 from core.twin_calendar import ingest_ics as twin_ingest_ics
+from core.twin_decisions import list_decisions as twin_list_decisions
+from core.twin_decisions import record as twin_record_decision
 from core.twin_delegate_pack import render_pack as twin_render_pack
 from core.twin_email_triage import triage as twin_email_triage
 from core.twin_events import ingest_event as twin_ingest_event
@@ -207,6 +209,15 @@ class TwinDelegatePackRequest(BaseModel):
     """Body for rendering the delegate pack."""
 
     tenant_id: str
+
+
+class TwinDecisionRecordRequest(BaseModel):
+    """Body for recording a yes/no decision."""
+
+    tenant_id: str
+    title: str
+    decision: str
+    reason: str
 
 
 def create_app() -> FastAPI:
@@ -824,6 +835,28 @@ def create_app() -> FastAPI:
                 status_code=400,
                 content={"detail": str(exc)},
             )
+
+    # --- Twin decisions (T23) ---
+
+    @app.post("/api/v1/twin/decisions", tags=["twin"], status_code=200)
+    def twin_decision_record(request: TwinDecisionRecordRequest) -> Any:
+        try:
+            return twin_record_decision(
+                request.tenant_id,
+                request.title,
+                request.decision,
+                request.reason,
+            )
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": str(exc)},
+            )
+
+    @app.get("/api/v1/twin/decisions/{tenant_id}", tags=["twin"])
+    def twin_decision_list(tenant_id: str, q: str = "") -> Any:
+        decisions = twin_list_decisions(tenant_id, query=q)
+        return {"decisions": decisions, "count": len(decisions)}
 
     # --- Twin proposed actions with human approval gate (T06) ---
 

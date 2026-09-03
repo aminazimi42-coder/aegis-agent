@@ -127,6 +127,19 @@ def _cmd_delegate(args: argparse.Namespace) -> dict[str, Any]:
     return render_pack(args.tenant)
 
 
+def _cmd_decision_record(args: argparse.Namespace) -> dict[str, Any]:
+    from core.twin_decisions import record
+
+    return record(args.tenant, args.title, args.decision, args.reason)
+
+
+def _cmd_decision_list(args: argparse.Namespace) -> dict[str, Any]:
+    from core.twin_decisions import list_decisions
+
+    decisions = list_decisions(args.tenant, query=args.query or "")
+    return {"decisions": decisions, "count": len(decisions)}
+
+
 # ---------------------------------------------------------------------------#
 # Argument parsing
 # ---------------------------------------------------------------------------#
@@ -212,6 +225,18 @@ def _build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("delegate", help="Render the delegate pack.")
     p.add_argument("--tenant", required=True)
 
+    # decision-record
+    p = sub.add_parser("decision-record", help="Record a yes/no decision.")
+    p.add_argument("--tenant", required=True)
+    p.add_argument("--title", required=True)
+    p.add_argument("--decision", required=True, choices=["yes", "no"])
+    p.add_argument("--reason", required=True)
+
+    # decision-list
+    p = sub.add_parser("decision-list", help="List recorded decisions.")
+    p.add_argument("--tenant", required=True)
+    p.add_argument("--query", default="")
+
     return parser
 
 
@@ -235,6 +260,8 @@ def main(argv: list[str] | None = None) -> int:
         "brief-meetings": _cmd_brief_meetings,
         "followups": _cmd_followups,
         "delegate": _cmd_delegate,
+        "decision-record": _cmd_decision_record,
+        "decision-list": _cmd_decision_list,
     }[args.command]
 
     try:
