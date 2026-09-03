@@ -53,6 +53,7 @@ from core.twin_email_triage import triage as twin_email_triage
 from core.twin_events import ingest_event as twin_ingest_event
 from core.twin_evolution import evolve as twin_evolve
 from core.twin_evolution import weekly_digest as twin_weekly_digest
+from core.twin_followups import render_followups as twin_render_followups
 from core.twin_git_observer import observe_repo as twin_observe_repo
 from core.twin_github_observer import observe_github as twin_observe_github
 from core.twin_interview import (
@@ -191,6 +192,12 @@ class TwinEmailTriageRequest(BaseModel):
 
 class TwinMeetingBriefsRequest(BaseModel):
     """Body for rendering per-meeting briefs."""
+
+    tenant_id: str
+
+
+class TwinFollowupsRequest(BaseModel):
+    """Body for rendering the follow-up list."""
 
     tenant_id: str
 
@@ -781,6 +788,18 @@ def create_app() -> FastAPI:
     def twin_meeting_briefs(request: TwinMeetingBriefsRequest) -> Any:
         try:
             return twin_render_meetings(request.tenant_id)
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": str(exc)},
+            )
+
+    # --- Twin follow-ups (T21) ---
+
+    @app.post("/api/v1/twin/followups/render", tags=["twin"], status_code=200)
+    def twin_followups_render(request: TwinFollowupsRequest) -> Any:
+        try:
+            return twin_render_followups(request.tenant_id)
         except ValueError as exc:
             return JSONResponse(
                 status_code=400,
