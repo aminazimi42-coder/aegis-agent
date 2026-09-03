@@ -20,6 +20,7 @@ from typing import Any
 from uuid import uuid4
 
 from core.twin_interview import get_latest_profile
+from core.twin_risk import classify
 
 # ---------------------------------------------------------------------------#
 # Helpers
@@ -120,14 +121,20 @@ def plan_goal(tenant_id: str, text: str) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
     plan_path = out_dir / "goal_plan.md"
 
+    # Attach risk_level to each step for the markdown and the return dict.
+    risk_levels: list[str] = []
     lines: list[str] = [f"# Goal Plan — {tenant_id}", ""]
     for i, title in enumerate(steps, start=1):
-        lines.append(f"{i}. {title}")
+        rl = classify(title)
+        risk_levels.append(rl)
+        lines.append(f"{i}. [{rl}] {title}")
     lines.append("")
+
     plan_path.write_text("\n".join(lines), encoding="utf-8")
 
     return {
         "tenant_id": tenant_id,
         "path": plan_path.as_posix(),
         "action_ids": action_ids,
+        "risk_levels": risk_levels,
     }

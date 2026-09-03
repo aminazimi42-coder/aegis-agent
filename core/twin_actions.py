@@ -16,6 +16,7 @@ from uuid import uuid4
 
 from core.persistence import get_connection
 from core.twin_interview import get_latest_profile
+from core.twin_risk import attach_risk
 
 # ---------------------------------------------------------------------------#
 # Constants
@@ -124,14 +125,16 @@ def propose_actions(tenant_id: str) -> list[dict[str, Any]]:
 
     # 1. Always propose review_digest.
     actions.append(
-        {
-            "action_id": f"act-{uuid4().hex[:12]}",
-            "tenant_id": tenant_id,
-            "kind": "review_digest",
-            "title": "Review weekly digest",
-            "status": "proposed",
-            "created_at": now,
-        }
+        attach_risk(
+            {
+                "action_id": f"act-{uuid4().hex[:12]}",
+                "tenant_id": tenant_id,
+                "kind": "review_digest",
+                "title": "Review weekly digest",
+                "status": "proposed",
+                "created_at": now,
+            }
+        )
     )
 
     # 2. Propose review_repos if the profile has repositories.
@@ -139,26 +142,30 @@ def propose_actions(tenant_id: str) -> list[dict[str, Any]]:
     repos = [r.strip() for r in repos_raw.split(",") if r.strip()] if repos_raw else []
     if repos:
         actions.append(
-            {
-                "action_id": f"act-{uuid4().hex[:12]}",
-                "tenant_id": tenant_id,
-                "kind": "review_repos",
-                "title": f"Review repositories: {', '.join(repos)}",
-                "status": "proposed",
-                "created_at": now,
-            }
+            attach_risk(
+                {
+                    "action_id": f"act-{uuid4().hex[:12]}",
+                    "tenant_id": tenant_id,
+                    "kind": "review_repos",
+                    "title": f"Review repositories: {', '.join(repos)}",
+                    "status": "proposed",
+                    "created_at": now,
+                }
+            )
         )
 
     # 3. Always propose prepare_weekly_plan.
     actions.append(
-        {
-            "action_id": f"act-{uuid4().hex[:12]}",
-            "tenant_id": tenant_id,
-            "kind": "prepare_weekly_plan",
-            "title": "Prepare weekly plan",
-            "status": "proposed",
-            "created_at": now,
-        }
+        attach_risk(
+            {
+                "action_id": f"act-{uuid4().hex[:12]}",
+                "tenant_id": tenant_id,
+                "kind": "prepare_weekly_plan",
+                "title": "Prepare weekly plan",
+                "status": "proposed",
+                "created_at": now,
+            }
+        )
     )
 
     # Persist.

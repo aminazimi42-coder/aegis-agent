@@ -1,28 +1,28 @@
-T42 — Goal text to an ordered plan of proposed actions. Do ONLY this directive. Do not start T43. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend e9ccc62. Do not rewrite README. Do not execute tools. Source, comments, commit message: English only.
+T43 — Action risk levels L0–L3. Do ONLY this directive. Do not start T44. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 0ae09df. Do not rewrite README. Do not send mail or take payment. Source, comments, commit message: English only.
 
-Baseline on main: T01–T41. HEAD e9ccc62. pytest was 352 green after T41.
+Baseline on main: T01–T42. HEAD 0ae09df. pytest was 357 green after T42.
 
-GOAL: one paragraph of intent becomes an ordered list of proposed actions. Human still approves. No side effects.
+GOAL: every proposed action carries a risk level. L0 observe may stay proposed. L2 write and L3 external still need human approve. No auto-execute.
 
 Implement:
 
-1) core/twin_goal_plan.py
-- plan_goal(tenant_id, text) -> {tenant_id, path, action_ids}
-- Require consented profile or raise ValueError("no consented profile")
-- Split text into 2–8 steps: numbered lines if present, else sentences
-- Each step calls existing propose_actions (or equivalent) so status is proposed
-- Write work_products/{tenant_id}/goal_plan.md with the ordered titles
-- Overwrite on each call
-- Do not approve, execute, email, or open sockets
+1) core/twin_risk.py
+- classify(title: str) -> "L0"|"L1"|"L2"|"L3"
+- L3 if title lower contains pay, wire, deploy, production, delete account
+- L2 if contains email, send, push, commit, write, invoice
+- L1 if contains draft, plan, brief, summary
+- else L0
+- attach_risk(action: dict) -> dict with risk_level set
 
-2) API POST /api/v1/twin/goal/plan body {tenant_id, text}
-3) CLI goal-plan --tenant ID --text TEXT
+2) When propose_actions or plan_goal creates an action, set risk_level on the stored row if the schema allows a column; otherwise put risk_level in the returned dict and in goal_plan.md
+- approve() unchanged: still required before email-send
+- Do not auto-approve L0 in this slice
 
-4) tests/test_t42_twin_goal_plan.py
-- AEGIS_DATA_DIR temp
-- without profile ValueError
-- after T03 commit plan_goal(..., "1. Review the PR\n2. Draft the reply") markdown contains Review and Draft
-- FastAPI 200
+3) tests/test_t43_twin_risk.py
+- classify("deploy to production") == "L3"
+- classify("draft the reply") == "L1"
+- after T03 commit propose or plan_goal result includes risk_level
+- FastAPI existing approve route still 200
 - No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -30,12 +30,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_goal_plan import plan_goal; print(callable(plan_goal))"
-   Required: True
+   ./.venv/bin/python -c "from core.twin_risk import classify; print(classify('deploy to production'))"
+   Required: L3
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 352
+   Required: 0 failed, count > 357
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t42): goal text to ordered proposed-action plan"
+6. git commit -m "feat(t43): classify proposed actions L0-L3"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
