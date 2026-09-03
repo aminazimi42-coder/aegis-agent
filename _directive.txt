@@ -1,29 +1,25 @@
-T37 — GitHub Actions CI on main. Do ONLY this directive. Do not start T38. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend d9f2950. Do not rewrite README again. Do not add paid SaaS secrets. Source and commit message: English only.
+T38 — README of shipped work T01–T37. Do ONLY this directive. Do not start T39. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 7547b45. Do not add new product features. Source and commit message: English only.
 
-Baseline on main: T01–T36. HEAD d9f2950. pytest was 325 green after T36.
+Baseline on main: HEAD 7547b45. pytest was 330 green after T37.
 
-GOAL: one workflow that on push and pull_request to main runs ruff then pytest on Python 3.11.
+GOAL: README.md must name what this tree actually ships after T01–T37. No new claims.
 
-Implement:
+Update README.md only plus tests/test_t38_readme_shipped.py. Keep existing CLI and route tables. Add short honest sections if missing:
 
-1) .github/workflows/ci.yml
-- name: CI
-- on push and pull_request branches [main]
-- job test, runs-on ubuntu-latest
-- checkout@v4
-- setup-python@v5 with python-version 3.11
-- pip install -e ".[dev]"
-- python -m ruff check .
-- python -m pytest -q
-- no network calls in the job besides pip and GitHub
+- Human approve gate: propose is not execute; email-send writes local outbox only
+- Safety: complete_safe / secret redaction / policy exist as local guards (name the real modules if present)
+- Errors: twin 400 body has detail + code + request_id (core/api_errors.py)
+- CI: .github/workflows/ci.yml runs ruff and pytest on Python 3.11 for push/PR to main
+- Persistence truth: SQLite under AEGIS_DATA_DIR; do not claim FinOps/approvals survive restart unless code does
+- Default LLM remains EchoProvider
+- Test suite exists; do not invent a count — write "run pytest -q" not a stale number
+- Do not claim desktop UI, paid LLM default, or live SMTP
 
-2) Do not delete existing release.yml or security.yml
-
-3) tests/test_t37_ci_workflow.py
-- Path(".github/workflows/ci.yml").is_file()
-- text contains "ruff check" and "pytest"
-- text contains "3.11"
-- text contains "pull_request"
+tests/test_t38_readme_shipped.py
+- README contains "EchoProvider"
+- README contains "outbox" and "approve"
+- README contains "ci.yml" or "GitHub Actions"
+- README contains "request_id" or "TWIN_NO_PROFILE" or "api_errors"
 - No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -31,12 +27,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; t=Path('.github/workflows/ci.yml').read_text(); print('pytest' in t and '3.11' in t)"
+   ./.venv/bin/python -c "from pathlib import Path; t=Path('README.md').read_text(); print('outbox' in t and 'EchoProvider' in t)"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 325
+   Required: 0 failed, count > 330
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "ci(t37): GitHub Actions ruff and pytest on main"
+6. git commit -m "docs(t38): README names shipped safety errors CI and approve-outbox"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

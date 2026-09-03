@@ -153,6 +153,50 @@ and `/api/v1/platform/status`.
 
 ---
 
+## Safety
+
+The twin **proposes** actions; a human must **approve** before anything executes.
+LLM completions go through `core/llm_safety.py`:
+
+- **`complete_safe`** — calls the provider inside a tool allow-list cage
+  (`ALLOWED_TOOLS`) and rejects responses that claim forbidden external
+  actions ("payment sent", "email sent", etc.).
+- **`redact_secrets`** — strips `AEGIS_LLM_API_KEY` and `AEGIS_GITHUB_TOKEN`
+  values from the prompt before it reaches the provider.
+- **`SecurityPolicy`** (`core/security.py`) — agent-name allow-list and
+  `validate_task` SQL-injection guard used by the orchestrator.
+
+These are local guards; they do not call any external service.
+
+## Errors
+
+Twin API routes return a unified 400 body on `ValueError`
+(`core/api_errors.py`):
+
+```json
+{"detail": "<message>", "code": "TWIN_NO_PROFILE", "request_id": "<uuid4 hex>"}
+```
+
+`code` is a stable string from a known-message map (`TWIN_NO_PROFILE`,
+`TWIN_ACTION_MISSING`, `TWIN_NOT_APPROVED`, …) or the fallback
+`TWIN_ERROR`.  `detail` is `str(exc)` unchanged.
+
+## CI
+
+`.github/workflows/ci.yml` runs **ruff check** and **pytest -q** on
+Python 3.11 for every push and pull request to `main`.
+
+## Persistence Truth
+
+State is **SQLite** under `AEGIS_DATA_DIR` (defaults to `data/`).
+On a free Render instance the service may cold-start and lose in-memory
+state; SQLite files persist only if the volume is mounted.  Do not assume
+FinOps records or approval state survive a restart unless the volume is
+persistent.  The default LLM is **EchoProvider** (offline echo); no paid
+LLM and no live SMTP are wired in this revision.
+
+---
+
 ## Tech Stack
 
 | Component | Technology |
