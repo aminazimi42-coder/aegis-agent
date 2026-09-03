@@ -223,6 +223,12 @@ def _cmd_schedule_tick(args: argparse.Namespace) -> dict[str, Any]:
     return {"due": due, "count": len(due)}
 
 
+def _cmd_goal_plan(args: argparse.Namespace) -> dict[str, Any]:
+    from core.twin_goal_plan import plan_goal
+
+    return plan_goal(args.tenant, args.text)
+
+
 # ---------------------------------------------------------------------------#
 # Argument parsing
 # ---------------------------------------------------------------------------#
@@ -393,6 +399,14 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--now", default=None, help="Override now ISO-8601 timestamp.")
 
+    # goal-plan
+    p = sub.add_parser(
+        "goal-plan",
+        help="Turn goal text into an ordered proposed-action plan (T42).",
+    )
+    p.add_argument("--tenant", required=True)
+    p.add_argument("--text", required=True)
+
     return parser
 
 
@@ -430,6 +444,7 @@ def main(argv: list[str] | None = None) -> int:
         "email-send": _cmd_email_send,
         "schedule": _cmd_schedule,
         "schedule-tick": _cmd_schedule_tick,
+        "goal-plan": _cmd_goal_plan,
     }[args.command]
 
     try:

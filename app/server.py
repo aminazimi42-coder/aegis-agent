@@ -65,6 +65,7 @@ from core.twin_focus_block import create_block as twin_create_focus_block
 from core.twin_followups import render_followups as twin_render_followups
 from core.twin_git_observer import observe_repo as twin_observe_repo
 from core.twin_github_observer import observe_github as twin_observe_github
+from core.twin_goal_plan import plan_goal as twin_plan_goal
 from core.twin_interview import (
     answer as twin_answer,
 )
@@ -329,6 +330,13 @@ class TwinScheduleTickRequest(BaseModel):
     """Body for ticking the scheduler — marking due jobs."""
 
     now: str | None = None
+
+
+class TwinGoalPlanRequest(BaseModel):
+    """Body for turning goal text into an ordered proposed-action plan (T42)."""
+
+    tenant_id: str
+    text: str
 
 
 def create_app() -> FastAPI:
@@ -1139,6 +1147,15 @@ def create_app() -> FastAPI:
     def twin_schedule_tick_endpoint(request: TwinScheduleTickRequest) -> Any:
         due = twin_tick(request.now)
         return {"due": due, "count": len(due)}
+
+    # --- Goal text to ordered proposed-action plan (T42) --- #
+
+    @app.post("/api/v1/twin/goal/plan", tags=["twin"], status_code=200)
+    def twin_goal_plan(request: TwinGoalPlanRequest) -> Any:
+        try:
+            return twin_plan_goal(request.tenant_id, request.text)
+        except ValueError as exc:
+            return twin_value_error_response(exc)
 
     return app
 

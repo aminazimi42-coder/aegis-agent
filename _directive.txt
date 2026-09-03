@@ -1,29 +1,27 @@
-T41 — Durable commitment scheduler. Do ONLY this directive. Do not start T42. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend f40edaf. Do not rewrite README. Do not send email or open sockets. Source, comments, commit message: English only.
+T42 — Goal text to an ordered plan of proposed actions. Do ONLY this directive. Do not start T43. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend e9ccc62. Do not rewrite README. Do not execute tools. Source, comments, commit message: English only.
 
-Baseline on main: T01–T40. HEAD f40edaf. pytest was 346 green after T40.
+Baseline on main: T01–T41. HEAD e9ccc62. pytest was 352 green after T41.
 
-GOAL: a Monday-10:00 commitment survives process restart. Tick only marks due rows; it does not execute side effects.
+GOAL: one paragraph of intent becomes an ordered list of proposed actions. Human still approves. No side effects.
 
 Implement:
 
-1) core/twin_scheduler.py plus tables in core/twin_persist.py
-- jobs(id TEXT PK, tenant_id TEXT, title TEXT, due_at TEXT ISO-8601, timezone TEXT, status TEXT, created_at TEXT)
-- schedule(tenant_id, title, due_at, timezone="UTC") -> {id, tenant_id, due_at, status="scheduled"}
+1) core/twin_goal_plan.py
+- plan_goal(tenant_id, text) -> {tenant_id, path, action_ids}
 - Require consented profile or raise ValueError("no consented profile")
-- list_jobs(tenant_id, status=None)
-- tick(now=None) -> list of jobs whose due_at <= now and status==scheduled; set those to status="due"
-- Do not call email-send, tools, or HTTP
+- Split text into 2–8 steps: numbered lines if present, else sentences
+- Each step calls existing propose_actions (or equivalent) so status is proposed
+- Write work_products/{tenant_id}/goal_plan.md with the ordered titles
+- Overwrite on each call
+- Do not approve, execute, email, or open sockets
 
-2) API POST /api/v1/twin/schedule body {tenant_id, title, due_at, timezone?}
-   POST /api/v1/twin/schedule/tick body {now?}
-3) CLI schedule --tenant --title --due
-   CLI schedule-tick [--now]
+2) API POST /api/v1/twin/goal/plan body {tenant_id, text}
+3) CLI goal-plan --tenant ID --text TEXT
 
-4) tests/test_t41_twin_scheduler.py
+4) tests/test_t42_twin_goal_plan.py
 - AEGIS_DATA_DIR temp
 - without profile ValueError
-- schedule then new connection list_jobs still sees the row
-- tick with now after due_at flips status to due
+- after T03 commit plan_goal(..., "1. Review the PR\n2. Draft the reply") markdown contains Review and Draft
 - FastAPI 200
 - No live network
 
@@ -32,12 +30,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_scheduler import schedule, tick; print(callable(schedule))"
+   ./.venv/bin/python -c "from core.twin_goal_plan import plan_goal; print(callable(plan_goal))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 346
+   Required: 0 failed, count > 352
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t41): durable commitment scheduler in sqlite"
+6. git commit -m "feat(t42): goal text to ordered proposed-action plan"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
