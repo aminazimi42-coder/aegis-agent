@@ -27,6 +27,21 @@ from core.task_store import TaskStore
 from core.tenant_memory import TenantMemoryVault
 from core.token_optimizer import TokenOptimizer
 from core.tool_tokens import ToolTokenManager
+from core.twin_actions import (
+    approve as twin_action_approve,
+)
+from core.twin_actions import (
+    execute as twin_action_execute,
+)
+from core.twin_actions import (
+    list_actions as twin_action_list,
+)
+from core.twin_actions import (
+    propose_actions as twin_action_propose,
+)
+from core.twin_actions import (
+    reject as twin_action_reject,
+)
 from core.twin_events import ingest_event as twin_ingest_event
 from core.twin_evolution import evolve as twin_evolve
 from core.twin_evolution import weekly_digest as twin_weekly_digest
@@ -114,6 +129,12 @@ class TwinObserveGitRequest(BaseModel):
     tenant_id: str
     repo_path: str
     max_commits: int = 20
+
+
+class TwinActionProposeRequest(BaseModel):
+    """Body for proposing twin actions from the profile + digest."""
+
+    tenant_id: str
 
 
 def create_app() -> FastAPI:
@@ -601,6 +622,67 @@ def create_app() -> FastAPI:
                 status_code=400,
                 content={"detail": str(exc)},
             )
+
+    # --- Twin proposed actions with human approval gate (T06) ---
+
+    @app.post("/api/v1/twin/actions/propose", tags=["twin"], status_code=200)
+    def twin_actions_propose(
+        request: TwinActionProposeRequest,
+    ) -> Any:
+        try:
+            actions = twin_action_propose(request.tenant_id)
+            return {"actions": actions, "count": len(actions)}
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": str(exc)},
+            )
+
+    @app.post(
+        "/api/v1/twin/actions/{action_id}/approve", tags=["twin"], status_code=200
+    )
+    def twin_actions_approve(action_id: str) -> Any:
+        try:
+            return twin_action_approve(action_id)
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=404,
+                content={"detail": str(exc)},
+            )
+
+    @app.post(
+        "/api/v1/twin/actions/{action_id}/reject", tags=["twin"], status_code=200
+    )
+    def twin_actions_reject(action_id: str) -> Any:
+        try:
+            return twin_action_reject(action_id)
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=404,
+                content={"detail": str(exc)},
+            )
+
+    @app.post(
+        "/api/v1/twin/actions/{action_id}/execute", tags=["twin"], status_code=200
+    )
+    def twin_actions_execute(action_id: str) -> Any:
+        try:
+            return twin_action_execute(action_id)
+        except PermissionError as exc:
+            return JSONResponse(
+                status_code=403,
+                content={"detail": str(exc)},
+            )
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=404,
+                content={"detail": str(exc)},
+            )
+
+    @app.get("/api/v1/twin/actions/{tenant_id}", tags=["twin"])
+    def twin_actions_list(tenant_id: str) -> Any:
+        actions = twin_action_list(tenant_id)
+        return {"actions": actions, "count": len(actions)}
 
     return app
 
