@@ -1,34 +1,37 @@
-T50 — Home lists real work-product files. Do ONLY this directive. Do not start T51. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 4623d83. Do not rewrite README. Source, comments, commit message: English only.
+T51 — Golden busy-day path. Do ONLY this directive. Do not start T52. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 122028c. Do not rewrite README. Do not open SMTP. Source, comments, commit message: English only.
 
-Baseline on main: T01–T49. HEAD 4623d83. pytest was 410 green after T49.
+Baseline on main: T01–T50. HEAD 122028c. pytest was 414 green after T50.
 
-GOAL: home.md is composed from files that exist on disk for that tenant, not invented names.
+GOAL: one test walks event → brief → propose → approve → local outbox. No new product column.
 
 Implement:
 
-1) core/twin_home.py render_home
-- After existing Pending / Due / Brief sections, add a Files section
-- List filenames actually present under work_products/{tenant_id}/ (files only, sorted)
-- If the directory is empty besides home.md itself, write "(none)"
-- Do not invent brief or memo names that are absent
-
-2) tests/test_t50_twin_home_files.py
+1) tests/test_t51_golden_busy_day.py
 - AEGIS_DATA_DIR temp
-- after T03 commit, write a marker file work_products/{id}/marker_t50.md then render_home; home.md contains marker_t50.md
-- FastAPI home still 200
+- T03 start/answer/commit for tenant t51
+- ingest one calendar or git event if those helpers exist; otherwise skip ingest
+- render_brief writes morning_brief.md
+- propose_actions returns at least one action
+- pick one action, set title so classify is L2 (contains "email"), approve it
+- give payload {"body": "Busy day pack"} if the store accepts payload
+- send_approved writes an .eml under work_products/t51/outbox
+- assert .eml exists and contains "Busy day pack" or the title
+- FastAPI health or home 200 optional
 - No live network
+
+2) Do not add new core modules unless a one-line helper is required to set payload on an existing action.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_home import render_home; print(callable(render_home))"
+   ./.venv/bin/python -c "from pathlib import Path; print(Path('tests/test_t51_golden_busy_day.py').is_file())"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 410
+   Required: 0 failed, count > 414
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t50): home lists real work-product filenames"
+6. git commit -m "test(t51): golden busy-day brief propose approve outbox"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
