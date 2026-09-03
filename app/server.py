@@ -66,6 +66,7 @@ from core.twin_followups import render_followups as twin_render_followups
 from core.twin_git_observer import observe_repo as twin_observe_repo
 from core.twin_github_observer import observe_github as twin_observe_github
 from core.twin_goal_plan import plan_goal as twin_plan_goal
+from core.twin_home import render_home as twin_render_home
 from core.twin_interview import (
     answer as twin_answer,
 )
@@ -352,6 +353,12 @@ class TwinMemoryForgetRequest(BaseModel):
 
     tenant_id: str
     field: str
+
+
+class TwinHomeRequest(BaseModel):
+    """Body for rendering the executive home page (T45)."""
+
+    tenant_id: str
 
 
 def create_app() -> FastAPI:
@@ -1185,6 +1192,15 @@ def create_app() -> FastAPI:
     def twin_memory_forget_endpoint(request: TwinMemoryForgetRequest) -> Any:
         try:
             return twin_memory_forget(request.tenant_id, request.field)
+        except ValueError as exc:
+            return twin_value_error_response(exc)
+
+    # --- Executive home page (T45) --- #
+
+    @app.post("/api/v1/twin/home", tags=["twin"], status_code=200)
+    def twin_home_endpoint(request: TwinHomeRequest) -> Any:
+        try:
+            return twin_render_home(request.tenant_id)
         except ValueError as exc:
             return twin_value_error_response(exc)
 

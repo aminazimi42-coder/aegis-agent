@@ -35,6 +35,13 @@ def _memory_forget(tenant_id: str, field: str) -> dict[str, Any]:
     return forget(tenant_id, field)
 
 
+def _home(tenant_id: str) -> dict[str, Any]:
+    """Run the T45 executive home page flow."""
+    from core.twin_home import render_home
+
+    return render_home(tenant_id)
+
+
 def main(argv: list[str] | None = None) -> int:
     """Entry point for the Aegis CLI."""
     parser = argparse.ArgumentParser(
@@ -70,6 +77,13 @@ def main(argv: list[str] | None = None) -> int:
     memory_forget_parser.add_argument("--tenant", required=True, help="Tenant identifier.")
     memory_forget_parser.add_argument("--field", required=True, help="Field name to forget.")
 
+    # home
+    home_parser = sub.add_parser(
+        "home",
+        help="Render the executive home page (pending approvals, due jobs, brief).",
+    )
+    home_parser.add_argument("--tenant", required=True, help="Tenant identifier.")
+
     args = parser.parse_args(argv)
 
     if args.command == "audio-task":
@@ -91,6 +105,14 @@ def main(argv: list[str] | None = None) -> int:
     elif args.command == "memory-forget":
         try:
             result = _memory_forget(args.tenant, args.field)
+            print(json.dumps(result, indent=2))
+            return 0
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+    elif args.command == "home":
+        try:
+            result = _home(args.tenant)
             print(json.dumps(result, indent=2))
             return 0
         except ValueError as exc:

@@ -1,31 +1,28 @@
-T44 — Memory control list and forget. Do ONLY this directive. Do not start T45. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 509f284. Do not rewrite README. Do not call a cloud model. Source, comments, commit message: English only.
+T45 — Executive home page from real local state. Do ONLY this directive. Do not start T46. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 0525549. Do not rewrite README. Do not call a cloud model. Source, comments, commit message: English only.
 
-Baseline on main: T01–T43. HEAD 509f284. pytest was 377 green after T43.
+Baseline on main: T01–T44. HEAD 0525549. pytest was 384 green after T44.
 
-GOAL: the principal can see what the twin stored and drop one field. No encryption product in this slice.
+GOAL: one home.md a busy principal can read in seconds: pending approvals, due jobs, pointer to morning brief if present.
 
 Implement:
 
-1) core/twin_memory_control.py
-- show(tenant_id) -> {tenant_id, path, fields}
+1) core/twin_home.py
+- render_home(tenant_id) -> {tenant_id, path}
 - Require consented profile or raise ValueError("no consented profile")
-- Write work_products/{tenant_id}/memory.md listing profile keys that exist (name, role, and any other keys present). Skip secrets.
-- forget(tenant_id, field) -> same shape
-- Persist forgotten field names in SQLite table forgotten(tenant_id, field, at) via twin_persist
-- show must omit forgotten fields
-- Overwrite memory.md on each show/forget
+- Sections:
+  Pending approvals — from twin_persist.list_approvals if status pending, else "(none)"
+  Due commitments — from twin_scheduler.list_jobs(tenant_id, status="due") if that signature exists, else list and filter status==due
+  Brief — if work_products/{tenant_id}/morning_brief.md exists, mention the filename; do not regenerate the brief
+- Write work_products/{tenant_id}/home.md overwrite
 
-2) API POST /api/v1/twin/memory/show body {tenant_id}
-   POST /api/v1/twin/memory/forget body {tenant_id, field}
-3) CLI memory-show --tenant
-   CLI memory-forget --tenant --field
+2) API POST /api/v1/twin/home body {tenant_id}
+3) CLI home --tenant ID
 
-4) tests/test_t44_twin_memory_control.py
+4) tests/test_t45_twin_home.py
 - AEGIS_DATA_DIR temp
 - without profile ValueError
-- after T03 commit show markdown contains tenant id or a profile key
-- forget("role") then show markdown does not contain a Role heading
-- FastAPI 200 on show
+- after T03 commit render_home writes home.md containing "Pending" or "Due"
+- FastAPI 200
 - No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -33,12 +30,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_memory_control import show, forget; print(callable(show))"
+   ./.venv/bin/python -c "from core.twin_home import render_home; print(callable(render_home))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 377
+   Required: 0 failed, count > 384
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t44): memory control list and forget field"
+6. git commit -m "feat(t45): executive home from approvals and due jobs"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
