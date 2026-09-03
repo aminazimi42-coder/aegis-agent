@@ -48,6 +48,7 @@ def _render_markdown(
     pending: list[dict[str, Any]],
     due: list[dict[str, Any]],
     brief_name: str | None,
+    file_names: list[str],
 ) -> str:
     """Render the home page markdown body."""
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -85,6 +86,15 @@ def _render_markdown(
         lines.append("(none)")
     lines.append("")
 
+    lines.append("## Files")
+    lines.append("")
+    if file_names:
+        for name in file_names:
+            lines.append(f"- {name}")
+    else:
+        lines.append("(none)")
+    lines.append("")
+
     return "\n".join(lines)
 
 
@@ -103,12 +113,20 @@ def render_home(tenant_id: str) -> dict[str, Any]:
     brief_path = _work_products_dir(tenant_id) / "morning_brief.md"
     brief_name = "morning_brief.md" if brief_path.exists() else None
 
-    content = _render_markdown(tenant_id, pending, due, brief_name)
+    out_dir = _work_products_dir(tenant_id)
+    file_names: list[str] = []
+    if out_dir.is_dir():
+        file_names = sorted(
+            f.name
+            for f in out_dir.iterdir()
+            if f.is_file() and f.name != "home.md"
+        )
+
+    content = _render_markdown(tenant_id, pending, due, brief_name, file_names)
     content = apply_style(tenant_id, content)
 
-    out_dir = _work_products_dir(tenant_id)
-    out_dir.mkdir(parents=True, exist_ok=True)
     home_path = out_dir / "home.md"
+    out_dir.mkdir(parents=True, exist_ok=True)
     home_path.write_text(content, encoding="utf-8")
 
     return {
