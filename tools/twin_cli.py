@@ -169,6 +169,12 @@ def _cmd_focus_block(args: argparse.Namespace) -> dict[str, Any]:
     )
 
 
+def _cmd_travel(args: argparse.Namespace) -> dict[str, Any]:
+    from core.twin_travel_pack import render_pack
+
+    return render_pack(args.tenant, docs_dir=args.dir or "")
+
+
 # ---------------------------------------------------------------------------#
 # Argument parsing
 # ---------------------------------------------------------------------------#
@@ -288,6 +294,11 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--duration", type=int, default=90)
     p.add_argument("--title", default="Focus")
 
+    # travel
+    p = sub.add_parser("travel", help="Render a one-page travel pack from calendar + docs.")
+    p.add_argument("--tenant", required=True)
+    p.add_argument("--dir", default="")
+
     return parser
 
 
@@ -317,6 +328,7 @@ def main(argv: list[str] | None = None) -> int:
         "pr-review": _cmd_pr_review,
         "expenses": _cmd_expenses,
         "focus-block": _cmd_focus_block,
+        "travel": _cmd_travel,
     }[args.command]
 
     try:

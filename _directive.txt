@@ -1,27 +1,26 @@
-T27 — Focus block hold. Do ONLY this directive. Do not start T28. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 3a38c57. Do not rewrite README. Do not talk to Google Calendar. Source, comments, commit message: English only.
+T28 — Travel pack from calendar + docs folder. Do ONLY this directive. Do not start T29. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 3cef063. Do not rewrite README. Do not book flights or pay. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T26. HEAD 3a38c57. pytest was 261 green after T26.
+Baseline on main (do not regress): T01–T27. HEAD 3cef063. pytest was 266 green after T27.
 
-GOAL: create a local focus-block hold the principal can drop into a calendar. No cloud calendar.
+GOAL: one page for an upcoming trip: calendar meetings whose summary contains flight/hotel/travel plus files from a local docs folder. No live LLM.
 
 Implement:
 
-1) core/twin_focus_block.py
-- create_block(tenant_id, start, duration_min=90, title="Focus") -> dict {tenant_id, path_md, path_ics}
+1) core/twin_travel_pack.py
+- render_pack(tenant_id, docs_dir="") -> dict {tenant_id, path}
 - Require consented profile or raise ValueError("no consented profile")
-- duration_min must be int >= 15 else ValueError("invalid duration")
-- Write work_products/{tenant_id}/focus_block.md with title, start, duration
-- Write work_products/{tenant_id}/focus_block.ics with one VEVENT SUMMARY and DTSTART using the given start string as-is
+- Meetings: twin_events source=calendar kind=meeting whose summary lower contains flight or hotel or travel
+- If docs_dir is a directory, list *.pdf *.txt *.md names (not contents)
+- Write work_products/{tenant_id}/travel_pack.md with Itinerary and Documents and line "Do not book or pay without written approval."
 - Overwrite on each call
 
-2) API POST /api/v1/twin/focus/block body {tenant_id, start, duration_min, title}
-   duration_min default 90, title default Focus
-3) CLI focus-block --tenant ID --start S [--duration 90] [--title Focus]
+2) API POST /api/v1/twin/travel/render body {tenant_id, docs_dir}
+3) CLI travel --tenant ID [--dir PATH]
 
-4) tests/test_t27_twin_focus_block.py
+4) tests/test_t28_twin_travel_pack.py
 - AEGIS_DATA_DIR temp
 - without profile ValueError
-- after T03 commit create_block start=20260903T090000Z: both files exist, ics contains VEVENT and 20260903T090000Z
+- after T03 commit + ingest calendar "Flight to Berlin": file contains Flight to Berlin and written approval
 - FastAPI 200
 - No live network
 
@@ -30,12 +29,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_focus_block import create_block; print(callable(create_block))"
+   ./.venv/bin/python -c "from core.twin_travel_pack import render_pack; print(callable(render_pack))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 261
+   Required: 0 failed, count > 266
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t27): local focus-block hold as markdown and ics"
+6. git commit -m "feat(t28): travel pack from calendar events and local docs"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

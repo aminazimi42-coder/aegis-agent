@@ -77,6 +77,7 @@ from core.twin_meeting_brief import render_meetings as twin_render_meetings
 from core.twin_morning_brief import render_brief as twin_render_brief
 from core.twin_pr_review import review_diff as twin_review_diff
 from core.twin_style_lock import lock_style as twin_lock_style
+from core.twin_travel_pack import render_pack as twin_render_travel_pack
 from core.twin_work_products import render as twin_render_work_products
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -252,6 +253,13 @@ class TwinFocusBlockRequest(BaseModel):
     start: str
     duration_min: int = 90
     title: str = "Focus"
+
+
+class TwinTravelPackRequest(BaseModel):
+    """Body for rendering a one-page travel pack from calendar + docs."""
+
+    tenant_id: str
+    docs_dir: str = ""
 
 
 def create_app() -> FastAPI:
@@ -939,6 +947,18 @@ def create_app() -> FastAPI:
                 duration_min=request.duration_min,
                 title=request.title,
             )
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": str(exc)},
+            )
+
+    # --- Twin travel pack (T28) ---
+
+    @app.post("/api/v1/twin/travel/render", tags=["twin"], status_code=200)
+    def twin_travel_pack_render(request: TwinTravelPackRequest) -> Any:
+        try:
+            return twin_render_travel_pack(request.tenant_id, request.docs_dir)
         except ValueError as exc:
             return JSONResponse(
                 status_code=400,
