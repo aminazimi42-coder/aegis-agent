@@ -1,24 +1,22 @@
-T47 — Apply style lock to brief and home renders. Do ONLY this directive. Do not start T48. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 5f98c0e. Do not rewrite README. Source, comments, commit message: English only.
+T48 — Resume includes profile name. Do ONLY this directive. Do not start T49. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 6a1ec95. Do not rewrite README. Source, comments, commit message: English only.
 
-Baseline on main: T01–T46. HEAD 5f98c0e. pytest was 395 green after T46.
+Baseline on main: T01–T47. HEAD 6a1ec95. pytest was 399 green after T47.
 
-GOAL: if style_lock.md exists, morning brief and home mention Voice. If it does not exist, renders stay unchanged.
+GOAL: resume.md shows Name when the consented profile has a name field. Role stays. Missing name is skipped, not invented.
 
 Implement:
 
-1) core/twin_style_lock.py
-- apply_style(tenant_id, markdown: str) -> str
-- If work_products/{tenant_id}/style_lock.md missing, return markdown unchanged
-- Else insert a line "Voice: " plus up to three words found after "Top words" or listed in that file, then the original markdown
-- Do not require samples_dir on apply
+1) core/twin_resume_pack.py
+- Read name = profile.get("name") or ""
+- If name is non-empty, markdown contains "**Name:**" and that value
+- Keep **Role:** when role exists
+- Do not invent a name
 
-2) core/twin_morning_brief.py and core/twin_home.py
-- After building markdown, pass it through apply_style before write
-
-3) tests/test_t47_style_apply.py
+2) tests/test_t48_resume_name.py
 - AEGIS_DATA_DIR temp
-- apply_style without a lock file returns the input
-- after T03 commit and lock_style on a temp dir with one .txt containing "clarity precision cadence extra", render_brief or render_home file contains "Voice:"
+- after T03 commit, if profile has no name, render still writes the file
+- after T03 commit, if tests can set profile name via existing interview helpers, resume contains that name; if no helper exists, at least render_resume accepts profile name when present in stored profile JSON
+- FastAPI resume route still 200
 - No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -26,12 +24,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_style_lock import apply_style; print(callable(apply_style))"
+   ./.venv/bin/python -c "from core.twin_resume_pack import render_resume; print(callable(render_resume))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 395
+   Required: 0 failed, count > 399
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t47): apply style lock to brief and home"
+6. git commit -m "feat(t48): resume pack prints profile name when present"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

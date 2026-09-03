@@ -61,6 +61,7 @@ def _build_resume(
     role: str,
     work_products: list[str],
     decisions_count: int | None,
+    name: str = "",
 ) -> str:
     """Render the ``resume.md`` content."""
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -72,6 +73,9 @@ def _build_resume(
     ]
 
     # --- Name / role section (only fields that exist) ---
+    if name:
+        lines.append(f"**Name:** {name}")
+        lines.append("")
     if role:
         lines.append(f"**Role:** {role}")
         lines.append("")
@@ -116,10 +120,11 @@ def render_resume(tenant_id: str) -> dict[str, Any]:
         raise ValueError("no consented profile")
 
     role: str = profile.get("role") or ""
+    name: str = profile.get("name") or ""
     work_products = _collect_work_product_filenames(tenant_id)
     decisions_count = _decisions_count(tenant_id)
 
-    content = _build_resume(tenant_id, role, work_products, decisions_count)
+    content = _build_resume(tenant_id, role, work_products, decisions_count, name)
 
     out_dir = _work_products_dir(tenant_id)
     out_dir.mkdir(parents=True, exist_ok=True)
