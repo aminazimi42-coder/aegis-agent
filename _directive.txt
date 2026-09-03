@@ -1,35 +1,38 @@
-T48 — Resume includes profile name. Do ONLY this directive. Do not start T49. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 6a1ec95. Do not rewrite README. Source, comments, commit message: English only.
+T49 — Email outbox uses action payload body. Do ONLY this directive. Do not start T50. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 3834c89. Do not rewrite README. Do not open SMTP. Source, comments, commit message: English only.
 
-Baseline on main: T01–T47. HEAD 6a1ec95. pytest was 399 green after T47.
+Baseline on main: T01–T48. HEAD 3834c89. pytest was 403 green after T48.
 
-GOAL: resume.md shows Name when the consented profile has a name field. Role stays. Missing name is skipped, not invented.
+GOAL: .eml body is the draft text from the action payload when present, not only the title.
 
 Implement:
 
-1) core/twin_resume_pack.py
-- Read name = profile.get("name") or ""
-- If name is non-empty, markdown contains "**Name:**" and that value
-- Keep **Role:** when role exists
-- Do not invent a name
+1) core/twin_email_send.py send_approved
+- subject = action title
+- body resolution:
+  - if payload is a dict, use payload.get("body") or payload.get("text") or payload.get("draft")
+  - if payload is a non-empty str, use that string
+  - else use title
+- Still require approved status and consented profile
+- Still write local .eml only
 
-2) tests/test_t48_resume_name.py
+2) tests/test_t49_email_payload_body.py
 - AEGIS_DATA_DIR temp
-- after T03 commit, if profile has no name, render still writes the file
-- after T03 commit, if tests can set profile name via existing interview helpers, resume contains that name; if no helper exists, at least render_resume accepts profile name when present in stored profile JSON
-- FastAPI resume route still 200
-- No live network
+- after T03 commit, create an approved action whose payload is {"body": "Please send the pack"} (use existing action store helpers)
+- send_approved writes an .eml whose text contains "Please send the pack"
+- no socket
+- FastAPI send route still 400 without profile or unapproved action
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_resume_pack import render_resume; print(callable(render_resume))"
+   ./.venv/bin/python -c "from core.twin_email_send import send_approved; print(callable(send_approved))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 399
+   Required: 0 failed, count > 403
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t48): resume pack prints profile name when present"
+6. git commit -m "feat(t49): outbox body from action payload"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

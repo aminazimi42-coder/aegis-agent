@@ -65,7 +65,13 @@ def send_approved(tenant_id: str, action_id: str) -> dict[str, Any]:
 
     # 4. Derive subject and body from the action.
     subject = action.get("title", "")
-    body = action.get("payload") if isinstance(action.get("payload"), str) else subject
+    payload = action.get("payload")
+    if isinstance(payload, dict):
+        body = payload.get("body") or payload.get("text") or payload.get("draft") or subject
+    elif isinstance(payload, str) and payload.strip():
+        body = payload
+    else:
+        body = subject
 
     # 5. Write .eml file to the local outbox (no socket, no network).
     out_dir = _outbox_dir(tenant_id)

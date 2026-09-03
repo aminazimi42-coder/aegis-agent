@@ -49,7 +49,8 @@ def _ensure_schema() -> None:
                 kind        TEXT    NOT NULL,
                 title       TEXT    NOT NULL,
                 status      TEXT    NOT NULL,
-                created_at  TEXT    NOT NULL
+                created_at  TEXT    NOT NULL,
+                payload     TEXT
             )
             """
         )
@@ -59,6 +60,11 @@ def _ensure_schema() -> None:
             ON twin_actions (tenant_id)
             """
         )
+        # Add payload column to pre-T49 tables (best-effort).
+        try:
+            conn.execute("ALTER TABLE twin_actions ADD COLUMN payload TEXT")
+        except sqlite3.OperationalError:
+            pass
 
 
 # ---------------------------------------------------------------------------#
@@ -80,13 +86,26 @@ def _row_to_dict(row: sqlite3.Row | dict[str, Any]) -> dict[str, Any]:
         "title": row["title"],
         "status": row["status"],
         "created_at": row["created_at"],
+        "payload": _deserialize_payload(row["payload"]) if "payload" in row.keys() else None,
     }
+
+
+def _deserialize_payload(raw: str | None) -> Any:
+    """Deserialize a JSON payload from the DB, or return the raw str."""
+    import json
+
+    if raw is None:
+        return None
+    try:
+        return json.loads(raw)
+    except (json.JSONDecodeError, TypeError):
+        return raw
 
 
 def _load_action(action_id: str) -> dict[str, Any] | None:
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT action_id, tenant_id, kind, title, status, created_at "
+            "SELECT action_id, tenant_id, kind, title, status, created_at, payload "
             "FROM twin_actions WHERE action_id = ?",
             (action_id,),
         ).fetchone()
@@ -174,8 +193,8 @@ def propose_actions(tenant_id: str) -> list[dict[str, Any]]:
             for a in actions:
                 conn.execute(
                     "INSERT INTO twin_actions "
-                    "(action_id, tenant_id, kind, title, status, created_at) "
-                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    "(action_id, tenant_id, kind, title, status, created_at, payload) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
                     (
                         a["action_id"],
                         a["tenant_id"],
@@ -183,6 +202,7 @@ def propose_actions(tenant_id: str) -> list[dict[str, Any]]:
                         a["title"],
                         a["status"],
                         a["created_at"],
+                        a.get("_payload_json"),
                     ),
                 )
 
@@ -257,7 +277,7 @@ def list_actions(tenant_id: str) -> list[dict[str, Any]]:
     _ensure_schema()
     with get_connection() as conn:
         rows = conn.execute(
-            "SELECT action_id, tenant_id, kind, title, status, created_at "
+            "SELECT action_id, tenant_id, kind, title, status, created_at, payload "
             "FROM twin_actions WHERE tenant_id = ? "
             "ORDER BY created_at ASC",
             (tenant_id,),
