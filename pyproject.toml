@@ -6,7 +6,10 @@ build-backend = "setuptools.build_meta"
 name = "aegis-agent-platform"
 version = "1.0.0-rc1"
 description = "Foundation multi-agent SaaS framework for enterprise orchestration"
-authors = [ { name = "Amin Azimi" } ]
+authors = [
+  { name = "Amin Azimi — AI Architect / Azimi Innovation Lab", email = "aminazimi42-coder@users.noreply.github.com" },
+]
+license = { text = "Apache-2.0" }
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

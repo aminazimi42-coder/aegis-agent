@@ -8,7 +8,7 @@
 
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-API%20Ready-009688)](https://fastapi.tianglia.com/)
-[![License](https://img.shields.io/badge/License-Proprietary-purple)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache--2.0-blue)](LICENSE)
 [![Tests](https://img.shields.io/badge/Tests-Passing-success)](https://github.com/)
 
 </div>
@@ -213,6 +213,11 @@ LLM and no live SMTP are wired in this revision.
 
 ---
 
+## Author
+
+Aegis Agent is a local-first FastAPI cognitive-twin for one senior operator: consented profile, proposed actions, human approval, and local work products. Version 1.0.0-rc1. Created 2026. Developer: Amin Azimi. Brands: AI Architect Amin Azimi — End-to-End System Development, and Azimi Innovation Lab.
+
 ## License
 
-© Azimi Innovation Lab. See `LICENSE` for details.
+Licensed under the Apache License, Version 2.0. See `LICENSE` for the full text.
+Copyright 2026 Amin Azimi — AI Architect Amin Azimi — End-to-End System Development, Azimi Innovation Lab.

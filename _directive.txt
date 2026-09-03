@@ -1,37 +1,51 @@
-T53 — Honest shipped-capability lock after T38–T52. Do ONLY this directive. Do not start T54. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend a56427f. Do not add desktop UI, Stripe, license keys, or a default cloud LLM. Source, comments, commit message: English only.
+T54 — Author identity and commercial-safe LICENSE. Do ONLY this directive. Do not start T55. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend c890020. Do not rewrite README beyond the Author and License sections named below. Do not change application code, agents, tests except the new lock test. Source, comments, commit message: English only.
 
-Baseline on main: T01–T52. HEAD a56427f. pytest was 422 green after T52.
+Baseline on main: T01–T53. HEAD c890020.
 
-GOAL: one STATUS.md the principal can trust. Tests lock the claims. No new product column.
+GOAL: Owner identity is complete and consistent. LICENSE is permissive so the owner can later sell, package a desktop app, or attach an external license server without copyleft lock-in. No PSP code. No maturity slogans.
 
 Implement:
 
-1) STATUS.md at repo root (overwrite if present)
-Required English headings and facts, no hype:
-- Shipped: EchoProvider default; complete_safe; SQLite persist for approvals, budgets, jobs; scheduler tick does not send mail; goal plan proposes only; risk L0–L3; memory show/forget; home.md; style on brief/home; resume name; outbox payload body; golden busy-day test; execute after approve writes local outbox or executed.md; CI on push
-- Not shipped: installable desktop app, payment or license inside Aegis, cloud LLM as the default
-- Optional: HTTP provider only when env vars are set
+1) LICENSE at repo root — replace the whole file with Apache License 2.0 text plus this copyright header at the top (keep the standard Apache terms below the header; do not add "All rights reserved"; do not call it Proprietary):
 
-2) tests/test_t53_status_lock.py
-- STATUS.md contains "EchoProvider" and "Not shipped"
-- from core.llm_provider import get_provider; type(get_provider()).__name__ == "EchoProvider" with default env
-- Path("core").rglob("*").as_posix() joined lower must not contain "stripe"
-- execute, render_home, schedule, send_approved are callable
-- No live network
+   Copyright 2026 Amin Azimi
+   AI Architect Amin Azimi — End-to-End System Development
+   Azimi Innovation Lab
 
-3) Do not rewrite the whole README. One line in README under an existing heading may point to STATUS.md if a Testing or Twin heading already exists.
+   Reason: current file mixes MIT grant with "All rights reserved" and exclusive-property language. That conflict blocks clean commercialization. Apache-2.0 is permissive, includes a patent grant, requires attribution, and does not force later products to be open.
+
+2) README.md
+   - Change the License badge from Proprietary to Apache-2.0.
+   - Add an ## Author section immediately before ## License (create ## License if missing). Exact English, about fifty words, no hype:
+
+     Aegis Agent is a local-first FastAPI cognitive-twin for one senior operator: consented profile, proposed actions, human approval, and local work products. Version 1.0.0-rc1. Created 2026. Developer: Amin Azimi. Brands: AI Architect Amin Azimi — End-to-End System Development, and Azimi Innovation Lab.
+
+   - License section must name Apache-2.0 and both brands. Do not invent extra biography.
+
+3) pyproject.toml
+   - authors = [
+       { name = "Amin Azimi", email = "aminazimi42-coder@users.noreply.github.com" }
+     ]
+     If an email field is awkward, name-only is fine: "Amin Azimi — AI Architect / Azimi Innovation Lab"
+   - Add license = { text = "Apache-2.0" } under [project] if missing.
+
+4) tests/test_t54_author_license.py
+   - LICENSE contains "Apache" and "Azimi Innovation Lab" and "End-to-End System Development"
+   - README.md contains "## Author" and "1.0.0-rc1" and "2026"
+   - README.md does not contain "License-Proprietary"
+   - No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; print(Path('STATUS.md').is_file())"
+   ./.venv/bin/python -c "from pathlib import Path; t=Path('LICENSE').read_text(); print('Apache' in t and 'Azimi Innovation Lab' in t)"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 422
+   Required: 0 failed, count > 430
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "docs(t53): lock honest shipped capability status"
+6. git commit -m "docs(t54): author identity and Apache-2.0 license"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
