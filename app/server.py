@@ -77,6 +77,7 @@ from core.twin_interview import (
 from core.twin_meeting_brief import render_meetings as twin_render_meetings
 from core.twin_morning_brief import render_brief as twin_render_brief
 from core.twin_pr_review import review_diff as twin_review_diff
+from core.twin_resume_pack import render_resume as twin_render_resume
 from core.twin_style_lock import lock_style as twin_lock_style
 from core.twin_team_inbox import triage as twin_team_inbox_triage
 from core.twin_transcript_task import from_transcript as twin_from_transcript
@@ -281,6 +282,12 @@ class TwinTranscriptTaskRequest(BaseModel):
 
 class TwinBoardMemoRequest(BaseModel):
     """Body for rendering a one-page board weekly memo."""
+
+    tenant_id: str
+
+
+class TwinResumeRenderRequest(BaseModel):
+    """Body for rendering a one-page principal resume."""
 
     tenant_id: str
 
@@ -1018,6 +1025,18 @@ def create_app() -> FastAPI:
     def twin_board_memo(request: TwinBoardMemoRequest) -> Any:
         try:
             return twin_render_board_memo(request.tenant_id)
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": str(exc)},
+            )
+
+    # --- Twin resume pack (T32) ---
+
+    @app.post("/api/v1/twin/resume/render", tags=["twin"], status_code=200)
+    def twin_resume_render(request: TwinResumeRenderRequest) -> Any:
+        try:
+            return twin_render_resume(request.tenant_id)
         except ValueError as exc:
             return JSONResponse(
                 status_code=400,

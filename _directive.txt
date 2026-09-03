@@ -1,27 +1,26 @@
-T31 — Board / weekly memo from digest. Do ONLY this directive. Do not start T32. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend f58c2bf. Do not rewrite README. Source, comments, commit message: English only.
+T32 — Principal one-pager / resume pack. Do ONLY this directive. Do not start T33. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 62d0981. Do not rewrite README. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T30. HEAD f58c2bf. pytest was 287 green after T30.
+Baseline on main (do not regress): T01–T31. HEAD 62d0981. pytest was 294 green after T31.
 
-GOAL: one memo page a principal can paste into a board update. Uses weekly digest if present, else meetings + repos + decisions. No live LLM.
+GOAL: one page from the consented profile plus names of existing work products. No live LLM.
 
 Implement:
 
-1) core/twin_board_memo.py
-- render_memo(tenant_id) -> dict {tenant_id, path}
+1) core/twin_resume_pack.py
+- render_resume(tenant_id) -> dict {tenant_id, path}
 - Require consented profile or raise ValueError("no consented profile")
-- Prefer existing work_products/{tenant_id}/weekly_digest.md text (first 40 lines) if file exists
-- Always add sections Meetings (calendar up to 5), Repos (behavior/git up to 5), Decisions (list_decisions up to 5 if import works)
-- If style_lock.md exists, copy its first 8 lines under Voice
-- Write work_products/{tenant_id}/board_memo.md
+- Load profile via the same helper other twin modules use
+- Sections: Name/role from profile fields that exist (skip missing), Work products = filenames under work_products/{tenant_id}/, Decisions count if list_decisions works
+- Write work_products/{tenant_id}/resume.md
 - Overwrite on each call
 
-2) API POST /api/v1/twin/memo/board body {tenant_id}
-3) CLI board-memo --tenant ID
+2) API POST /api/v1/twin/resume/render body {tenant_id}
+3) CLI resume --tenant ID
 
-4) tests/test_t31_twin_board_memo.py
+4) tests/test_t32_twin_resume_pack.py
 - AEGIS_DATA_DIR temp
 - without profile ValueError
-- after T03 commit + ingest calendar Standup: file contains Standup
+- after T03 commit file exists and contains the tenant id or a profile name token
 - FastAPI 200
 - No live network
 
@@ -30,12 +29,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_board_memo import render_memo; print(callable(render_memo))"
+   ./.venv/bin/python -c "from core.twin_resume_pack import render_resume; print(callable(render_resume))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 287
+   Required: 0 failed, count > 294
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t31): board weekly memo from digest meetings and decisions"
+6. git commit -m "feat(t32): principal one-pager from profile and work products"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

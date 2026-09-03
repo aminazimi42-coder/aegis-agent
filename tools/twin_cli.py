@@ -193,6 +193,12 @@ def _cmd_board_memo(args: argparse.Namespace) -> dict[str, Any]:
     return render_memo(args.tenant)
 
 
+def _cmd_resume(args: argparse.Namespace) -> dict[str, Any]:
+    from core.twin_resume_pack import render_resume
+
+    return render_resume(args.tenant)
+
+
 # ---------------------------------------------------------------------------#
 # Argument parsing
 # ---------------------------------------------------------------------------#
@@ -334,6 +340,10 @@ def _build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("board-memo", help="Render a one-page board weekly memo.")
     p.add_argument("--tenant", required=True)
 
+    # resume
+    p = sub.add_parser("resume", help="Render a one-page principal resume.")
+    p.add_argument("--tenant", required=True)
+
     return parser
 
 
@@ -367,6 +377,7 @@ def main(argv: list[str] | None = None) -> int:
         "team-inbox": _cmd_team_inbox,
         "transcript-task": _cmd_transcript_task,
         "board-memo": _cmd_board_memo,
+        "resume": _cmd_resume,
     }[args.command]
 
     try:
