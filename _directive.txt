@@ -1,26 +1,28 @@
-T32 — Principal one-pager / resume pack. Do ONLY this directive. Do not start T33. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 62d0981. Do not rewrite README. Source, comments, commit message: English only.
+T33 — Send an approved email draft to a local outbox. Do ONLY this directive. Do not start T34. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend c181ef6. Do not rewrite README. Do not talk to SMTP or IMAP. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T31. HEAD 62d0981. pytest was 294 green after T31.
+Baseline on main (do not regress): T01–T32. HEAD c181ef6. pytest was 294+ after T32.
 
-GOAL: one page from the consented profile plus names of existing work products. No live LLM.
+GOAL: after a human-approved twin action of kind email, copy the draft text into work_products/{tenant_id}/outbox/. No network send.
 
 Implement:
 
-1) core/twin_resume_pack.py
-- render_resume(tenant_id) -> dict {tenant_id, path}
+1) core/twin_email_send.py
+- send_approved(tenant_id, action_id) -> dict {tenant_id, path, action_id}
 - Require consented profile or raise ValueError("no consented profile")
-- Load profile via the same helper other twin modules use
-- Sections: Name/role from profile fields that exist (skip missing), Work products = filenames under work_products/{tenant_id}/, Decisions count if list_decisions works
-- Write work_products/{tenant_id}/resume.md
-- Overwrite on each call
+- Load action; if missing raise ValueError("action not found")
+- If action status is not approved raise ValueError("not approved")
+- Write work_products/{tenant_id}/outbox/{action_id}.eml with Subject and body from action title/payload
+- Header line "X-Aegis-Send: local-outbox-only"
+- Do not open a socket
 
-2) API POST /api/v1/twin/resume/render body {tenant_id}
-3) CLI resume --tenant ID
+2) API POST /api/v1/twin/email/send body {tenant_id, action_id}
+3) CLI email-send --tenant ID --action ID
 
-4) tests/test_t32_twin_resume_pack.py
+4) tests/test_t33_twin_email_send.py
 - AEGIS_DATA_DIR temp
 - without profile ValueError
-- after T03 commit file exists and contains the tenant id or a profile name token
+- after T03 + propose + approve of an email-like action: outbox file exists and contains local-outbox-only
+- unapproved action raises
 - FastAPI 200
 - No live network
 
@@ -29,12 +31,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_resume_pack import render_resume; print(callable(render_resume))"
+   ./.venv/bin/python -c "from core.twin_email_send import send_approved; print(callable(send_approved))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
    Required: 0 failed, count > 294
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t32): principal one-pager from profile and work products"
+6. git commit -m "feat(t33): send approved email draft to local outbox only"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

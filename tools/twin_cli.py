@@ -199,6 +199,12 @@ def _cmd_resume(args: argparse.Namespace) -> dict[str, Any]:
     return render_resume(args.tenant)
 
 
+def _cmd_email_send(args: argparse.Namespace) -> dict[str, Any]:
+    from core.twin_email_send import send_approved
+
+    return send_approved(args.tenant, args.action)
+
+
 # ---------------------------------------------------------------------------#
 # Argument parsing
 # ---------------------------------------------------------------------------#
@@ -344,6 +350,14 @@ def _build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("resume", help="Render a one-page principal resume.")
     p.add_argument("--tenant", required=True)
 
+    # email-send
+    p = sub.add_parser(
+        "email-send",
+        help="Send an approved email draft to the local outbox only.",
+    )
+    p.add_argument("--tenant", required=True)
+    p.add_argument("--action", required=True)
+
     return parser
 
 
@@ -378,6 +392,7 @@ def main(argv: list[str] | None = None) -> int:
         "transcript-task": _cmd_transcript_task,
         "board-memo": _cmd_board_memo,
         "resume": _cmd_resume,
+        "email-send": _cmd_email_send,
     }[args.command]
 
     try:

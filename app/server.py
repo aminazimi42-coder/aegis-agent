@@ -53,6 +53,7 @@ from core.twin_calendar import ingest_ics as twin_ingest_ics
 from core.twin_decisions import list_decisions as twin_list_decisions
 from core.twin_decisions import record as twin_record_decision
 from core.twin_delegate_pack import render_pack as twin_render_pack
+from core.twin_email_send import send_approved as twin_email_send
 from core.twin_email_triage import triage as twin_email_triage
 from core.twin_events import ingest_event as twin_ingest_event
 from core.twin_evolution import evolve as twin_evolve
@@ -290,6 +291,13 @@ class TwinResumeRenderRequest(BaseModel):
     """Body for rendering a one-page principal resume."""
 
     tenant_id: str
+
+
+class TwinEmailSendRequest(BaseModel):
+    """Body for sending an approved email draft to the local outbox."""
+
+    tenant_id: str
+    action_id: str
 
 
 def create_app() -> FastAPI:
@@ -1037,6 +1045,18 @@ def create_app() -> FastAPI:
     def twin_resume_render(request: TwinResumeRenderRequest) -> Any:
         try:
             return twin_render_resume(request.tenant_id)
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": str(exc)},
+            )
+
+    # --- Twin email send to local outbox (T33) ---
+
+    @app.post("/api/v1/twin/email/send", tags=["twin"], status_code=200)
+    def twin_email_send_endpoint(request: TwinEmailSendRequest) -> Any:
+        try:
+            return twin_email_send(request.tenant_id, request.action_id)
         except ValueError as exc:
             return JSONResponse(
                 status_code=400,
