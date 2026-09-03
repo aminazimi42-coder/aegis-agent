@@ -158,6 +158,17 @@ def _cmd_expenses(args: argparse.Namespace) -> dict[str, Any]:
     return ingest_receipts(args.tenant, args.dir)
 
 
+def _cmd_focus_block(args: argparse.Namespace) -> dict[str, Any]:
+    from core.twin_focus_block import create_block
+
+    return create_block(
+        args.tenant,
+        args.start,
+        duration_min=args.duration,
+        title=args.title,
+    )
+
+
 # ---------------------------------------------------------------------------#
 # Argument parsing
 # ---------------------------------------------------------------------------#
@@ -270,6 +281,13 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--tenant", required=True)
     p.add_argument("--dir", required=True)
 
+    # focus-block
+    p = sub.add_parser("focus-block", help="Create a local focus-block hold (markdown + .ics).")
+    p.add_argument("--tenant", required=True)
+    p.add_argument("--start", required=True)
+    p.add_argument("--duration", type=int, default=90)
+    p.add_argument("--title", default="Focus")
+
     return parser
 
 
@@ -298,6 +316,7 @@ def main(argv: list[str] | None = None) -> int:
         "style-lock": _cmd_style_lock,
         "pr-review": _cmd_pr_review,
         "expenses": _cmd_expenses,
+        "focus-block": _cmd_focus_block,
     }[args.command]
 
     try:

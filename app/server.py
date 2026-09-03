@@ -57,6 +57,7 @@ from core.twin_events import ingest_event as twin_ingest_event
 from core.twin_evolution import evolve as twin_evolve
 from core.twin_evolution import weekly_digest as twin_weekly_digest
 from core.twin_expenses import ingest_receipts as twin_ingest_receipts
+from core.twin_focus_block import create_block as twin_create_focus_block
 from core.twin_followups import render_followups as twin_render_followups
 from core.twin_git_observer import observe_repo as twin_observe_repo
 from core.twin_github_observer import observe_github as twin_observe_github
@@ -242,6 +243,15 @@ class TwinExpensesIngestRequest(BaseModel):
 
     tenant_id: str
     receipts_dir: str
+
+
+class TwinFocusBlockRequest(BaseModel):
+    """Body for creating a local focus-block hold (markdown + .ics)."""
+
+    tenant_id: str
+    start: str
+    duration_min: int = 90
+    title: str = "Focus"
 
 
 def create_app() -> FastAPI:
@@ -912,6 +922,23 @@ def create_app() -> FastAPI:
     def twin_expenses_ingest(request: TwinExpensesIngestRequest) -> Any:
         try:
             return twin_ingest_receipts(request.tenant_id, request.receipts_dir)
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": str(exc)},
+            )
+
+    # --- Twin focus block (T27) ---
+
+    @app.post("/api/v1/twin/focus/block", tags=["twin"], status_code=200)
+    def twin_focus_block(request: TwinFocusBlockRequest) -> Any:
+        try:
+            return twin_create_focus_block(
+                request.tenant_id,
+                request.start,
+                duration_min=request.duration_min,
+                title=request.title,
+            )
         except ValueError as exc:
             return JSONResponse(
                 status_code=400,

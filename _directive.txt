@@ -1,28 +1,27 @@
-T26 — Expense notes from local receipt texts. Do ONLY this directive. Do not start T27. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 6defb0d. Do not rewrite README. Do not send payments or call a bank. Source, comments, commit message: English only.
+T27 — Focus block hold. Do ONLY this directive. Do not start T28. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 3a38c57. Do not rewrite README. Do not talk to Google Calendar. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T25. HEAD 6defb0d. pytest was 252 green after T25.
+Baseline on main (do not regress): T01–T26. HEAD 3a38c57. pytest was 261 green after T26.
 
-GOAL: turn a folder of receipt .txt files into an expense note. No money movement.
+GOAL: create a local focus-block hold the principal can drop into a calendar. No cloud calendar.
 
 Implement:
 
-1) core/twin_expenses.py
-- ingest_receipts(tenant_id, receipts_dir) -> dict {tenant_id, path, count}
+1) core/twin_focus_block.py
+- create_block(tenant_id, start, duration_min=90, title="Focus") -> dict {tenant_id, path_md, path_ics}
 - Require consented profile or raise ValueError("no consented profile")
-- Require Path(receipts_dir).is_dir() or raise ValueError("receipts dir not found")
-- Read each *.txt; first line vendor, rest body
-- If a token matches $123 or 123.45 capture as amount else "unparsed"
-- Write work_products/{tenant_id}/expenses.md with vendor, amount, and line "Do not pay without written approval."
-- ingest_event source="finance" kind="receipt" if allowed; else skip ingest and still write file
+- duration_min must be int >= 15 else ValueError("invalid duration")
+- Write work_products/{tenant_id}/focus_block.md with title, start, duration
+- Write work_products/{tenant_id}/focus_block.ics with one VEVENT SUMMARY and DTSTART using the given start string as-is
 - Overwrite on each call
 
-2) API POST /api/v1/twin/expenses/ingest body {tenant_id, receipts_dir}
-3) CLI expenses --tenant ID --dir PATH
+2) API POST /api/v1/twin/focus/block body {tenant_id, start, duration_min, title}
+   duration_min default 90, title default Focus
+3) CLI focus-block --tenant ID --start S [--duration 90] [--title Focus]
 
-4) tests/test_t26_twin_expenses.py
+4) tests/test_t27_twin_focus_block.py
 - AEGIS_DATA_DIR temp
 - without profile ValueError
-- after T03 commit write receipt "Hotel\\n$210.00": file contains Hotel and 210 and Do not pay
+- after T03 commit create_block start=20260903T090000Z: both files exist, ics contains VEVENT and 20260903T090000Z
 - FastAPI 200
 - No live network
 
@@ -31,12 +30,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_expenses import ingest_receipts; print(callable(ingest_receipts))"
+   ./.venv/bin/python -c "from core.twin_focus_block import create_block; print(callable(create_block))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 252
+   Required: 0 failed, count > 261
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t26): local receipt expense notes without payment"
+6. git commit -m "feat(t27): local focus-block hold as markdown and ics"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
