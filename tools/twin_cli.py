@@ -10,6 +10,7 @@ Usage::
     python tools/twin_cli.py actions-approve --action-id <ID>
     python tools/twin_cli.py actions-execute --action-id <ID>
     python tools/twin_cli.py render --tenant <ID>
+    python tools/twin_cli.py brief-morning --tenant <ID>
 
 Each subcommand prints a JSON object to stdout (``json.dumps(default=str)``)
 and exits 0 on success.  On ``ValueError`` or ``PermissionError`` the CLI
@@ -92,6 +93,12 @@ def _cmd_calendar_ics(args: argparse.Namespace) -> dict[str, Any]:
     return ingest_ics(args.tenant, args.path)
 
 
+def _cmd_brief_morning(args: argparse.Namespace) -> dict[str, Any]:
+    from core.twin_morning_brief import render_brief
+
+    return render_brief(args.tenant)
+
+
 # ---------------------------------------------------------------------------#
 # Argument parsing
 # ---------------------------------------------------------------------------#
@@ -156,6 +163,10 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--tenant", required=True)
     p.add_argument("--path", required=True)
 
+    # brief-morning
+    p = sub.add_parser("brief-morning", help="Render a one-page morning brief.")
+    p.add_argument("--tenant", required=True)
+
     return parser
 
 
@@ -174,6 +185,7 @@ def main(argv: list[str] | None = None) -> int:
         "actions-execute": _cmd_actions_execute,
         "render": _cmd_render,
         "calendar-ics": _cmd_calendar_ics,
+        "brief-morning": _cmd_brief_morning,
     }[args.command]
 
     try:

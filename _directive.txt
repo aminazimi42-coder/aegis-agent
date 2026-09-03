@@ -1,33 +1,44 @@
-T17 — Twin speech policy and budget stop. Do ONLY this directive. Do not start T18. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 05b6613. Do not rewrite README. Do not add payments, OAuth, or desktop UI. Do not call a live paid network. Source, comments, commit message: English only.
+T18 — Morning one-page brief. Do ONLY this directive. Do not start T19. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend ed725c4. Do not rewrite README. Do not add email send, payments, OAuth, or desktop UI. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T16. HEAD 05b6613. pytest was 196 green after T16.
+Baseline on main (do not regress): T01–T17. HEAD ed725c4. pytest was 199 green after T17.
 
-GOAL: the model must not claim an external action happened. If the token budget is exhausted, complete_safe must not call the provider.
+GOAL: a busy principal gets one local markdown page: today from calendar events, recent repos from behavior/git events, and pending proposed/approved actions. No LLM required.
 
-Implement in core/llm_safety.py:
+Implement:
 
-- FORBIDDEN_CLAIMS: tuple of lowercase phrases: "transferred funds", "pushed to origin", "payment sent", "email sent"
-- After provider returns, if ok and any forbidden phrase is in text.lower(): set ok=False and text="rejected: external action claim"
-- Before get_provider().complete, if env AEGIS_LLM_BUDGET_EXHAUSTED is "1": do not call complete; return ok=False, text="rejected: budget exhausted", tokens 0, tool=""
-- Keep redact_secrets and the T15 tool cage. Keep ledger best-effort.
+1) core/twin_morning_brief.py
+- render_brief(tenant_id) -> dict {tenant_id, path, sections}
+- Require consented profile or raise ValueError("no consented profile")
+- Rebuild behavior if missing (safe import twin_behavior.rebuild)
+- Collect:
+  meetings: twin_events source=calendar kind=meeting (summary+start), up to 8
+  repos: from get_behavior snapshot repos or event payloads repo, up to 8
+  pending_actions: twin_actions list with status in {proposed, approved}, up to 8
+- Write Path(AEGIS_DATA_DIR or ./data)/work_products/{tenant_id}/morning_brief.md
+- File must contain headings Meetings, Repos, Pending actions
+- Overwrite on each call
 
-tests/test_t17_llm_policy.py
-- Monkeypatch provider to return "payment sent to vendor" -> ok False and rejected in text
-- With AEGIS_LLM_BUDGET_EXHAUSTED=1, complete_safe does not need a live provider; ok False and "budget" in text.lower()
-- T15 wire_transfer still rejected
-- AEGIS_DATA_DIR temp; no live network
+2) API POST /api/v1/twin/brief/morning body {tenant_id}
+3) CLI tools/twin_cli.py subcommand brief-morning --tenant ID
+
+4) tests/test_t18_twin_morning_brief.py
+- AEGIS_DATA_DIR temp
+- without profile ValueError
+- after T03 commit + ingest calendar meeting Standup + git repo acme/core: file exists, contains Standup and acme/core
+- FastAPI 200
+- No live network / no paid LLM
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "import os; os.environ['AEGIS_LLM_BUDGET_EXHAUSTED']='1'; from core.llm_safety import complete_safe; r=complete_safe('hi', tenant_id='t17'); print(r['ok'] is False, 'budget' in r['text'].lower())"
-   Required: True True
+   ./.venv/bin/python -c "from core.twin_morning_brief import render_brief; print(callable(render_brief))"
+   Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 196
+   Required: 0 failed, count > 199
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t17): reject external-action claims and stop on exhausted budget"
+6. git commit -m "feat(t18): morning one-page brief from calendar git and actions"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
