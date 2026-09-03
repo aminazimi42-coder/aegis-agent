@@ -181,6 +181,12 @@ def _cmd_team_inbox(args: argparse.Namespace) -> dict[str, Any]:
     return triage(args.tenant, args.file)
 
 
+def _cmd_transcript_task(args: argparse.Namespace) -> dict[str, Any]:
+    from core.twin_transcript_task import from_transcript
+
+    return from_transcript(args.tenant, args.file)
+
+
 # ---------------------------------------------------------------------------#
 # Argument parsing
 # ---------------------------------------------------------------------------#
@@ -310,6 +316,14 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--tenant", required=True)
     p.add_argument("--file", required=True)
 
+    # transcript-task
+    p = sub.add_parser(
+        "transcript-task",
+        help="Turn a local transcript .txt into one proposed twin action.",
+    )
+    p.add_argument("--tenant", required=True)
+    p.add_argument("--file", required=True)
+
     return parser
 
 
@@ -341,6 +355,7 @@ def main(argv: list[str] | None = None) -> int:
         "focus-block": _cmd_focus_block,
         "travel": _cmd_travel,
         "team-inbox": _cmd_team_inbox,
+        "transcript-task": _cmd_transcript_task,
     }[args.command]
 
     try:

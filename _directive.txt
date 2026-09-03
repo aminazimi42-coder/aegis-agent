@@ -1,28 +1,27 @@
-T29 — Team inbox from a local export file. Do ONLY this directive. Do not start T30. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 3bf445f. Do not rewrite README. Do not add a live Slack or Telegram bot. Source, comments, commit message: English only.
+T30 — Transcript file to a proposed task. Do ONLY this directive. Do not start T31. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 9ee7af6. Do not rewrite README. Do not call cloud speech-to-text. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T28. HEAD 3bf445f.
+Baseline on main (do not regress): T01–T29. HEAD 9ee7af6. pytest was 280 green after T29.
 
-GOAL: read a local team-chat export (.txt or .jsonl) and write a triage page. No outbound send.
+GOAL: turn a local transcript .txt into one proposed twin action. No audio decode.
 
 Implement:
 
-1) core/twin_team_inbox.py
-- triage(tenant_id, export_path) -> dict {tenant_id, path, count}
+1) core/twin_transcript_task.py
+- from_transcript(tenant_id, transcript_path) -> dict {tenant_id, action_id, path, title}
 - Require consented profile or raise ValueError("no consented profile")
-- Require Path(export_path).is_file() or raise ValueError("export not found")
-- .txt: one message per non-empty line
-- .jsonl: each line JSON with text or body
-- Write work_products/{tenant_id}/team_inbox.md numbered list of up to 40 lines
-- ingest_event source="chat" kind="message" if allowed; else skip ingest and still write file
-- Overwrite on each call
+- Require Path(transcript_path).is_file() or raise ValueError("transcript not found")
+- Title = first non-empty line stripped to 80 chars
+- Propose via twin_actions.propose with that title (reuse existing propose API; if signature differs, wrap the public function already used in T11 tests)
+- Write work_products/{tenant_id}/transcript_task.md with title and action_id
+- Overwrite markdown on each call; new propose each call is fine
 
-2) API POST /api/v1/twin/team/inbox body {tenant_id, export_path}
-3) CLI team-inbox --tenant ID --file PATH
+2) API POST /api/v1/twin/transcript/task body {tenant_id, transcript_path}
+3) CLI transcript-task --tenant ID --file PATH
 
-4) tests/test_t29_twin_team_inbox.py
+4) tests/test_t30_twin_transcript_task.py
 - AEGIS_DATA_DIR temp
 - without profile ValueError
-- after T03 commit write export line "Need the board pack tonight": file contains board pack
+- after T03 commit write "Call the Berlin hotel tonight": markdown contains Berlin hotel and a non-empty action_id
 - FastAPI 200
 - No live network
 
@@ -31,12 +30,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_team_inbox import triage; print(callable(triage))"
+   ./.venv/bin/python -c "from core.twin_transcript_task import from_transcript; print(callable(from_transcript))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 266
+   Required: 0 failed, count > 280
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t29): team inbox triage from local chat export"
+6. git commit -m "feat(t30): transcript text to proposed twin action"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

@@ -78,6 +78,7 @@ from core.twin_morning_brief import render_brief as twin_render_brief
 from core.twin_pr_review import review_diff as twin_review_diff
 from core.twin_style_lock import lock_style as twin_lock_style
 from core.twin_team_inbox import triage as twin_team_inbox_triage
+from core.twin_transcript_task import from_transcript as twin_from_transcript
 from core.twin_travel_pack import render_pack as twin_render_travel_pack
 from core.twin_work_products import render as twin_render_work_products
 from fastapi import FastAPI, Request
@@ -268,6 +269,13 @@ class TwinTeamInboxRequest(BaseModel):
 
     tenant_id: str
     export_path: str
+
+
+class TwinTranscriptTaskRequest(BaseModel):
+    """Body for turning a local transcript .txt into one proposed twin action."""
+
+    tenant_id: str
+    transcript_path: str
 
 
 def create_app() -> FastAPI:
@@ -979,6 +987,18 @@ def create_app() -> FastAPI:
     def twin_team_inbox(request: TwinTeamInboxRequest) -> Any:
         try:
             return twin_team_inbox_triage(request.tenant_id, request.export_path)
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": str(exc)},
+            )
+
+    # --- Twin transcript task (T30) ---
+
+    @app.post("/api/v1/twin/transcript/task", tags=["twin"], status_code=200)
+    def twin_transcript_task(request: TwinTranscriptTaskRequest) -> Any:
+        try:
+            return twin_from_transcript(request.tenant_id, request.transcript_path)
         except ValueError as exc:
             return JSONResponse(
                 status_code=400,
