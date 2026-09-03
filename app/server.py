@@ -27,6 +27,9 @@ from core.task_store import TaskStore
 from core.tenant_memory import TenantMemoryVault
 from core.token_optimizer import TokenOptimizer
 from core.tool_tokens import ToolTokenManager
+from core.twin_events import ingest_event as twin_ingest_event
+from core.twin_evolution import evolve as twin_evolve
+from core.twin_evolution import weekly_digest as twin_weekly_digest
 from core.twin_interview import (
     answer as twin_answer,
 )
@@ -93,6 +96,15 @@ class TwinCommitRequest(BaseModel):
     """Body for committing a completed interview as a profile."""
 
     consent: bool
+
+
+class TwinEventRequest(BaseModel):
+    """Body for ingesting a work event into the twin evolution loop."""
+
+    tenant_id: str
+    source: str
+    kind: str
+    payload: dict[str, Any] = {}
 
 
 def create_app() -> FastAPI:
@@ -535,6 +547,35 @@ def create_app() -> FastAPI:
                 content={"detail": "no committed profile for this tenant"},
             )
         return profile
+
+    # --- Twin evolution (T04) ---
+
+    @app.post("/api/v1/twin/events", tags=["twin"], status_code=200)
+    def twin_event_ingest(request: TwinEventRequest) -> Any:
+        try:
+            event = twin_ingest_event(
+                tenant_id=request.tenant_id,
+                source=request.source,
+                kind=request.kind,
+                payload=request.payload,
+            )
+            evolved = twin_evolve(request.tenant_id, event)
+            return {"event": event, "profile": evolved}
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": str(exc)},
+            )
+
+    @app.get("/api/v1/twin/digest/{tenant_id}", tags=["twin"])
+    def twin_digest_get(tenant_id: str) -> Any:
+        try:
+            return twin_weekly_digest(tenant_id)
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=404,
+                content={"detail": str(exc)},
+            )
 
     return app
 
