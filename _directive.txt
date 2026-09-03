@@ -1,48 +1,47 @@
-T07 — Production integrity capstone. Do ONLY this directive. Do not start T08. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 62af1ba. Do not rewrite README. Do not add payments, OAuth, Telegram, or desktop UI. Source, comments, commit message: English only.
+T08 — Honest README aligned to the running code. Do ONLY this directive. Do not start T09. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend ac7ffbf. Do not add payments, OAuth, desktop UI, or a live paid LLM. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T06. pytest was 145 green after T06.
+Baseline on main (do not regress): T01–T07. platform_status reports 1.0.0-rc1, 6 agents, EchoProvider. pytest was 149 green after T07.
 
-GOAL: one honest platform status surface that a CTO can trust, plus a single end-to-end test that walks interview -> event -> digest -> propose -> approve -> execute without network.
+GOAL: README must describe what the repo actually does. A CTO reading it must not think money settles itself or that six cinematic acts are the runtime.
 
-Implement:
+Rewrite README.md (keep docs/assets images if they still exist; you may keep a compact header). Required content, all true:
 
-1) core/platform_status.py
-- platform_status() -> dict with exactly these keys:
-  version (from config, 1.0.0-rc1)
-  agent_count (6)
-  agents (list of six names in registry order)
-  llm_provider (get_provider class name or AEGIS_LLM_PROVIDER default "echo")
-  twin_routes (bool True if the FastAPI app object can be inspected OR just True if modules twin_interview, twin_events, twin_actions, twin_git_observer import)
-  persistence ("sqlite")
-- No marketing claims. No "enterprise AGI" strings.
+- Name, Python 3.11, FastAPI
+- Six agents by name: Alina, Kian, Bita, Aylin, Ahmad, Amin. Ahmad is security/oversight, Amin is finance-domain specialist in-process — not a payment processor
+- Default LLM is EchoProvider (offline). Paid providers are not wired in this revision
+- Persistence is SQLite under AEGIS_DATA_DIR
+- Twin loop that exists today: Day-0 interview + consent, event ingest, deterministic evolve, weekly digest, local git observer, proposed actions with human approve-before-execute (execute records SQLite/ledger only)
+- How to run tests: ./.venv/bin/python -m pytest -q
+- How to run API: existing README start command if it still works; if not, document uvicorn app.server:app --reload from repo reality
+- Real routes: /health if present, /docs, /api/v1/platform/status, /api/v1/twin/session/start, answer, commit, profile, events, digest, observe/git, actions/propose|approve|reject|execute
 
-2) API
-- GET /api/v1/platform/status  returns platform_status()
-Keep every existing twin route working (session, profile, events, digest, observe/git, actions).
+Forbidden strings anywhere in README.md (case-insensitive):
+- Enterprise Candidate
+- settles financial flows
+- automated settlement
+- closes commitments autonomously
+- Monetization & Finance as if live billing exists
+- cinematic acts as if they are executable modules
 
-3) tests/test_t07_production_integrity.py
-- platform_status version 1.0.0-rc1, agent_count 6, agents include Ahmad and Amin, llm_provider contains echo (case-insensitive)
-- FastAPI GET /api/v1/platform/status 200
-- E2E isolated AEGIS_DATA_DIR:
-  start+6 answers+commit consent True
-  ingest git commit event + evolve
-  weekly_digest event_count >= 1
-  propose_actions >= 1
-  execute before approve raises PermissionError
-  approve then execute status executed
-- No live network
+Add tests/test_t08_readme_honesty.py that reads README.md and asserts:
+- contains "EchoProvider" or "Echo"
+- contains "1.0.0-rc1" or "SQLite"
+- contains "approve"
+- does not contain "Enterprise Candidate"
+- does not contain "autonomously" in a commitment/settlement sentence
+Keep T01–T07 tests green.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.platform_status import platform_status; s=platform_status(); print(s['version'], s['agent_count'], s['llm_provider'])"
-   Required: 1.0.0-rc1 6 and echo somewhere in the provider string
+   ./.venv/bin/python -c "from pathlib import Path; t=Path('README.md').read_text(); print('Echo' in t, 'approve' in t.lower(), 'Enterprise Candidate' not in t)"
+   Required: True True True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 145
+   Required: 0 failed, count > 149
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t07): honest platform status and twin e2e integrity test"
+6. git commit -m "docs(t08): align README with shipped twin runtime"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
