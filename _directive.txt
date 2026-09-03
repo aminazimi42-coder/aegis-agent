@@ -1,33 +1,36 @@
-T13 — Local twin CLI operator. Do ONLY this directive. Do not start T14. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 2d32f1a. Do not rewrite README except one short CLI usage paragraph if the file already has a Quick Start. Do not add desktop GUI, OAuth, or payments. Source, comments, commit message: English only.
+T14 — Local ICS calendar ingest. Do ONLY this directive. Do not start T15. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend f3eae63. Do not rewrite README. Do not add Google Calendar OAuth, desktop UI, or payments. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T12. pytest was 182 green after T12.
+Baseline on main (do not regress): T01–T13. pytest was 186 green after T13.
 
-GOAL: a CTO can drive interview, approve an action, and render work products from the terminal without opening Swagger.
+GOAL: ingest a local .ics file as calendar events into the twin. No cloud calendar.
+
+Also one-line CLI bootstrap: at top of tools/twin_cli.py, if `core` is not importable, insert the repo root onto sys.path so `python tools/twin_cli.py status` works without extra env.
 
 Implement:
 
-1) tools/twin_cli.py
-- argparse program: python -m tools.twin_cli OR python tools/twin_cli.py
-- Subcommands:
-  status
-  interview-start --tenant ID
-  interview-answer --session ID --question ID --text TEXT
-  interview-commit --session ID --consent {true,false}
-  actions-propose --tenant ID
-  actions-approve --action-id ID
-  actions-execute --action-id ID
-  render --tenant ID
-- Each command prints JSON to stdout (json.dumps default=str) and exit 0 on success
-- On ValueError or PermissionError print {"error": str} to stdout and exit 2
-- status prints platform_status()
-- No network. No input() prompts.
+1) core/twin_calendar.py
+- ingest_ics(tenant_id, ics_path) -> dict {tenant_id, ingested, skipped}
+- Require consented profile or raise ValueError("no consented profile")
+- Require Path(ics_path).is_file() or raise ValueError("ics not found")
+- Parse VEVENT blocks without an extra library: for each VEVENT read SUMMARY and DTSTART if present
+- ingest_event source="calendar" kind="meeting" payload={summary, start} then evolve
+- Dedup by (summary, start) already stored
+- Ignore malformed events (count as skipped)
 
-2) tests/test_t13_twin_cli.py
+2) API
+- POST /api/v1/twin/calendar/ics body {tenant_id, ics_path}
+Keep existing routes.
+
+3) CLI
+- tools/twin_cli.py subcommand: calendar-ics --tenant ID --path FILE
+- sys.path bootstrap as above
+
+4) tests/test_t14_twin_calendar.py
 - AEGIS_DATA_DIR temp
-- status exit 0 and stdout contains 1.0.0-rc1
-- interview-start + 6 answers using QUESTIONS + commit consent true exit 0
-- execute before approve exit 2
-- propose then approve then execute then render exit 0; weekly_plan.md exists under AEGIS_DATA_DIR
+- without profile ValueError
+- write a tiny temp .ics with one VEVENT SUMMARY:Standup DTSTART:20260903T090000Z
+- after T03 commit: ingest_ics ingested >= 1; second call ingested == 0
+- FastAPI 200
 - No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -38,9 +41,9 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
    ./.venv/bin/python tools/twin_cli.py status
    Required: exit 0 and stdout contains 1.0.0-rc1
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 182
+   Required: 0 failed, count > 186
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t13): local twin CLI for interview, approve, render"
+6. git commit -m "feat(t14): local ICS calendar ingest into twin events"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

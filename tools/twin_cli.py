@@ -21,7 +21,17 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from pathlib import Path
 from typing import Any
+
+# ---------------------------------------------------------------------------#
+# sys.path bootstrap — allow running ``python tools/twin_cli.py`` directly
+# without a pre-configured PYTHONPATH.
+# ---------------------------------------------------------------------------#
+if "core" not in sys.modules:
+    _repo_root = str(Path(__file__).resolve().parent.parent)
+    if _repo_root not in sys.path:
+        sys.path.insert(0, _repo_root)
 
 # ---------------------------------------------------------------------------#
 # Command handlers — each returns a JSON-serialisable dict or raises.
@@ -74,6 +84,12 @@ def _cmd_render(args: argparse.Namespace) -> dict[str, Any]:
     from core.twin_work_products import render
 
     return render(args.tenant)
+
+
+def _cmd_calendar_ics(args: argparse.Namespace) -> dict[str, Any]:
+    from core.twin_calendar import ingest_ics
+
+    return ingest_ics(args.tenant, args.path)
 
 
 # ---------------------------------------------------------------------------#
@@ -135,6 +151,11 @@ def _build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("render", help="Render local work-product files.")
     p.add_argument("--tenant", required=True)
 
+    # calendar-ics
+    p = sub.add_parser("calendar-ics", help="Ingest a local .ics calendar file.")
+    p.add_argument("--tenant", required=True)
+    p.add_argument("--path", required=True)
+
     return parser
 
 
@@ -152,6 +173,7 @@ def main(argv: list[str] | None = None) -> int:
         "actions-approve": _cmd_actions_approve,
         "actions-execute": _cmd_actions_execute,
         "render": _cmd_render,
+        "calendar-ics": _cmd_calendar_ics,
     }[args.command]
 
     try:

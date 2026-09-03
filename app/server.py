@@ -48,6 +48,7 @@ from core.twin_behavior import (
 from core.twin_behavior import (
     rebuild as twin_rebuild_behavior,
 )
+from core.twin_calendar import ingest_ics as twin_ingest_ics
 from core.twin_events import ingest_event as twin_ingest_event
 from core.twin_evolution import evolve as twin_evolve
 from core.twin_evolution import weekly_digest as twin_weekly_digest
@@ -163,6 +164,13 @@ class TwinWorkProductsRenderRequest(BaseModel):
     """Body for rendering local work-product files."""
 
     tenant_id: str
+
+
+class TwinCalendarIcsRequest(BaseModel):
+    """Body for ingesting a local .ics calendar file."""
+
+    tenant_id: str
+    ics_path: str
 
 
 def create_app() -> FastAPI:
@@ -703,6 +711,18 @@ def create_app() -> FastAPI:
     ) -> Any:
         try:
             return twin_render_work_products(request.tenant_id)
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": str(exc)},
+            )
+
+    # --- Twin local ICS calendar ingest (T14) ---
+
+    @app.post("/api/v1/twin/calendar/ics", tags=["twin"], status_code=200)
+    def twin_calendar_ics(request: TwinCalendarIcsRequest) -> Any:
+        try:
+            return twin_ingest_ics(request.tenant_id, request.ics_path)
         except ValueError as exc:
             return JSONResponse(
                 status_code=400,
