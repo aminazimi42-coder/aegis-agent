@@ -5,7 +5,6 @@ from typing import Any, Callable, List
 from pydantic import ValidationError
 
 from core.agent_registry import AGENT_REGISTRY
-from core.ai_core import AICore
 from core.circuit_breaker import CircuitBreakerSingleton
 from core.evidence_ledger import EvidenceLedgerSingleton
 from core.schemas import AgentResponse
@@ -14,6 +13,13 @@ from core.scorecard import ScorecardSingleton
 
 class TrustAwareModelRouter:
     """Choose the most suitable specialist based on trust-aware routing signals."""
+
+    CHEAP_MODEL = "aegis-cheap"
+    EXPENSIVE_MODEL = "aegis-expensive"
+    EXPENSIVE_KEYWORDS = (
+        "architecture", "security-review", "incident", "settlement",
+        "multi-step", "design", "refactor",
+    )
 
     ROUTE_KEYWORDS = {
         "Alina": [
@@ -81,6 +87,22 @@ class TrustAwareModelRouter:
         chosen = max(scores, key=lambda name: scores[name])
         return chosen if scores[chosen] > 0 else "Alina"
 
+    def decide_llm_model(self, task: str) -> str:
+        """Select cheap vs expensive LLM model based on task complexity."""
+        normalized = (task or "").lower()
+        if len(normalized) > 800:
+            return self.EXPENSIVE_MODEL
+        if any(kw in normalized for kw in self.EXPENSIVE_KEYWORDS):
+            return self.EXPENSIVE_MODEL
+        return self.CHEAP_MODEL
+
+    def route_task(self, task: str) -> dict[str, Any]:
+        """Return agent name, model, and tier for a task."""
+        agent_name = self.decide_model(task)
+        model = self.decide_llm_model(task)
+        tier = "expensive" if model == self.EXPENSIVE_MODEL else "cheap"
+        return {"agent_name": agent_name, "model": model, "tier": tier}
+
     def evaluate(self, task: str, preferred_model: str | None = None) -> dict[str, Any]:
         """Return trust-aware routing metadata for a candidate task."""
         selected_model = self.decide_model(task, preferred_model)
@@ -118,6 +140,7 @@ class TrustAwareModelRouter:
                 raise TypeError("Router factory must return a dictionary payload.")
             return payload
 
+        from core.ai_core import AICore
         ai_core = AICore()
         result = ai_core.dispatch(task)
         return {

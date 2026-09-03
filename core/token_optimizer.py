@@ -62,6 +62,7 @@ class TokenOptimizer:
         task: str,
         agent_name: str,
         response: str | None = None,
+        model: str = "aegis-cheap",
     ) -> dict[str, Any]:
         task_tokens = self.estimate_tokens(task)
         response_tokens = self.estimate_tokens(response)
@@ -70,6 +71,8 @@ class TokenOptimizer:
         with self._lock:
             if total_tokens > self.max_tokens_per_request:
                 total_tokens = self.max_tokens_per_request
+
+            self.check_budget(total_tokens)
 
             self._total_tokens += total_tokens
             entry = {
@@ -85,6 +88,7 @@ class TokenOptimizer:
             ]
 
         self.cache_response(task, agent_name, response or "")
+        self._ledger_usage(task, agent_name, total_tokens, model)
         return {
             "task": task,
             "agent_name": agent_name,
@@ -92,6 +96,35 @@ class TokenOptimizer:
             "total_tokens": self._total_tokens,
             "daily_budget_remaining": max(self.daily_budget - self._total_tokens, 0),
         }
+
+    def check_budget(self, additional_tokens: int) -> None:
+        """Raise PermissionError if adding tokens would exceed the daily budget."""
+        if self._total_tokens + additional_tokens > self.daily_budget:
+            raise PermissionError("token budget exceeded")
+
+    def _ledger_usage(
+        self,
+        task: str,
+        agent_name: str,
+        tokens: int,
+        model: str,
+    ) -> None:
+        """Best-effort persistence of usage to the evidence ledger."""
+        try:
+            from core.evidence_ledger import EvidenceLedgerSingleton
+            EvidenceLedgerSingleton.append_entry(
+                tenant_id="system",
+                actor=agent_name,
+                action="llm_usage",
+                payload={
+                    "task": task,
+                    "model": model,
+                    "tokens": tokens,
+                    "agent_name": agent_name,
+                },
+            )
+        except Exception:
+            pass
 
     def usage_summary(self) -> dict[str, Any]:
         with self._lock:

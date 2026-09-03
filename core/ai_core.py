@@ -10,6 +10,8 @@ from agents.bita.agent import BitaAgent
 from agents.kian.agent import KianAgent
 
 from core.agent_registry import AGENT_REGISTRY
+from core.llm_provider import LLMProvider, get_provider
+from core.model_router import TrustAwareModelRouter
 from core.token_optimizer import TokenOptimizer
 
 
@@ -19,6 +21,8 @@ class AICore:
     def __init__(self) -> None:
         self.registry = {agent.name: agent for agent in AGENT_REGISTRY}
         self.token_optimizer = TokenOptimizer()
+        self.llm_provider: LLMProvider = get_provider()
+        self.model_router = TrustAwareModelRouter()
         self.agent_map = {
             "Alina": AlinaAgent(),
             "Kian": KianAgent(),
@@ -95,18 +99,24 @@ class AICore:
         cached_response = self.token_optimizer.get_cached_response(task)
         if cached_response is not None:
             agent_name = self.resolve_agent_name(task)
-            self.token_optimizer.record_usage(task, agent_name, cached_response)
+            model = self.model_router.decide_llm_model(task)
             return {
                 "agent_name": agent_name,
                 "response": cached_response,
                 "task": task,
                 "cached": True,
+                "model": model,
+                "tokens": 0,
             }
 
         agent_name = self.resolve_agent_name(task)
         agent = self.agent_map[agent_name]
-        response = agent.handle(task)
-        self.token_optimizer.record_usage(task, agent_name, response)
+        model = self.model_router.decide_llm_model(task)
+        prompt = agent.handle(task)
+        result = self.llm_provider.complete(prompt, model=model, max_tokens=512)
+        response = result["text"]
+        tokens = result["total_tokens"]
+        self.token_optimizer.record_usage(task, agent_name, response, model=model)
         self.token_optimizer.cache_response(task, agent_name, response)
 
         return {
@@ -114,6 +124,8 @@ class AICore:
             "response": response,
             "task": task,
             "cached": False,
+            "model": model,
+            "tokens": tokens,
         }
 
     def run_workflow(self, task: str) -> List[Dict[str, Any]]:
