@@ -684,6 +684,14 @@ def create_app() -> FastAPI:
         actions = twin_action_list(tenant_id)
         return {"actions": actions, "count": len(actions)}
 
+    # --- Production integrity (T07) --- #
+
+    @app.get("/api/v1/platform/status", tags=["twin"])
+    def platform_status_endpoint() -> Any:
+        from core.platform_status import platform_status as _status
+
+        return _status()
+
     return app
 
 

@@ -1,49 +1,48 @@
-T06 — Twin proposed actions with human approval. Do ONLY this directive. Do not start T07. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 75759ed. Do not rewrite README. Do not add payments, bank transfer, email send, GitHub OAuth, Telegram, or desktop UI. Source, comments, commit message: English only.
+T07 — Production integrity capstone. Do ONLY this directive. Do not start T08. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 62af1ba. Do not rewrite README. Do not add payments, OAuth, Telegram, or desktop UI. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T05. pytest was 133 green after T05.
+Baseline on main (do not regress): T01–T06. pytest was 145 green after T06.
 
-GOAL: the twin may PROPOSE work items from the profile + digest, but it must not act until the human approves. Execution for this slice is a stub that records "executed" in SQLite only. No external side effects.
+GOAL: one honest platform status surface that a CTO can trust, plus a single end-to-end test that walks interview -> event -> digest -> propose -> approve -> execute without network.
 
 Implement:
 
-1) core/twin_actions.py
-- Action kinds allowlist: "review_digest", "review_repos", "prepare_weekly_plan"
-- propose_actions(tenant_id) -> list of actions. Require consented profile or raise ValueError("no consented profile")
-  Deterministic: one review_digest, plus review_repos if layers.repositories nonempty, plus prepare_weekly_plan
-- Each action: action_id, tenant_id, kind, title, status (proposed|approved|rejected|executed), created_at
-- Persist table twin_actions via core.persistence
-- approve(action_id) sets approved; reject(action_id) sets rejected; unknown id raises ValueError
-- execute(action_id) only if status==approved else PermissionError("approval required"); then status=executed and write evidence ledger action="twin_action_executed" if ledger works
-- list_actions(tenant_id)
+1) core/platform_status.py
+- platform_status() -> dict with exactly these keys:
+  version (from config, 1.0.0-rc1)
+  agent_count (6)
+  agents (list of six names in registry order)
+  llm_provider (get_provider class name or AEGIS_LLM_PROVIDER default "echo")
+  twin_routes (bool True if the FastAPI app object can be inspected OR just True if modules twin_interview, twin_events, twin_actions, twin_git_observer import)
+  persistence ("sqlite")
+- No marketing claims. No "enterprise AGI" strings.
 
-2) API /api/v1/twin
-- POST /actions/propose  body {tenant_id}
-- POST /actions/{action_id}/approve
-- POST /actions/{action_id}/reject
-- POST /actions/{action_id}/execute
-- GET  /actions/{tenant_id}
-Keep T03–T05 routes working. Do not break digest or observe/git.
+2) API
+- GET /api/v1/platform/status  returns platform_status()
+Keep every existing twin route working (session, profile, events, digest, observe/git, actions).
 
-3) tests/test_t06_twin_actions.py
-- propose without profile raises ValueError
-- after T03 commit: propose returns >=1 proposed
-- execute before approve raises PermissionError
-- approve then execute -> status executed
-- FastAPI: propose 200, approve 200, execute 200
-- AEGIS_DATA_DIR temp isolation; no network
+3) tests/test_t07_production_integrity.py
+- platform_status version 1.0.0-rc1, agent_count 6, agents include Ahmad and Amin, llm_provider contains echo (case-insensitive)
+- FastAPI GET /api/v1/platform/status 200
+- E2E isolated AEGIS_DATA_DIR:
+  start+6 answers+commit consent True
+  ingest git commit event + evolve
+  weekly_digest event_count >= 1
+  propose_actions >= 1
+  execute before approve raises PermissionError
+  approve then execute status executed
+- No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
-3. Proof — write a short /tmp/t06_proof.py if the one-liner is awkward. Required stdout:
-   GATED
-   executed
-   Logic: T03 interview+commit for tenant t6, propose_actions, execute(first_id) must raise PermissionError and print GATED, then approve+execute prints executed.
+3. Proof:
+   ./.venv/bin/python -c "from core.platform_status import platform_status; s=platform_status(); print(s['version'], s['agent_count'], s['llm_provider'])"
+   Required: 1.0.0-rc1 6 and echo somewhere in the provider string
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 133
+   Required: 0 failed, count > 145
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t06): proposed twin actions with human approval gate"
+6. git commit -m "feat(t07): honest platform status and twin e2e integrity test"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
