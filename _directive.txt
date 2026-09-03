@@ -1,28 +1,40 @@
-T34 — Local audio sidecar to a proposed task. Do ONLY this directive. Do not start T35. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend cea3de5. Do not rewrite README. Do not call cloud speech-to-text or whisper. Source, comments, commit message: English only.
+T35 — Unified twin API error body. Do ONLY this directive. Do not start T36. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend cd1fb63. Do not rewrite README. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T33. HEAD cea3de5. pytest was 307 green after T33.
+Baseline on main (do not regress): T01–T34. HEAD cd1fb63. pytest was 313 green after T34.
 
-GOAL: if the principal drops note.wav plus note.txt next to it, treat the txt as the transcript and reuse T30. No audio decode.
+GOAL: every twin route that catches ValueError returns the same JSON shape without breaking existing 400 tests.
 
 Implement:
 
-1) core/twin_audio_task.py
-- from_audio(tenant_id, audio_path) -> dict from from_transcript
-- Require consented profile or raise ValueError("no consented profile")
-- Require Path(audio_path).is_file() or raise ValueError("audio not found")
-- sidecar = same stem + ".txt"; if missing raise ValueError("transcript sidecar not found")
-- Call core.twin_transcript_task.from_transcript(tenant_id, sidecar)
-- Also write work_products/{tenant_id}/audio_task.md pointing at the sidecar name
+1) core/api_errors.py
+- KNOWN = map exact messages to codes:
+  "no consented profile" -> TWIN_NO_PROFILE
+  "action not found" -> TWIN_ACTION_MISSING
+  "not approved" -> TWIN_NOT_APPROVED
+  "samples dir not found" -> TWIN_SAMPLES_MISSING
+  "diff not found" -> TWIN_DIFF_MISSING
+  "receipts dir not found" -> TWIN_RECEIPTS_MISSING
+  "export not found" -> TWIN_EXPORT_MISSING
+  "transcript not found" -> TWIN_TRANSCRIPT_MISSING
+  "audio not found" -> TWIN_AUDIO_MISSING
+  "transcript sidecar not found" -> TWIN_SIDECAR_MISSING
+  "invalid duration" -> TWIN_BAD_DURATION
+- error_payload(exc: Exception, request_id: str | None = None) -> dict
+  detail MUST remain str(exc) unchanged
+  code from KNOWN or TWIN_ERROR
+  request_id = given or uuid4 hex
+- twin_value_error_response(exc) -> JSONResponse status 400 with that payload
 
-2) API POST /api/v1/twin/audio/task body {tenant_id, audio_path}
-3) CLI audio-task --tenant ID --file PATH
+2) app/server.py
+- Replace twin-route `JSONResponse(content={"detail": str(exc)}, status_code=400)` with twin_value_error_response(exc)
+- Do not change 200 paths
+- Do not change non-twin routes unless they already use the same one-liner
 
-4) tests/test_t34_twin_audio_task.py
-- AEGIS_DATA_DIR temp
-- without profile ValueError
-- after T03 commit write dummy.wav bytes and dummy.txt "Call the Berlin hotel tonight": result title or markdown contains Berlin hotel
-- missing sidecar raises
-- FastAPI 200
+3) tests/test_t35_api_errors.py
+- error_payload(ValueError("no consented profile"))["detail"] == "no consented profile"
+- same payload ["code"] == "TWIN_NO_PROFILE"
+- payload has request_id non-empty
+- FastAPI POST /api/v1/twin/resume/render without profile still 400 and detail contains consented
 - No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -30,12 +42,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_audio_task import from_audio; print(callable(from_audio))"
+   ./.venv/bin/python -c "from core.api_errors import error_payload, twin_value_error_response; print(callable(error_payload))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 307
+   Required: 0 failed, count > 313
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t34): local audio sidecar transcript to proposed task"
+6. git commit -m "feat(t35): unified twin API error payload with stable detail"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

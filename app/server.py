@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from core.ai_core import AICore
+from core.api_errors import twin_value_error_response
 from core.evidence_ledger import EvidenceLedgerSingleton
 from core.finops_autopilot import FinOpsAutopilot
 from core.human_authority import HumanAuthority
@@ -763,10 +764,7 @@ def create_app() -> FastAPI:
             evolved = twin_evolve(request.tenant_id, event)
             return {"event": event, "profile": evolved}
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     @app.get("/api/v1/twin/digest/{tenant_id}", tags=["twin"])
     def twin_digest_get(tenant_id: str) -> Any:
@@ -789,10 +787,7 @@ def create_app() -> FastAPI:
                 max_commits=request.max_commits,
             )
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     # --- Twin GitHub PAT observer (T10) ---
 
@@ -805,10 +800,7 @@ def create_app() -> FastAPI:
                 max_commits=request.max_commits,
             )
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     # --- Twin behavioral memory (T11) ---
 
@@ -821,10 +813,7 @@ def create_app() -> FastAPI:
         try:
             return twin_rebuild_behavior(request.tenant_id)
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     @app.get("/api/v1/twin/behavior/{tenant_id}", tags=["twin"])
     def twin_behavior_get(tenant_id: str) -> Any:
@@ -847,10 +836,7 @@ def create_app() -> FastAPI:
         try:
             return twin_render_work_products(request.tenant_id)
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     # --- Twin local ICS calendar ingest (T14) ---
 
@@ -859,10 +845,7 @@ def create_app() -> FastAPI:
         try:
             return twin_ingest_ics(request.tenant_id, request.ics_path)
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     # --- Twin morning brief (T18) ---
 
@@ -871,10 +854,7 @@ def create_app() -> FastAPI:
         try:
             return twin_render_brief(request.tenant_id)
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     # --- Twin email triage (T19) ---
 
@@ -883,10 +863,7 @@ def create_app() -> FastAPI:
         try:
             return twin_email_triage(request.tenant_id, request.mail_dir)
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     # --- Twin meeting briefs (T20) ---
 
@@ -895,10 +872,7 @@ def create_app() -> FastAPI:
         try:
             return twin_render_meetings(request.tenant_id)
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     # --- Twin follow-ups (T21) ---
 
@@ -907,10 +881,7 @@ def create_app() -> FastAPI:
         try:
             return twin_render_followups(request.tenant_id)
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     # --- Twin delegate pack (T22) ---
 
@@ -919,10 +890,7 @@ def create_app() -> FastAPI:
         try:
             return twin_render_pack(request.tenant_id)
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     # --- Twin decisions (T23) ---
 
@@ -936,10 +904,7 @@ def create_app() -> FastAPI:
                 request.reason,
             )
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     @app.get("/api/v1/twin/decisions/{tenant_id}", tags=["twin"])
     def twin_decision_list(tenant_id: str, q: str = "") -> Any:
@@ -953,10 +918,7 @@ def create_app() -> FastAPI:
         try:
             return twin_lock_style(request.tenant_id, request.samples_dir)
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     # --- Twin PR review (T25) ---
 
@@ -965,10 +927,7 @@ def create_app() -> FastAPI:
         try:
             return twin_review_diff(request.tenant_id, request.diff_path)
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     # --- Twin expenses (T26) ---
 
@@ -977,10 +936,7 @@ def create_app() -> FastAPI:
         try:
             return twin_ingest_receipts(request.tenant_id, request.receipts_dir)
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     # --- Twin focus block (T27) ---
 
@@ -994,10 +950,7 @@ def create_app() -> FastAPI:
                 title=request.title,
             )
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     # --- Twin travel pack (T28) ---
 
@@ -1006,10 +959,7 @@ def create_app() -> FastAPI:
         try:
             return twin_render_travel_pack(request.tenant_id, request.docs_dir)
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     # --- Twin team inbox (T29) ---
 
@@ -1018,10 +968,7 @@ def create_app() -> FastAPI:
         try:
             return twin_team_inbox_triage(request.tenant_id, request.export_path)
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     # --- Twin transcript task (T30) ---
 
@@ -1030,10 +977,7 @@ def create_app() -> FastAPI:
         try:
             return twin_from_transcript(request.tenant_id, request.transcript_path)
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     # --- Twin audio task (T34) ---
 
@@ -1042,10 +986,7 @@ def create_app() -> FastAPI:
         try:
             return twin_from_audio(request.tenant_id, request.audio_path)
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     # --- Twin board memo (T31) ---
 
@@ -1054,10 +995,7 @@ def create_app() -> FastAPI:
         try:
             return twin_render_board_memo(request.tenant_id)
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     # --- Twin resume pack (T32) ---
 
@@ -1066,10 +1004,7 @@ def create_app() -> FastAPI:
         try:
             return twin_render_resume(request.tenant_id)
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     # --- Twin email send to local outbox (T33) ---
 
@@ -1078,10 +1013,7 @@ def create_app() -> FastAPI:
         try:
             return twin_email_send(request.tenant_id, request.action_id)
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     # --- Twin proposed actions with human approval gate (T06) ---
 
@@ -1093,10 +1025,7 @@ def create_app() -> FastAPI:
             actions = twin_action_propose(request.tenant_id)
             return {"actions": actions, "count": len(actions)}
         except ValueError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": str(exc)},
-            )
+            return twin_value_error_response(exc)
 
     @app.post(
         "/api/v1/twin/actions/{action_id}/approve", tags=["twin"], status_code=200
