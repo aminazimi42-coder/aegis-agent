@@ -1,41 +1,30 @@
-T45 — Executive home page from real local state. Do ONLY this directive. Do not start T46. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 0525549. Do not rewrite README. Do not call a cloud model. Source, comments, commit message: English only.
+T46 — Restart contract tests for persist, spend, jobs. Do ONLY this directive. Do not start T47. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 5c61c61. Do not rewrite README. Source, comments, commit message: English only.
 
-Baseline on main: T01–T44. HEAD 0525549. pytest was 384 green after T44.
+Baseline on main: T01–T45. HEAD 5c61c61. pytest was 393 green after T45.
 
-GOAL: one home.md a busy principal can read in seconds: pending approvals, due jobs, pointer to morning brief if present.
+GOAL: one test module proves the durable pieces survive a second process. No new product feature.
 
 Implement:
 
-1) core/twin_home.py
-- render_home(tenant_id) -> {tenant_id, path}
-- Require consented profile or raise ValueError("no consented profile")
-- Sections:
-  Pending approvals — from twin_persist.list_approvals if status pending, else "(none)"
-  Due commitments — from twin_scheduler.list_jobs(tenant_id, status="due") if that signature exists, else list and filter status==due
-  Brief — if work_products/{tenant_id}/morning_brief.md exists, mention the filename; do not regenerate the brief
-- Write work_products/{tenant_id}/home.md overwrite
-
-2) API POST /api/v1/twin/home body {tenant_id}
-3) CLI home --tenant ID
-
-4) tests/test_t45_twin_home.py
-- AEGIS_DATA_DIR temp
-- without profile ValueError
-- after T03 commit render_home writes home.md containing "Pending" or "Due"
-- FastAPI 200
+1) tests/test_t46_restart_contract.py only (plus tiny helper in core/twin_persist.py only if a function is missing)
+- AEGIS_DATA_DIR temp shared across two subprocesses
+- Subprocess A: put_approval(... status pending), add_spend(tenant, 10), schedule a job due in the past after T03 commit in that process
+- Subprocess B: get_approval finds the row; get_budget spent >= 10; list_jobs sees the job
+- Tick in B flips due if still scheduled
 - No live network
+- Do not add desktop, payments, or README claims
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_home import render_home; print(callable(render_home))"
+   ./.venv/bin/python -c "from pathlib import Path; print(Path('tests/test_t46_restart_contract.py').is_file())"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 384
+   Required: 0 failed, count > 393
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t45): executive home from approvals and due jobs"
+6. git commit -m "test(t46): restart contract for approvals budgets and jobs"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
