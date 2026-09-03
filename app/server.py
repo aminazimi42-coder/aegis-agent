@@ -65,6 +65,7 @@ from core.twin_interview import (
 from core.twin_interview import (
     start_session as twin_start,
 )
+from core.twin_work_products import render as twin_render_work_products
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -154,6 +155,12 @@ class TwinObserveGithubRequest(BaseModel):
 
 class TwinBehaviorRebuildRequest(BaseModel):
     """Body for rebuilding the versioned behavioral snapshot."""
+
+    tenant_id: str
+
+
+class TwinWorkProductsRenderRequest(BaseModel):
+    """Body for rendering local work-product files."""
 
     tenant_id: str
 
@@ -685,6 +692,22 @@ def create_app() -> FastAPI:
                 content={"detail": "no behavior snapshot for this tenant"},
             )
         return result
+
+    # --- Twin local work products (T12) ---
+
+    @app.post(
+        "/api/v1/twin/work-products/render", tags=["twin"], status_code=200
+    )
+    def twin_work_products_render(
+        request: TwinWorkProductsRenderRequest,
+    ) -> Any:
+        try:
+            return twin_render_work_products(request.tenant_id)
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": str(exc)},
+            )
 
     # --- Twin proposed actions with human approval gate (T06) ---
 

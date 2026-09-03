@@ -1,44 +1,43 @@
-T11 — Versioned behavioral memory from twin events. Do ONLY this directive. Do not start T12. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 016c072. Do not rewrite README. Do not add OAuth, desktop UI, or payments. Source, comments, commit message: English only.
+T12 — Local work-product files from the twin. Do ONLY this directive. Do not start T13. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 7788df1. Do not rewrite README. Do not add OAuth, desktop UI, or payments. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T10. pytest was 168 green after T10.
+Baseline on main (do not regress): T01–T11. pytest was 177 green after T11.
 
-GOAL: turn accumulated events into a versioned habit snapshot the twin can read. This is the machinery for a multi-month twin; it does not invent months of data.
+GOAL: the twin must emit real local artifacts a CTO can open: weekly plan + repo review notes. Files only. No email, no GitHub write.
 
 Implement:
 
-1) core/twin_behavior.py
-- rebuild(tenant_id) -> dict:
-  tenant_id, version (int), event_count, sources {name: count}, repos list unique, top_subjects list up to 5 from commit subjects, updated_at
+1) core/twin_work_products.py
+- render(tenant_id) -> dict {tenant_id, dir, files: list[str]}
 - Require consented profile or raise ValueError("no consented profile")
-- Derive only from twin_events for that tenant (list_events or SQL)
-- Persist table twin_behavior (tenant_id unique, version, snapshot JSON, updated_at)
-- If snapshot equal to last stored snapshot: keep version, else version+1
-- get_behavior(tenant_id) -> latest snapshot or None
+- Call rebuild() from twin_behavior if get_behavior is None (safe if already imported)
+- Write under Path(AEGIS_DATA_DIR or ./data)/work_products/{tenant_id}/
+  - weekly_plan.md  — title, profile role if any, repos from behavior or layers, event_count, 3 bullet next actions (deterministic text, not a live LLM)
+  - review_notes.md — one section per repo name
+- Overwrite those two files on each render
+- Return absolute or as_posix paths in files
 
 2) API
-- POST /api/v1/twin/behavior/rebuild body {tenant_id}
-- GET  /api/v1/twin/behavior/{tenant_id}  200 or 404
-Keep existing twin routes.
+- POST /api/v1/twin/work-products/render body {tenant_id}
+Keep existing routes.
 
-3) tests/test_t11_twin_behavior.py
+3) tests/test_t12_twin_work_products.py
 - AEGIS_DATA_DIR temp
-- rebuild without profile raises ValueError
-- after T03 commit + one git ingest_event: rebuild event_count >= 1, version == 1
-- second rebuild with no new events: version stays 1
-- GET FastAPI after rebuild 200
-- No live network / no LLM required
+- render without profile raises ValueError
+- after T03 commit + ingest git repo acme/core: render creates both md files; weekly_plan.md contains acme/core; files len == 2
+- FastAPI client 200
+- No live network / no paid LLM required
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_behavior import rebuild, get_behavior; print(callable(rebuild), callable(get_behavior))"
-   Required: True True
+   ./.venv/bin/python -c "from core.twin_work_products import render; print(callable(render))"
+   Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 168
+   Required: 0 failed, count > 177
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t11): versioned behavioral memory from twin events"
+6. git commit -m "feat(t12): render local weekly plan and review notes"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
