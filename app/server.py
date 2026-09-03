@@ -67,6 +67,7 @@ from core.twin_interview import (
 from core.twin_interview import (
     start_session as twin_start,
 )
+from core.twin_meeting_brief import render_meetings as twin_render_meetings
 from core.twin_morning_brief import render_brief as twin_render_brief
 from core.twin_work_products import render as twin_render_work_products
 from fastapi import FastAPI, Request
@@ -186,6 +187,12 @@ class TwinEmailTriageRequest(BaseModel):
 
     tenant_id: str
     mail_dir: str
+
+
+class TwinMeetingBriefsRequest(BaseModel):
+    """Body for rendering per-meeting briefs."""
+
+    tenant_id: str
 
 
 def create_app() -> FastAPI:
@@ -762,6 +769,18 @@ def create_app() -> FastAPI:
     def twin_email_triage_endpoint(request: TwinEmailTriageRequest) -> Any:
         try:
             return twin_email_triage(request.tenant_id, request.mail_dir)
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": str(exc)},
+            )
+
+    # --- Twin meeting briefs (T20) ---
+
+    @app.post("/api/v1/twin/brief/meetings", tags=["twin"], status_code=200)
+    def twin_meeting_briefs(request: TwinMeetingBriefsRequest) -> Any:
+        try:
+            return twin_render_meetings(request.tenant_id)
         except ValueError as exc:
             return JSONResponse(
                 status_code=400,

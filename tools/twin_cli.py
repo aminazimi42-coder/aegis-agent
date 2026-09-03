@@ -12,6 +12,7 @@ Usage::
     python tools/twin_cli.py render --tenant <ID>
     python tools/twin_cli.py brief-morning --tenant <ID>
     python tools/twin_cli.py email-triage --tenant <ID> --dir <PATH>
+    python tools/twin_cli.py brief-meetings --tenant <ID>
 
 Each subcommand prints a JSON object to stdout (``json.dumps(default=str)``)
 and exits 0 on success.  On ``ValueError`` or ``PermissionError`` the CLI
@@ -106,6 +107,12 @@ def _cmd_email_triage(args: argparse.Namespace) -> dict[str, Any]:
     return triage(args.tenant, args.dir)
 
 
+def _cmd_brief_meetings(args: argparse.Namespace) -> dict[str, Any]:
+    from core.twin_meeting_brief import render_meetings
+
+    return render_meetings(args.tenant)
+
+
 # ---------------------------------------------------------------------------#
 # Argument parsing
 # ---------------------------------------------------------------------------#
@@ -179,6 +186,10 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--tenant", required=True)
     p.add_argument("--dir", required=True)
 
+    # brief-meetings
+    p = sub.add_parser("brief-meetings", help="Render per-meeting briefs.")
+    p.add_argument("--tenant", required=True)
+
     return parser
 
 
@@ -199,6 +210,7 @@ def main(argv: list[str] | None = None) -> int:
         "calendar-ics": _cmd_calendar_ics,
         "brief-morning": _cmd_brief_morning,
         "email-triage": _cmd_email_triage,
+        "brief-meetings": _cmd_brief_meetings,
     }[args.command]
 
     try:

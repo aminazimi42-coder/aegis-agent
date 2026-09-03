@@ -1,28 +1,27 @@
-T19 — Local email triage drafts. Do ONLY this directive. Do not start T20. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 44164d7. Do not rewrite README. Do not send email, do not add IMAP/SMTP, payments, or OAuth. Source, comments, commit message: English only.
+T20 — Meeting brief from calendar + repos. Do ONLY this directive. Do not start T21. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 44b1e1b. Do not rewrite README. Do not add email send, payments, or OAuth. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T18. HEAD 44164d7. pytest was 204 green after T18.
+Baseline on main (do not regress): T01–T19. HEAD 44b1e1b. pytest was 210 green after T19.
 
-GOAL: read a folder of .eml files and write triage + draft replies as local markdown. No network send.
+GOAL: one markdown page per upcoming calendar meeting with repo context. No live LLM.
 
 Implement:
 
-1) core/twin_email_triage.py
-- triage(tenant_id, mail_dir) -> dict {tenant_id, ingested, path}
+1) core/twin_meeting_brief.py
+- render_meetings(tenant_id) -> dict {tenant_id, path, count}
 - Require consented profile or raise ValueError("no consented profile")
-- Require Path(mail_dir).is_dir() or raise ValueError("mail dir not found")
-- Parse each *.eml with email.message_from_binary_file: From, Subject, first text part[:400]
-- Write work_products/{tenant_id}/email_triage.md with one section per message and a Draft reply: of 2 deterministic sentences (not a live LLM)
-- ingest_event source="email" kind="message" payload={from, subject} then evolve
-- Dedup by (from, subject)
+- Take up to 5 twin_events source=calendar kind=meeting
+- Repos from get_behavior snapshot or git event payloads
+- Write work_products/{tenant_id}/meeting_briefs.md
+- Each meeting section: title/summary, start, repos list, 3 deterministic prep bullets
+- Overwrite on each call
 
-2) API POST /api/v1/twin/email/triage body {tenant_id, mail_dir}
-3) CLI email-triage --tenant ID --dir PATH
+2) API POST /api/v1/twin/brief/meetings body {tenant_id}
+3) CLI brief-meetings --tenant ID
 
-4) tests/test_t19_twin_email_triage.py
+4) tests/test_t20_twin_meeting_brief.py
 - AEGIS_DATA_DIR temp
 - without profile ValueError
-- write one tiny .eml From: a@b.com Subject: Budget review
-- after T03 commit: triage file contains Budget review and Draft
+- after T03 commit + ingest calendar Standup: file contains Standup
 - FastAPI 200
 - No live network
 
@@ -31,12 +30,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_email_triage import triage; print(callable(triage))"
+   ./.venv/bin/python -c "from core.twin_meeting_brief import render_meetings; print(callable(render_meetings))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 204
+   Required: 0 failed, count > 210
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t19): local eml triage drafts without sending mail"
+6. git commit -m "feat(t20): meeting briefs from calendar events and repos"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
