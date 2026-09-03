@@ -1,30 +1,26 @@
-T39 — Persist approvals and FinOps budgets in SQLite. Do ONLY this directive. Do not start T40. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend a6a0815. Do not rewrite README. Do not add a payment gateway. Source, comments, commit message: English only.
+T40 — Durable token spend on every safe completion. Do ONLY this directive. Do not start T41. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 3d58724. Do not rewrite README. Do not call a live paid API in tests. Source, comments, commit message: English only.
 
-Baseline on main: T01–T38. HEAD a6a0815. pytest was 336 green after T38.
+Baseline on main: T01–T39. HEAD 3d58724. pytest was 342 green after T39.
 
-GOAL: process restart must not wipe approval rows or tenant budget remaining. Same public routes.
+GOAL: Echo stays default. complete_safe already uses get_provider. After each complete_safe, persist token spend so restart keeps the burn.
 
 Implement:
 
-1) core/twin_persist.py
-- db path = Path(AEGIS_DATA_DIR or "data") / "aegis.sqlite"
-- init_schema() tables:
-  approvals(id TEXT PK, tenant_id TEXT, title TEXT, status TEXT, payload TEXT, created_at TEXT, decided_at TEXT)
-  budgets(tenant_id TEXT PK, cap REAL, spent REAL, updated_at TEXT)
-- put_approval / get_approval / list_approvals
-- get_budget / set_budget / add_spend(tenant_id, amount) -> remaining
-- All functions open their own connection; close after use
+1) core/llm_safety.py complete_safe
+- After a successful provider.complete, call core.twin_persist.add_spend(tenant_id, total_tokens)
+- tenant_id from kwargs if present else "default"
+- If add_spend raises, still return the completion (do not hide the text)
+- Do not change EchoProvider default
+- Do not require AEGIS_LLM_BASE_URL in tests
 
-2) Wire without breaking callers
-- app/server.py approvals/request and approvals/{id}/decide must use put_approval/get_approval instead of only app.state.approvals
-- core/finops_autopilot.py: if a remaining/cap method exists, persist via set_budget/add_spend; if the class is in-memory only, add load/save hooks on those methods without changing method names callers already use
-- Keep 400 ValueError shape via existing twin_value_error_response where twin routes already use it
+2) core/twin_persist.py
+- add_spend already exists from T39; if missing, implement it
+- Optional table llm_calls is allowed but not required
 
-3) tests/test_t39_persist_restart.py
+3) tests/test_t40_llm_spend.py
 - AEGIS_DATA_DIR temp
-- put_approval then new Python process reading same db file still finds the row
-- add_spend then new function call on a fresh object/connection sees spent
-- FastAPI POST /approvals/request then GET-or-decide still works after creating a second TestClient (simulates restart of app.state)
+- get_provider() is EchoProvider when AEGIS_LLM_PROVIDER unset
+- complete_safe("hello", tenant_id="t40") then get_budget("t40") spent > 0
 - No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -32,12 +28,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_persist import put_approval, get_budget; print(callable(put_approval))"
-   Required: True
+   ./.venv/bin/python -c "from core.llm_provider import get_provider; print(type(get_provider()).__name__)"
+   Required: EchoProvider
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 336
+   Required: 0 failed, count > 342
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t39): persist approvals and finops budgets in sqlite"
+6. git commit -m "feat(t40): persist token spend after complete_safe"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

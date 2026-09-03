@@ -105,6 +105,11 @@ def complete_safe(
     values. If the ledger is unavailable or the append fails the
     completion result is still returned unchanged.
 
+    After the provider returns, token usage is persisted via
+    :func:`core.twin_persist.add_spend` so a process restart keeps the
+    cumulative burn.  If ``add_spend`` raises, the completion result is
+    still returned unchanged.
+
     This module never calls any downstream action runner; it only
     reads provider output and classifies it against the allowlist.
     """
@@ -126,6 +131,14 @@ def complete_safe(
 
     provider = get_provider()
     raw = provider.complete(safe_prompt, model=model, max_tokens=max_tokens)
+
+    # Persist token spend so a restart keeps the burn.
+    try:
+        from core.twin_persist import add_spend
+
+        add_spend(tenant_id, float(raw.get("total_tokens", 0)))
+    except Exception:
+        pass
 
     text = str(raw.get("text", ""))
     tool = _parse_tool(text)
