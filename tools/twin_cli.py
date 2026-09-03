@@ -140,6 +140,12 @@ def _cmd_decision_list(args: argparse.Namespace) -> dict[str, Any]:
     return {"decisions": decisions, "count": len(decisions)}
 
 
+def _cmd_style_lock(args: argparse.Namespace) -> dict[str, Any]:
+    from core.twin_style_lock import lock_style
+
+    return lock_style(args.tenant, args.dir)
+
+
 # ---------------------------------------------------------------------------#
 # Argument parsing
 # ---------------------------------------------------------------------------#
@@ -237,6 +243,11 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--tenant", required=True)
     p.add_argument("--query", default="")
 
+    # style-lock
+    p = sub.add_parser("style-lock", help="Lock writing style from local text samples.")
+    p.add_argument("--tenant", required=True)
+    p.add_argument("--dir", required=True)
+
     return parser
 
 
@@ -262,6 +273,7 @@ def main(argv: list[str] | None = None) -> int:
         "delegate": _cmd_delegate,
         "decision-record": _cmd_decision_record,
         "decision-list": _cmd_decision_list,
+        "style-lock": _cmd_style_lock,
     }[args.command]
 
     try:

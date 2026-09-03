@@ -73,6 +73,7 @@ from core.twin_interview import (
 )
 from core.twin_meeting_brief import render_meetings as twin_render_meetings
 from core.twin_morning_brief import render_brief as twin_render_brief
+from core.twin_style_lock import lock_style as twin_lock_style
 from core.twin_work_products import render as twin_render_work_products
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -218,6 +219,13 @@ class TwinDecisionRecordRequest(BaseModel):
     title: str
     decision: str
     reason: str
+
+
+class TwinStyleLockRequest(BaseModel):
+    """Body for locking a writing-style profile from local text samples."""
+
+    tenant_id: str
+    samples_dir: str
 
 
 def create_app() -> FastAPI:
@@ -857,6 +865,18 @@ def create_app() -> FastAPI:
     def twin_decision_list(tenant_id: str, q: str = "") -> Any:
         decisions = twin_list_decisions(tenant_id, query=q)
         return {"decisions": decisions, "count": len(decisions)}
+
+    # --- Twin style lock (T24) ---
+
+    @app.post("/api/v1/twin/style/lock", tags=["twin"], status_code=200)
+    def twin_style_lock(request: TwinStyleLockRequest) -> Any:
+        try:
+            return twin_lock_style(request.tenant_id, request.samples_dir)
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": str(exc)},
+            )
 
     # --- Twin proposed actions with human approval gate (T06) ---
 
