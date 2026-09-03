@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -9,25 +10,39 @@ try:
 except Exception:
     _HAS_CRYPTO = False
 
-KMS_DIR = Path(".kms")
-KMS_DIR.mkdir(exist_ok=True)
-MASTER_KEY_PATH = KMS_DIR / "master.key"
+
+def _kms_dir() -> Path:
+    base = os.environ.get("AEGIS_DATA_DIR")
+    if base:
+        return Path(base) / ".kms"
+    return Path(".kms")
+
+
+# Module-level constants kept for backward compatibility, but all path
+# resolution goes through _kms_dir() so AEGIS_DATA_DIR is respected at call time.
+KMS_DIR = _kms_dir()
+
+
+def _master_key_path() -> Path:
+    return _kms_dir() / "master.key"
 
 
 def _ensure_master() -> bytes:
-    if MASTER_KEY_PATH.exists():
-        return MASTER_KEY_PATH.read_bytes()
+    mk = _master_key_path()
+    if mk.exists():
+        return mk.read_bytes()
+    _kms_dir().mkdir(parents=True, exist_ok=True)
     if _HAS_CRYPTO:
         key = Fernet.generate_key()
-        MASTER_KEY_PATH.write_bytes(key)
+        mk.write_bytes(key)
         return key
     # fallback: simple file marker
-    MASTER_KEY_PATH.write_text("no-crypto")
+    mk.write_text("no-crypto")
     return b"no-crypto"
 
 
 def _key_path(name: str) -> Path:
-    return KMS_DIR / f"enterprise-{name}.enc"
+    return _kms_dir() / f"enterprise-{name}.enc"
 
 
 def store_key(name: str, pem: bytes) -> None:
@@ -61,7 +76,10 @@ def rotate_key(name: str, new_pem: bytes) -> None:
 
 
 def list_keys() -> list[str]:
-    return [p.stem.replace("enterprise-", "") for p in KMS_DIR.glob("enterprise-*.enc")]
+    return [
+        p.stem.replace("enterprise-", "")
+        for p in _kms_dir().glob("enterprise-*.enc")
+    ]
 
 
 def validate_rotation(name: str, max_age_days: int = 90) -> bool:
@@ -73,7 +91,8 @@ def validate_rotation(name: str, max_age_days: int = 90) -> bool:
     import datetime
 
     p = _key_path(name)
-    if not p.exists() or not MASTER_KEY_PATH.exists():
+    mk = _master_key_path()
+    if not p.exists() or not mk.exists():
         return False
     mtime = datetime.datetime.fromtimestamp(p.stat().st_mtime)
     age_days = (datetime.datetime.now() - mtime).days

@@ -36,14 +36,8 @@ class KeyManager:
 
     def register_private_key(self, name: str, pem: bytes) -> None:
         self._privkeys[name] = pem
-        # persist to KMS for durability (enterprise preferred)
-        try:
-            if _HAS_ENTERPRISE_KMS and enterprise_store_key is not None:
-                enterprise_store_key(name, pem)
-            else:
-                kms_store_key(name, pem)
-        except Exception:
-            pass
+        # persist to the default KMS adapter for durability
+        kms_store_key(name, pem)
 
     def verify(self, key_name: str, payload: bytes, signature: bytes) -> bool:
         pub = self._pubkeys.get(key_name)
@@ -65,12 +59,9 @@ class KeyManager:
         self._privkeys[name] = new_private_pem
         if new_public_pem is not None:
             self._pubkeys[name] = new_public_pem
-        # persist rotation to KMS
+        # persist rotation to the default KMS adapter
+        kms_rotate_key(name, new_private_pem)
         try:
-            if _HAS_ENTERPRISE_KMS and enterprise_rotate_key is not None:
-                enterprise_rotate_key(name, new_private_pem)
-            else:
-                kms_rotate_key(name, new_private_pem)
             EvidenceLedgerSingleton.append_entry(
                 tenant_id="system",
                 actor="key_manager",
