@@ -49,6 +49,7 @@ from core.twin_behavior import (
     rebuild as twin_rebuild_behavior,
 )
 from core.twin_calendar import ingest_ics as twin_ingest_ics
+from core.twin_delegate_pack import render_pack as twin_render_pack
 from core.twin_email_triage import triage as twin_email_triage
 from core.twin_events import ingest_event as twin_ingest_event
 from core.twin_evolution import evolve as twin_evolve
@@ -198,6 +199,12 @@ class TwinMeetingBriefsRequest(BaseModel):
 
 class TwinFollowupsRequest(BaseModel):
     """Body for rendering the follow-up list."""
+
+    tenant_id: str
+
+
+class TwinDelegatePackRequest(BaseModel):
+    """Body for rendering the delegate pack."""
 
     tenant_id: str
 
@@ -800,6 +807,18 @@ def create_app() -> FastAPI:
     def twin_followups_render(request: TwinFollowupsRequest) -> Any:
         try:
             return twin_render_followups(request.tenant_id)
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": str(exc)},
+            )
+
+    # --- Twin delegate pack (T22) ---
+
+    @app.post("/api/v1/twin/delegate/render", tags=["twin"], status_code=200)
+    def twin_delegate_pack_render(request: TwinDelegatePackRequest) -> Any:
+        try:
+            return twin_render_pack(request.tenant_id)
         except ValueError as exc:
             return JSONResponse(
                 status_code=400,

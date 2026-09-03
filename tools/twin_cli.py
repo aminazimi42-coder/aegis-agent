@@ -14,6 +14,7 @@ Usage::
     python tools/twin_cli.py email-triage --tenant <ID> --dir <PATH>
     python tools/twin_cli.py brief-meetings --tenant <ID>
     python tools/twin_cli.py followups --tenant <ID>
+    python tools/twin_cli.py delegate --tenant <ID>
 
 Each subcommand prints a JSON object to stdout (``json.dumps(default=str)``)
 and exits 0 on success.  On ``ValueError`` or ``PermissionError`` the CLI
@@ -120,6 +121,12 @@ def _cmd_followups(args: argparse.Namespace) -> dict[str, Any]:
     return render_followups(args.tenant)
 
 
+def _cmd_delegate(args: argparse.Namespace) -> dict[str, Any]:
+    from core.twin_delegate_pack import render_pack
+
+    return render_pack(args.tenant)
+
+
 # ---------------------------------------------------------------------------#
 # Argument parsing
 # ---------------------------------------------------------------------------#
@@ -201,6 +208,10 @@ def _build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("followups", help="Render the follow-up list.")
     p.add_argument("--tenant", required=True)
 
+    # delegate
+    p = sub.add_parser("delegate", help="Render the delegate pack.")
+    p.add_argument("--tenant", required=True)
+
     return parser
 
 
@@ -223,6 +234,7 @@ def main(argv: list[str] | None = None) -> int:
         "email-triage": _cmd_email_triage,
         "brief-meetings": _cmd_brief_meetings,
         "followups": _cmd_followups,
+        "delegate": _cmd_delegate,
     }[args.command]
 
     try:

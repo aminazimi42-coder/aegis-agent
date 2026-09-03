@@ -1,28 +1,26 @@
-T21 — Follow-up list from email and meetings. Do ONLY this directive. Do not start T22. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend b180972. Do not rewrite README. Do not send email or add payments. Source, comments, commit message: English only.
+T22 — Delegate pack for an assistant. Do ONLY this directive. Do not start T23. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend df91f6a. Do not rewrite README. Do not send email or add payments. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T20. HEAD b180972. pytest was 216 green after T20.
+Baseline on main (do not regress): T01–T21. HEAD df91f6a. pytest was 223 green after T21.
 
-GOAL: one local list of things a busy principal still owes a response to. Deterministic. No live LLM.
+GOAL: one page a principal can hand to an assistant today. Local markdown. No live LLM.
 
 Implement:
 
-1) core/twin_followups.py
-- render_followups(tenant_id) -> dict {tenant_id, path, count}
+1) core/twin_delegate_pack.py
+- render_pack(tenant_id) -> dict {tenant_id, path}
 - Require consented profile or raise ValueError("no consented profile")
-- Items from twin_events:
-  source=email kind=message -> follow-up on subject
-  source=calendar kind=meeting -> follow-up after summary
-- Dedup by (source, subject/summary)
-- Write work_products/{tenant_id}/follow_ups.md with numbered items
+- Sections: Meetings (calendar events up to 5), Follow-ups (email subjects up to 8), Pending actions (proposed/approved up to 8), Repos (from behavior or git payloads up to 5)
+- Write work_products/{tenant_id}/delegate_pack.md
+- Include a header "Do not send mail or move money without my written approval."
 - Overwrite on each call
 
-2) API POST /api/v1/twin/followups/render body {tenant_id}
-3) CLI followups --tenant ID
+2) API POST /api/v1/twin/delegate/render body {tenant_id}
+3) CLI delegate --tenant ID
 
-4) tests/test_t21_twin_followups.py
+4) tests/test_t22_twin_delegate_pack.py
 - AEGIS_DATA_DIR temp
 - without profile ValueError
-- after T03 commit + ingest email Budget review: file contains Budget review
+- after T03 commit + ingest calendar Standup: file contains Standup and written approval
 - FastAPI 200
 - No live network
 
@@ -31,12 +29,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_followups import render_followups; print(callable(render_followups))"
+   ./.venv/bin/python -c "from core.twin_delegate_pack import render_pack; print(callable(render_pack))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 216
+   Required: 0 failed, count > 223
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t21): follow-up list from email and meeting events"
+6. git commit -m "feat(t22): assistant delegate pack from meetings followups actions"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
