@@ -146,6 +146,12 @@ def _cmd_style_lock(args: argparse.Namespace) -> dict[str, Any]:
     return lock_style(args.tenant, args.dir)
 
 
+def _cmd_pr_review(args: argparse.Namespace) -> dict[str, Any]:
+    from core.twin_pr_review import review_diff
+
+    return review_diff(args.tenant, args.diff)
+
+
 # ---------------------------------------------------------------------------#
 # Argument parsing
 # ---------------------------------------------------------------------------#
@@ -248,6 +254,11 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--tenant", required=True)
     p.add_argument("--dir", required=True)
 
+    # pr-review
+    p = sub.add_parser("pr-review", help="Turn a local diff into PR review notes.")
+    p.add_argument("--tenant", required=True)
+    p.add_argument("--diff", required=True)
+
     return parser
 
 
@@ -274,6 +285,7 @@ def main(argv: list[str] | None = None) -> int:
         "decision-record": _cmd_decision_record,
         "decision-list": _cmd_decision_list,
         "style-lock": _cmd_style_lock,
+        "pr-review": _cmd_pr_review,
     }[args.command]
 
     try:

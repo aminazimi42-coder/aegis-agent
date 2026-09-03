@@ -1,28 +1,27 @@
-T24 — Writing style lock from local samples. Do ONLY this directive. Do not start T25. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 097c81e. Do not rewrite README. Do not send email or add payments. Source, comments, commit message: English only.
+T25 — Local PR review notes from a diff file. Do ONLY this directive. Do not start T26. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 244d404. Do not rewrite README. Do not push to GitHub, do not call live GitHub, do not add payments. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T23. HEAD 097c81e. pytest was 237 green after T23.
+Baseline on main (do not regress): T01–T24. HEAD 244d404. pytest was 245 green after T24.
 
-GOAL: learn a deterministic style profile from a folder of the principal's .txt/.md samples. No live LLM.
+GOAL: turn a local unified diff into review notes. Read-only. No origin push.
 
 Implement:
 
-1) core/twin_style_lock.py
-- lock_style(tenant_id, samples_dir) -> dict {tenant_id, path, sample_count, top_words}
+1) core/twin_pr_review.py
+- review_diff(tenant_id, diff_path) -> dict {tenant_id, path, files}
 - Require consented profile or raise ValueError("no consented profile")
-- Require Path(samples_dir).is_dir() or raise ValueError("samples dir not found")
-- Read *.txt and *.md (utf-8, ignore errors)
-- Tokenize [a-z0-9]+ lowercase; drop words length < 4
-- top_words = 12 most frequent
-- Write work_products/{tenant_id}/style_lock.md with Voice notes and the top words
+- Require Path(diff_path).is_file() or raise ValueError("diff not found")
+- Parse lines starting with "diff --git" or "+++ b/" to collect file paths
+- Write work_products/{tenant_id}/pr_review.md with files list and 4 deterministic checklist bullets including "Do not push to origin"
+- ingest_event source="git" kind="review" payload={files} if ingest allows; if kind rejected, skip ingest and still write the file
 - Overwrite on each call
 
-2) API POST /api/v1/twin/style/lock body {tenant_id, samples_dir}
-3) CLI style-lock --tenant ID --dir PATH
+2) API POST /api/v1/twin/pr/review body {tenant_id, diff_path}
+3) CLI pr-review --tenant ID --diff PATH
 
-4) tests/test_t24_twin_style_lock.py
+4) tests/test_t25_twin_pr_review.py
 - AEGIS_DATA_DIR temp
 - without profile ValueError
-- after T03 commit write sample containing "clarity clarity clarity shipping": file contains clarity
+- after T03 commit write a tiny diff containing "+++ b/acme/core.py": file contains acme/core.py and Do not push
 - FastAPI 200
 - No live network
 
@@ -31,12 +30,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_style_lock import lock_style; print(callable(lock_style))"
+   ./.venv/bin/python -c "from core.twin_pr_review import review_diff; print(callable(review_diff))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 237
+   Required: 0 failed, count > 245
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t24): lock writing style from local text samples"
+6. git commit -m "feat(t25): local diff PR review notes without origin push"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

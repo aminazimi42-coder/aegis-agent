@@ -73,6 +73,7 @@ from core.twin_interview import (
 )
 from core.twin_meeting_brief import render_meetings as twin_render_meetings
 from core.twin_morning_brief import render_brief as twin_render_brief
+from core.twin_pr_review import review_diff as twin_review_diff
 from core.twin_style_lock import lock_style as twin_lock_style
 from core.twin_work_products import render as twin_render_work_products
 from fastapi import FastAPI, Request
@@ -226,6 +227,13 @@ class TwinStyleLockRequest(BaseModel):
 
     tenant_id: str
     samples_dir: str
+
+
+class TwinPrReviewRequest(BaseModel):
+    """Body for turning a local diff into PR review notes."""
+
+    tenant_id: str
+    diff_path: str
 
 
 def create_app() -> FastAPI:
@@ -872,6 +880,18 @@ def create_app() -> FastAPI:
     def twin_style_lock(request: TwinStyleLockRequest) -> Any:
         try:
             return twin_lock_style(request.tenant_id, request.samples_dir)
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": str(exc)},
+            )
+
+    # --- Twin PR review (T25) ---
+
+    @app.post("/api/v1/twin/pr/review", tags=["twin"], status_code=200)
+    def twin_pr_review(request: TwinPrReviewRequest) -> Any:
+        try:
+            return twin_review_diff(request.tenant_id, request.diff_path)
         except ValueError as exc:
             return JSONResponse(
                 status_code=400,
