@@ -1,27 +1,27 @@
-T30 — Transcript file to a proposed task. Do ONLY this directive. Do not start T31. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 9ee7af6. Do not rewrite README. Do not call cloud speech-to-text. Source, comments, commit message: English only.
+T31 — Board / weekly memo from digest. Do ONLY this directive. Do not start T32. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend f58c2bf. Do not rewrite README. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T29. HEAD 9ee7af6. pytest was 280 green after T29.
+Baseline on main (do not regress): T01–T30. HEAD f58c2bf. pytest was 287 green after T30.
 
-GOAL: turn a local transcript .txt into one proposed twin action. No audio decode.
+GOAL: one memo page a principal can paste into a board update. Uses weekly digest if present, else meetings + repos + decisions. No live LLM.
 
 Implement:
 
-1) core/twin_transcript_task.py
-- from_transcript(tenant_id, transcript_path) -> dict {tenant_id, action_id, path, title}
+1) core/twin_board_memo.py
+- render_memo(tenant_id) -> dict {tenant_id, path}
 - Require consented profile or raise ValueError("no consented profile")
-- Require Path(transcript_path).is_file() or raise ValueError("transcript not found")
-- Title = first non-empty line stripped to 80 chars
-- Propose via twin_actions.propose with that title (reuse existing propose API; if signature differs, wrap the public function already used in T11 tests)
-- Write work_products/{tenant_id}/transcript_task.md with title and action_id
-- Overwrite markdown on each call; new propose each call is fine
+- Prefer existing work_products/{tenant_id}/weekly_digest.md text (first 40 lines) if file exists
+- Always add sections Meetings (calendar up to 5), Repos (behavior/git up to 5), Decisions (list_decisions up to 5 if import works)
+- If style_lock.md exists, copy its first 8 lines under Voice
+- Write work_products/{tenant_id}/board_memo.md
+- Overwrite on each call
 
-2) API POST /api/v1/twin/transcript/task body {tenant_id, transcript_path}
-3) CLI transcript-task --tenant ID --file PATH
+2) API POST /api/v1/twin/memo/board body {tenant_id}
+3) CLI board-memo --tenant ID
 
-4) tests/test_t30_twin_transcript_task.py
+4) tests/test_t31_twin_board_memo.py
 - AEGIS_DATA_DIR temp
 - without profile ValueError
-- after T03 commit write "Call the Berlin hotel tonight": markdown contains Berlin hotel and a non-empty action_id
+- after T03 commit + ingest calendar Standup: file contains Standup
 - FastAPI 200
 - No live network
 
@@ -30,12 +30,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_transcript_task import from_transcript; print(callable(from_transcript))"
+   ./.venv/bin/python -c "from core.twin_board_memo import render_memo; print(callable(render_memo))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 280
+   Required: 0 failed, count > 287
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t30): transcript text to proposed twin action"
+6. git commit -m "feat(t31): board weekly memo from digest meetings and decisions"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

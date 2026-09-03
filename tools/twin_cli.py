@@ -187,6 +187,12 @@ def _cmd_transcript_task(args: argparse.Namespace) -> dict[str, Any]:
     return from_transcript(args.tenant, args.file)
 
 
+def _cmd_board_memo(args: argparse.Namespace) -> dict[str, Any]:
+    from core.twin_board_memo import render_memo
+
+    return render_memo(args.tenant)
+
+
 # ---------------------------------------------------------------------------#
 # Argument parsing
 # ---------------------------------------------------------------------------#
@@ -324,6 +330,10 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--tenant", required=True)
     p.add_argument("--file", required=True)
 
+    # board-memo
+    p = sub.add_parser("board-memo", help="Render a one-page board weekly memo.")
+    p.add_argument("--tenant", required=True)
+
     return parser
 
 
@@ -356,6 +366,7 @@ def main(argv: list[str] | None = None) -> int:
         "travel": _cmd_travel,
         "team-inbox": _cmd_team_inbox,
         "transcript-task": _cmd_transcript_task,
+        "board-memo": _cmd_board_memo,
     }[args.command]
 
     try:

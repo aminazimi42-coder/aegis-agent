@@ -48,6 +48,7 @@ from core.twin_behavior import (
 from core.twin_behavior import (
     rebuild as twin_rebuild_behavior,
 )
+from core.twin_board_memo import render_memo as twin_render_board_memo
 from core.twin_calendar import ingest_ics as twin_ingest_ics
 from core.twin_decisions import list_decisions as twin_list_decisions
 from core.twin_decisions import record as twin_record_decision
@@ -276,6 +277,12 @@ class TwinTranscriptTaskRequest(BaseModel):
 
     tenant_id: str
     transcript_path: str
+
+
+class TwinBoardMemoRequest(BaseModel):
+    """Body for rendering a one-page board weekly memo."""
+
+    tenant_id: str
 
 
 def create_app() -> FastAPI:
@@ -999,6 +1006,18 @@ def create_app() -> FastAPI:
     def twin_transcript_task(request: TwinTranscriptTaskRequest) -> Any:
         try:
             return twin_from_transcript(request.tenant_id, request.transcript_path)
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": str(exc)},
+            )
+
+    # --- Twin board memo (T31) ---
+
+    @app.post("/api/v1/twin/memo/board", tags=["twin"], status_code=200)
+    def twin_board_memo(request: TwinBoardMemoRequest) -> Any:
+        try:
+            return twin_render_board_memo(request.tenant_id)
         except ValueError as exc:
             return JSONResponse(
                 status_code=400,
