@@ -152,6 +152,12 @@ def _cmd_pr_review(args: argparse.Namespace) -> dict[str, Any]:
     return review_diff(args.tenant, args.diff)
 
 
+def _cmd_expenses(args: argparse.Namespace) -> dict[str, Any]:
+    from core.twin_expenses import ingest_receipts
+
+    return ingest_receipts(args.tenant, args.dir)
+
+
 # ---------------------------------------------------------------------------#
 # Argument parsing
 # ---------------------------------------------------------------------------#
@@ -259,6 +265,11 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--tenant", required=True)
     p.add_argument("--diff", required=True)
 
+    # expenses
+    p = sub.add_parser("expenses", help="Ingest a folder of receipt .txt files into expense notes.")
+    p.add_argument("--tenant", required=True)
+    p.add_argument("--dir", required=True)
+
     return parser
 
 
@@ -286,6 +297,7 @@ def main(argv: list[str] | None = None) -> int:
         "decision-list": _cmd_decision_list,
         "style-lock": _cmd_style_lock,
         "pr-review": _cmd_pr_review,
+        "expenses": _cmd_expenses,
     }[args.command]
 
     try:

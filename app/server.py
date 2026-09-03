@@ -56,6 +56,7 @@ from core.twin_email_triage import triage as twin_email_triage
 from core.twin_events import ingest_event as twin_ingest_event
 from core.twin_evolution import evolve as twin_evolve
 from core.twin_evolution import weekly_digest as twin_weekly_digest
+from core.twin_expenses import ingest_receipts as twin_ingest_receipts
 from core.twin_followups import render_followups as twin_render_followups
 from core.twin_git_observer import observe_repo as twin_observe_repo
 from core.twin_github_observer import observe_github as twin_observe_github
@@ -234,6 +235,13 @@ class TwinPrReviewRequest(BaseModel):
 
     tenant_id: str
     diff_path: str
+
+
+class TwinExpensesIngestRequest(BaseModel):
+    """Body for ingesting a folder of receipt .txt files into expense notes."""
+
+    tenant_id: str
+    receipts_dir: str
 
 
 def create_app() -> FastAPI:
@@ -892,6 +900,18 @@ def create_app() -> FastAPI:
     def twin_pr_review(request: TwinPrReviewRequest) -> Any:
         try:
             return twin_review_diff(request.tenant_id, request.diff_path)
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": str(exc)},
+            )
+
+    # --- Twin expenses (T26) ---
+
+    @app.post("/api/v1/twin/expenses/ingest", tags=["twin"], status_code=200)
+    def twin_expenses_ingest(request: TwinExpensesIngestRequest) -> Any:
+        try:
+            return twin_ingest_receipts(request.tenant_id, request.receipts_dir)
         except ValueError as exc:
             return JSONResponse(
                 status_code=400,
