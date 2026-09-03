@@ -1,49 +1,42 @@
-T14 — Local ICS calendar ingest. Do ONLY this directive. Do not start T15. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend f3eae63. Do not rewrite README. Do not add Google Calendar OAuth, desktop UI, or payments. Source, comments, commit message: English only.
+T15 — LLM tool cage and structured complete. Do ONLY this directive. Do not start T16. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend f161f65. Do not rewrite README. Do not add payments, OAuth, or desktop UI. Do not call a live paid network. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T13. pytest was 186 green after T13.
+Baseline on main (do not regress): T01–T14. HEAD f161f65. pytest was 190 green after T14. Default provider remains Echo.
 
-GOAL: ingest a local .ics file as calendar events into the twin. No cloud calendar.
-
-Also one-line CLI bootstrap: at top of tools/twin_cli.py, if `core` is not importable, insert the repo root onto sys.path so `python tools/twin_cli.py status` works without extra env.
+GOAL: the model may only propose structured work inside an allowlist. It cannot claim an external action happened and cannot invoke a tool outside the cage.
 
 Implement:
 
-1) core/twin_calendar.py
-- ingest_ics(tenant_id, ics_path) -> dict {tenant_id, ingested, skipped}
-- Require consented profile or raise ValueError("no consented profile")
-- Require Path(ics_path).is_file() or raise ValueError("ics not found")
-- Parse VEVENT blocks without an extra library: for each VEVENT read SUMMARY and DTSTART if present
-- ingest_event source="calendar" kind="meeting" payload={summary, start} then evolve
-- Dedup by (summary, start) already stored
-- Ignore malformed events (count as skipped)
+1) core/llm_safety.py
+- ALLOWED_TOOLS = ("weekly_digest", "render_work_products", "propose_actions")
+- complete_safe(prompt, *, tenant_id, model="aegis-cheap", max_tokens=128) -> dict
+  keys: text, model, prompt_tokens, completion_tokens, total_tokens, tool, ok
+- Call get_provider().complete then parse tool:
+  if provider text contains a line TOOL:<name> use that name else tool=""
+- If tool and tool not in ALLOWED_TOOLS: ok=False, tool stays the rejected name, text="rejected: tool not allowed"
+- Never execute twin_actions.execute from this module
+- Never write "executed" or "transferred" or "pushed to origin" into text when ok is True unless those words were already in the prompt (keep it simple: if ok, do not append any execution claim)
+- Use Echo path in tests; no live HTTP
 
-2) API
-- POST /api/v1/twin/calendar/ics body {tenant_id, ics_path}
-Keep existing routes.
-
-3) CLI
-- tools/twin_cli.py subcommand: calendar-ics --tenant ID --path FILE
-- sys.path bootstrap as above
-
-4) tests/test_t14_twin_calendar.py
-- AEGIS_DATA_DIR temp
-- without profile ValueError
-- write a tiny temp .ics with one VEVENT SUMMARY:Standup DTSTART:20260903T090000Z
-- after T03 commit: ingest_ics ingested >= 1; second call ingested == 0
-- FastAPI 200
+2) tests/test_t15_llm_safety.py
+- default complete_safe with Echo: ok True, tool "" or allowed
+- complete_safe after a monkeypatch of Echo/get_provider that returns text "TOOL:wire_transfer\nPAY" -> ok False and "rejected" in text.lower()
+- core/llm_safety.py source does not call execute(
+- AEGIS_DATA_DIR temp isolation
 - No live network
+
+3) Do not change twin routes except you may no-op. Do not weaken T06 execute gate.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python tools/twin_cli.py status
-   Required: exit 0 and stdout contains 1.0.0-rc1
+   ./.venv/bin/python -c "from core.llm_safety import complete_safe, ALLOWED_TOOLS; r=complete_safe('hello', tenant_id='t15'); print(r['ok'], 'execute' not in open('core/llm_safety.py').read(), 'propose_actions' in ALLOWED_TOOLS)"
+   Required: True True True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 186
+   Required: 0 failed, count > 190
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t14): local ICS calendar ingest into twin events"
+6. git commit -m "feat(t15): llm tool cage and structured complete"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
