@@ -1,47 +1,38 @@
-T08 — Honest README aligned to the running code. Do ONLY this directive. Do not start T09. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend ac7ffbf. Do not add payments, OAuth, desktop UI, or a live paid LLM. Source, comments, commit message: English only.
+T09 — Paid-LLM adapter with Echo fallback. Do ONLY this directive. Do not start T10. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 938e762. Do not rewrite README except one line if a provider env list is missing. Do not add GitHub OAuth, desktop UI, or payments. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T07. platform_status reports 1.0.0-rc1, 6 agents, EchoProvider. pytest was 149 green after T07.
+Baseline on main (do not regress): T01–T08. pytest was 156 green after T08. core/llm_provider.py already has EchoProvider, HttpProvider, get_provider().
 
-GOAL: README must describe what the repo actually does. A CTO reading it must not think money settles itself or that six cinematic acts are the runtime.
+GOAL: when AEGIS_LLM_PROVIDER=http and AEGIS_LLM_BASE_URL + AEGIS_LLM_API_KEY are set, use HttpProvider. On any network/HTTP/parse error, fall back to EchoProvider and do not raise. Never log or persist the API key. Tests must not call a live network.
 
-Rewrite README.md (keep docs/assets images if they still exist; you may keep a compact header). Required content, all true:
+Implement:
 
-- Name, Python 3.11, FastAPI
-- Six agents by name: Alina, Kian, Bita, Aylin, Ahmad, Amin. Ahmad is security/oversight, Amin is finance-domain specialist in-process — not a payment processor
-- Default LLM is EchoProvider (offline). Paid providers are not wired in this revision
-- Persistence is SQLite under AEGIS_DATA_DIR
-- Twin loop that exists today: Day-0 interview + consent, event ingest, deterministic evolve, weekly digest, local git observer, proposed actions with human approve-before-execute (execute records SQLite/ledger only)
-- How to run tests: ./.venv/bin/python -m pytest -q
-- How to run API: existing README start command if it still works; if not, document uvicorn app.server:app --reload from repo reality
-- Real routes: /health if present, /docs, /api/v1/platform/status, /api/v1/twin/session/start, answer, commit, profile, events, digest, observe/git, actions/propose|approve|reject|execute
+1) core/llm_provider.py
+- HttpProvider.complete: wrap urlopen in try/except (URLError, TimeoutError, OSError, ValueError, json errors). On failure return EchoProvider().complete(...) with the same prompt/model/max_tokens
+- Keep Authorization header. Do not print api_key
+- get_provider stays: http only if kind==http AND base_url AND api_key, else Echo
+- Optional: accept OpenAI-style body.choices[0].text or body.text — still no live call in tests
 
-Forbidden strings anywhere in README.md (case-insensitive):
-- Enterprise Candidate
-- settles financial flows
-- automated settlement
-- closes commitments autonomously
-- Monetization & Finance as if live billing exists
-- cinematic acts as if they are executable modules
+2) tests/test_t09_paid_llm_adapter.py
+- default get_provider is EchoProvider
+- with env http + url + key and urllib.request.urlopen monkeypatched to return a fake JSON body, complete returns that text and does not use ECHO[ prefix
+- with env http + url + key and urlopen raising OSError, complete falls back to Echo (text startswith ECHO[)
+- module source of llm_provider.py does not contain a hardcoded sk- key
+- Isolate env vars in setUp/tearDown
+- No live network
 
-Add tests/test_t08_readme_honesty.py that reads README.md and asserts:
-- contains "EchoProvider" or "Echo"
-- contains "1.0.0-rc1" or "SQLite"
-- contains "approve"
-- does not contain "Enterprise Candidate"
-- does not contain "autonomously" in a commitment/settlement sentence
-Keep T01–T07 tests green.
+3) Do not change twin routes. Keep platform_status working.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; t=Path('README.md').read_text(); print('Echo' in t, 'approve' in t.lower(), 'Enterprise Candidate' not in t)"
-   Required: True True True
+   ./.venv/bin/python -c "from core.llm_provider import get_provider, EchoProvider; p=get_provider(); print(type(p).__name__, p.complete('hi', model='aegis-cheap', max_tokens=8)['text'][:5])"
+   Required: EchoProvider and ECHO[
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 149
+   Required: 0 failed, count > 156
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "docs(t08): align README with shipped twin runtime"
+6. git commit -m "feat(t09): http llm adapter with echo fallback, no live network in tests"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

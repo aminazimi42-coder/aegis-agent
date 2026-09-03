@@ -88,18 +88,34 @@ class HttpProvider:
                 "Authorization": f"Bearer {self.api_key}",
             },
         )
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            body = json.loads(resp.read().decode("utf-8"))
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                body = json.loads(resp.read().decode("utf-8"))
+        except (OSError, ValueError, RuntimeError):
+            return EchoProvider().complete(
+                prompt, model=model, max_tokens=max_tokens,
+            )
+        # Accept OpenAI-style body.choices[0].text or plain body.text
+        text = ""
+        choices = body.get("choices")
+        if isinstance(choices, list) and choices:
+            first = choices[0]
+            if isinstance(first, dict):
+                text = first.get("text", "")
+            elif isinstance(first, str):
+                text = first
+        if not text:
+            text = body.get("text", "")
         return {
-            "text": body.get("text", ""),
+            "text": text,
             "model": model,
             "prompt_tokens": body.get("prompt_tokens", _estimate_tokens(prompt)),
             "completion_tokens": body.get(
-                "completion_tokens", _estimate_tokens(body.get("text", "")),
+                "completion_tokens", _estimate_tokens(text),
             ),
             "total_tokens": body.get(
                 "total_tokens",
-                _estimate_tokens(prompt) + _estimate_tokens(body.get("text", "")),
+                _estimate_tokens(prompt) + _estimate_tokens(text),
             ),
         }
 
