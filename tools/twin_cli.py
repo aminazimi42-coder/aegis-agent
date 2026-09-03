@@ -175,6 +175,12 @@ def _cmd_travel(args: argparse.Namespace) -> dict[str, Any]:
     return render_pack(args.tenant, docs_dir=args.dir or "")
 
 
+def _cmd_team_inbox(args: argparse.Namespace) -> dict[str, Any]:
+    from core.twin_team_inbox import triage
+
+    return triage(args.tenant, args.file)
+
+
 # ---------------------------------------------------------------------------#
 # Argument parsing
 # ---------------------------------------------------------------------------#
@@ -299,6 +305,11 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--tenant", required=True)
     p.add_argument("--dir", default="")
 
+    # team-inbox
+    p = sub.add_parser("team-inbox", help="Triage a local team-chat export into a markdown page.")
+    p.add_argument("--tenant", required=True)
+    p.add_argument("--file", required=True)
+
     return parser
 
 
@@ -329,6 +340,7 @@ def main(argv: list[str] | None = None) -> int:
         "expenses": _cmd_expenses,
         "focus-block": _cmd_focus_block,
         "travel": _cmd_travel,
+        "team-inbox": _cmd_team_inbox,
     }[args.command]
 
     try:

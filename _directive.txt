@@ -1,26 +1,28 @@
-T28 — Travel pack from calendar + docs folder. Do ONLY this directive. Do not start T29. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 3cef063. Do not rewrite README. Do not book flights or pay. Source, comments, commit message: English only.
+T29 — Team inbox from a local export file. Do ONLY this directive. Do not start T30. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 3bf445f. Do not rewrite README. Do not add a live Slack or Telegram bot. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T27. HEAD 3cef063. pytest was 266 green after T27.
+Baseline on main (do not regress): T01–T28. HEAD 3bf445f.
 
-GOAL: one page for an upcoming trip: calendar meetings whose summary contains flight/hotel/travel plus files from a local docs folder. No live LLM.
+GOAL: read a local team-chat export (.txt or .jsonl) and write a triage page. No outbound send.
 
 Implement:
 
-1) core/twin_travel_pack.py
-- render_pack(tenant_id, docs_dir="") -> dict {tenant_id, path}
+1) core/twin_team_inbox.py
+- triage(tenant_id, export_path) -> dict {tenant_id, path, count}
 - Require consented profile or raise ValueError("no consented profile")
-- Meetings: twin_events source=calendar kind=meeting whose summary lower contains flight or hotel or travel
-- If docs_dir is a directory, list *.pdf *.txt *.md names (not contents)
-- Write work_products/{tenant_id}/travel_pack.md with Itinerary and Documents and line "Do not book or pay without written approval."
+- Require Path(export_path).is_file() or raise ValueError("export not found")
+- .txt: one message per non-empty line
+- .jsonl: each line JSON with text or body
+- Write work_products/{tenant_id}/team_inbox.md numbered list of up to 40 lines
+- ingest_event source="chat" kind="message" if allowed; else skip ingest and still write file
 - Overwrite on each call
 
-2) API POST /api/v1/twin/travel/render body {tenant_id, docs_dir}
-3) CLI travel --tenant ID [--dir PATH]
+2) API POST /api/v1/twin/team/inbox body {tenant_id, export_path}
+3) CLI team-inbox --tenant ID --file PATH
 
-4) tests/test_t28_twin_travel_pack.py
+4) tests/test_t29_twin_team_inbox.py
 - AEGIS_DATA_DIR temp
 - without profile ValueError
-- after T03 commit + ingest calendar "Flight to Berlin": file contains Flight to Berlin and written approval
+- after T03 commit write export line "Need the board pack tonight": file contains board pack
 - FastAPI 200
 - No live network
 
@@ -29,12 +31,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_travel_pack import render_pack; print(callable(render_pack))"
+   ./.venv/bin/python -c "from core.twin_team_inbox import triage; print(callable(triage))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
    Required: 0 failed, count > 266
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t28): travel pack from calendar events and local docs"
+6. git commit -m "feat(t29): team inbox triage from local chat export"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
