@@ -4,6 +4,9 @@ import time
 from threading import Lock
 from typing import Any
 
+from core.twin_persist import get_budget as twin_get_budget
+from core.twin_persist import set_budget as twin_set_budget
+
 
 class FinOpsAutopilot:
     """Track spend, enforce per-request and tenant budgets, and block runaway
@@ -43,6 +46,20 @@ class FinOpsAutopilot:
                 "remaining_tokens": self.tenant_daily_budget_tokens,
             },
         )
+        # T39 — load hook: if this is a fresh in-memory entry, try to
+        # restore spent from the SQLite budget table so process restart
+        # does not wipe remaining budget.
+        if state["total_tokens_used"] == 0 and state["request_count"] == 0:
+            try:
+                budget = twin_get_budget(tenant_key)
+                if budget is not None and budget["spent"] > 0:
+                    state["total_tokens_used"] = int(budget["spent"])
+                    state["remaining_tokens"] = max(
+                        self.tenant_daily_budget_tokens - state["total_tokens_used"],
+                        0,
+                    )
+            except Exception:
+                pass
         state["remaining_tokens"] = max(
             self.tenant_daily_budget_tokens - state["total_tokens_used"],
             0,
@@ -135,6 +152,15 @@ class FinOpsAutopilot:
                 self.tenant_daily_budget_tokens - state["total_tokens_used"],
                 0,
             )
+            # T39 — save hook: persist spent so restart does not wipe it.
+            try:
+                twin_set_budget(
+                    tenant_key,
+                    cap=self.tenant_daily_budget_tokens,
+                    spent=state["total_tokens_used"],
+                )
+            except Exception:
+                pass
             return {
                 "tenant_id": tenant_key,
                 "agent_name": agent_name,

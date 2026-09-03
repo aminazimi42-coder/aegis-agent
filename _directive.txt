@@ -1,25 +1,30 @@
-T38 — README of shipped work T01–T37. Do ONLY this directive. Do not start T39. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 7547b45. Do not add new product features. Source and commit message: English only.
+T39 — Persist approvals and FinOps budgets in SQLite. Do ONLY this directive. Do not start T40. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend a6a0815. Do not rewrite README. Do not add a payment gateway. Source, comments, commit message: English only.
 
-Baseline on main: HEAD 7547b45. pytest was 330 green after T37.
+Baseline on main: T01–T38. HEAD a6a0815. pytest was 336 green after T38.
 
-GOAL: README.md must name what this tree actually ships after T01–T37. No new claims.
+GOAL: process restart must not wipe approval rows or tenant budget remaining. Same public routes.
 
-Update README.md only plus tests/test_t38_readme_shipped.py. Keep existing CLI and route tables. Add short honest sections if missing:
+Implement:
 
-- Human approve gate: propose is not execute; email-send writes local outbox only
-- Safety: complete_safe / secret redaction / policy exist as local guards (name the real modules if present)
-- Errors: twin 400 body has detail + code + request_id (core/api_errors.py)
-- CI: .github/workflows/ci.yml runs ruff and pytest on Python 3.11 for push/PR to main
-- Persistence truth: SQLite under AEGIS_DATA_DIR; do not claim FinOps/approvals survive restart unless code does
-- Default LLM remains EchoProvider
-- Test suite exists; do not invent a count — write "run pytest -q" not a stale number
-- Do not claim desktop UI, paid LLM default, or live SMTP
+1) core/twin_persist.py
+- db path = Path(AEGIS_DATA_DIR or "data") / "aegis.sqlite"
+- init_schema() tables:
+  approvals(id TEXT PK, tenant_id TEXT, title TEXT, status TEXT, payload TEXT, created_at TEXT, decided_at TEXT)
+  budgets(tenant_id TEXT PK, cap REAL, spent REAL, updated_at TEXT)
+- put_approval / get_approval / list_approvals
+- get_budget / set_budget / add_spend(tenant_id, amount) -> remaining
+- All functions open their own connection; close after use
 
-tests/test_t38_readme_shipped.py
-- README contains "EchoProvider"
-- README contains "outbox" and "approve"
-- README contains "ci.yml" or "GitHub Actions"
-- README contains "request_id" or "TWIN_NO_PROFILE" or "api_errors"
+2) Wire without breaking callers
+- app/server.py approvals/request and approvals/{id}/decide must use put_approval/get_approval instead of only app.state.approvals
+- core/finops_autopilot.py: if a remaining/cap method exists, persist via set_budget/add_spend; if the class is in-memory only, add load/save hooks on those methods without changing method names callers already use
+- Keep 400 ValueError shape via existing twin_value_error_response where twin routes already use it
+
+3) tests/test_t39_persist_restart.py
+- AEGIS_DATA_DIR temp
+- put_approval then new Python process reading same db file still finds the row
+- add_spend then new function call on a fresh object/connection sees spent
+- FastAPI POST /approvals/request then GET-or-decide still works after creating a second TestClient (simulates restart of app.state)
 - No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -27,12 +32,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; t=Path('README.md').read_text(); print('outbox' in t and 'EchoProvider' in t)"
+   ./.venv/bin/python -c "from core.twin_persist import put_approval, get_budget; print(callable(put_approval))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 330
+   Required: 0 failed, count > 336
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "docs(t38): README names shipped safety errors CI and approve-outbox"
+6. git commit -m "feat(t39): persist approvals and finops budgets in sqlite"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

@@ -79,6 +79,11 @@ from core.twin_interview import (
 )
 from core.twin_meeting_brief import render_meetings as twin_render_meetings
 from core.twin_morning_brief import render_brief as twin_render_brief
+from core.twin_persist import get_approval as twin_get_approval
+from core.twin_persist import (
+    list_approvals as twin_list_approvals,
+)
+from core.twin_persist import put_approval as twin_put_approval
 from core.twin_pr_review import review_diff as twin_review_diff
 from core.twin_resume_pack import render_resume as twin_render_resume
 from core.twin_style_lock import lock_style as twin_lock_style
@@ -644,16 +649,25 @@ def create_app() -> FastAPI:
         # evaluate risk
         tenant_sensitive = body.get("tenant_sensitive", False)
         profile = human_authority.evaluate_risk(action, {"tenant_sensitive": tenant_sensitive})
-        approval_id = f"appr-{len(app.state.approvals)+1}"
+        # count existing approvals to generate a unique id
+        existing = twin_list_approvals()
+        approval_id = f"appr-{len(existing)+1}"
         status = "pending"
         if profile.level.name == "AUTO":
             status = "approved"
-        app.state.approvals[approval_id] = {
-            "action": action,
-            "tenant_id": tenant_id,
-            "profile": profile.__dict__,
-            "status": status,
-        }
+        record = twin_put_approval(
+            approval_id=approval_id,
+            tenant_id=tenant_id,
+            title=action,
+            status=status,
+            payload={
+                "action": action,
+                "tenant_id": tenant_id,
+                "profile": profile.__dict__,
+            },
+        )
+        # also keep in-memory for backward compatibility
+        app.state.approvals[approval_id] = record
         # record evidence and scorecard
         try:
             EvidenceLedgerSingleton.append_entry(
@@ -667,20 +681,29 @@ def create_app() -> FastAPI:
             pass
         return {"approval_id": approval_id, "status": status, "profile": profile.__dict__}
 
-    @app.post("/approvals/{approval_id}/decide", tags=["diagnostics"]) 
+    @app.post("/approvals/{approval_id}/decide", tags=["diagnostics"])
     async def decide_approval(approval_id: str, request: Request) -> dict[str, Any]:
         body = await request.json()
         decision = body.get("decision")
         approver = body.get("approver", "unknown")
-        if approval_id not in app.state.approvals:
+        record = twin_get_approval(approval_id)
+        if record is None:
             return JSONResponse(status_code=404, content={"detail": "approval_id not found"})
         if decision not in {"approve", "deny"}:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": "decision must be 'approve' or 'deny'"},
+            return twin_value_error_response(
+                ValueError("decision must be 'approve' or 'deny'")
             )
-        record = app.state.approvals[approval_id]
-        record["status"] = "approved" if decision == "approve" else "denied"
+        new_status = "approved" if decision == "approve" else "denied"
+        updated = twin_put_approval(
+            approval_id=approval_id,
+            tenant_id=record["tenant_id"],
+            title=record.get("title", ""),
+            status=new_status,
+            payload=record.get("payload"),
+            created_at=record.get("created_at"),
+            decided_at=datetime.now(timezone.utc).isoformat(),
+        )
+        app.state.approvals[approval_id] = updated
         # ledger evidence
         try:
             EvidenceLedgerSingleton.append_entry(
