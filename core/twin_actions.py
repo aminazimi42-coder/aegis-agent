@@ -8,9 +8,11 @@ side effects.
 
 from __future__ import annotations
 
+import os
 import sqlite3
 import threading
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
@@ -239,12 +241,49 @@ def reject(action_id: str) -> dict[str, Any]:
         return action
 
 
+def _work_products_dir(tenant_id: str) -> Path:
+    """Return the work-products base directory for *tenant_id*."""
+    base = Path(os.getenv("AEGIS_DATA_DIR", "data"))
+    return base / "work_products" / tenant_id
+
+
+def _is_email_action(action: dict[str, Any]) -> bool:
+    """Return True if the action's title or kind mentions email."""
+    haystack = f"{action.get('kind', '')} {action.get('title', '')}".lower()
+    return "email" in haystack
+
+
+def _write_executed_md(action: dict[str, Any]) -> Path:
+    """Write ``work_products/{tenant_id}/executed.md`` for non-email actions."""
+    tenant_id = action["tenant_id"]
+    wp_dir = _work_products_dir(tenant_id)
+    wp_dir.mkdir(parents=True, exist_ok=True)
+    md_path = wp_dir / "executed.md"
+    lines = [
+        f"action_id: {action['action_id']}",
+        f"title: {action['title']}",
+        f"kind: {action['kind']}",
+        f"tenant_id: {tenant_id}",
+    ]
+    md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return md_path
+
+
 def execute(action_id: str) -> dict[str, Any]:
-    """Execute an approved action (stub: records ``executed`` in SQLite only).
+    """Execute an approved action.
 
     Raises ``PermissionError("approval required")`` if the action is not
     in the ``approved`` status.  Raises ``ValueError`` if the action_id
     is unknown.
+
+    After marking the action ``executed`` in SQLite:
+    - If the title or kind contains "email" (case-insensitive), call
+      ``send_approved(tenant_id, action_id)`` best-effort (writes a local
+      outbox ``.eml`` file).
+    - Otherwise write ``work_products/{tenant_id}/executed.md`` containing
+      the action_id and title.
+
+    No HTTP, no socket, no SMTP — purely local side effects.
     """
     _ensure_schema()
     with _action_lock:
@@ -268,6 +307,20 @@ def execute(action_id: str) -> dict[str, Any]:
         )
     except Exception:
         pass
+
+    # Local side effect: email actions go to the outbox; others write executed.md.
+    if _is_email_action(action):
+        try:
+            from core.twin_email_send import send_approved
+
+            send_approved(action["tenant_id"], action_id)
+        except Exception:
+            pass
+    else:
+        try:
+            _write_executed_md(action)
+        except Exception:
+            pass
 
     return action
 

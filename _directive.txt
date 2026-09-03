@@ -1,37 +1,36 @@
-T51 — Golden busy-day path. Do ONLY this directive. Do not start T52. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 122028c. Do not rewrite README. Do not open SMTP. Source, comments, commit message: English only.
+T52 — Local execute after approve. Do ONLY this directive. Do not start T53. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 6556c25. Do not rewrite README. Do not open sockets. Source, comments, commit message: English only.
 
-Baseline on main: T01–T50. HEAD 122028c. pytest was 414 green after T50.
+Baseline on main: T01–T51. HEAD 6556c25. pytest was 417 green after T51.
 
-GOAL: one test walks event → brief → propose → approve → local outbox. No new product column.
+GOAL: execute() still refuses unapproved actions. After approve, email-kind writes local outbox; other kinds write a local executed.md. No SMTP.
 
 Implement:
 
-1) tests/test_t51_golden_busy_day.py
-- AEGIS_DATA_DIR temp
-- T03 start/answer/commit for tenant t51
-- ingest one calendar or git event if those helpers exist; otherwise skip ingest
-- render_brief writes morning_brief.md
-- propose_actions returns at least one action
-- pick one action, set title so classify is L2 (contains "email"), approve it
-- give payload {"body": "Busy day pack"} if the store accepts payload
-- send_approved writes an .eml under work_products/t51/outbox
-- assert .eml exists and contains "Busy day pack" or the title
-- FastAPI health or home 200 optional
-- No live network
+1) core/twin_actions.py execute
+- Keep PermissionError("approval required") if status is not approved
+- After marking executed:
+  - if title or kind lower contains "email", call send_approved(tenant_id, action_id) best-effort
+  - else write work_products/{tenant_id}/executed.md containing action_id and title
+- Do not call HTTP
 
-2) Do not add new core modules unless a one-line helper is required to set payload on an existing action.
+2) tests/test_t52_local_execute.py
+- AEGIS_DATA_DIR temp
+- unapproved execute raises PermissionError
+- after T03 commit, approve an email-titled action with payload body, execute creates an .eml or executed.md
+- FastAPI execute route if present still rejects unapproved
+- No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; print(Path('tests/test_t51_golden_busy_day.py').is_file())"
+   ./.venv/bin/python -c "from core.twin_actions import execute; print(callable(execute))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 414
+   Required: 0 failed, count > 417
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "test(t51): golden busy-day brief propose approve outbox"
+6. git commit -m "feat(t52): local execute after approve writes outbox or executed.md"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

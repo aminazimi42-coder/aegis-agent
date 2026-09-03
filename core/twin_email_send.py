@@ -59,8 +59,9 @@ def send_approved(tenant_id: str, action_id: str) -> dict[str, Any]:
     if action is None:
         raise ValueError("action not found")
 
-    # 3. Approval gate.
-    if action["status"] != "approved":
+    # 3. Approval gate — accept ``approved`` or ``executed`` (an action
+    #    that was already executed by ``execute()`` is still a valid send target).
+    if action["status"] not in ("approved", "executed"):
         raise ValueError("not approved")
 
     # 4. Derive subject and body from the action.
