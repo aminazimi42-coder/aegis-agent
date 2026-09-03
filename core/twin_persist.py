@@ -30,7 +30,7 @@ def _connect() -> sqlite3.Connection:
 
 
 def init_schema() -> None:
-    """Create the approvals and budgets tables if they do not exist."""
+    """Create the approvals, budgets, and jobs tables if they do not exist."""
     conn = _connect()
     try:
         conn.executescript(
@@ -45,10 +45,19 @@ def init_schema() -> None:
                 decided_at TEXT
             );
             CREATE TABLE IF NOT EXISTS budgets (
-                tenant_id  TEXT PRIMARY KEY,
-                cap        REAL,
-                spent      REAL,
+                tenant_id TEXT PRIMARY KEY,
+                cap       REAL,
+                spent     REAL,
                 updated_at TEXT
+            );
+            CREATE TABLE IF NOT EXISTS jobs (
+                id         TEXT PRIMARY KEY,
+                tenant_id  TEXT,
+                title      TEXT,
+                due_at     TEXT,
+                timezone   TEXT,
+                status     TEXT,
+                created_at TEXT
             );
             """
         )

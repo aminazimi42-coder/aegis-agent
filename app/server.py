@@ -86,6 +86,8 @@ from core.twin_persist import (
 from core.twin_persist import put_approval as twin_put_approval
 from core.twin_pr_review import review_diff as twin_review_diff
 from core.twin_resume_pack import render_resume as twin_render_resume
+from core.twin_scheduler import schedule as twin_schedule
+from core.twin_scheduler import tick as twin_tick
 from core.twin_style_lock import lock_style as twin_lock_style
 from core.twin_team_inbox import triage as twin_team_inbox_triage
 from core.twin_transcript_task import from_transcript as twin_from_transcript
@@ -312,6 +314,21 @@ class TwinEmailSendRequest(BaseModel):
 
     tenant_id: str
     action_id: str
+
+
+class TwinScheduleRequest(BaseModel):
+    """Body for scheduling a durable commitment job (T41)."""
+
+    tenant_id: str
+    title: str
+    due_at: str
+    timezone: str = "UTC"
+
+
+class TwinScheduleTickRequest(BaseModel):
+    """Body for ticking the scheduler — marking due jobs."""
+
+    now: str | None = None
 
 
 def create_app() -> FastAPI:
@@ -1103,6 +1120,25 @@ def create_app() -> FastAPI:
         from core.platform_status import platform_status as _status
 
         return _status()
+
+    # --- Durable commitment scheduler (T41) --- #
+
+    @app.post("/api/v1/twin/schedule", tags=["twin"], status_code=200)
+    def twin_schedule_endpoint(request: TwinScheduleRequest) -> Any:
+        try:
+            return twin_schedule(
+                request.tenant_id,
+                request.title,
+                request.due_at,
+                timezone_=request.timezone,
+            )
+        except ValueError as exc:
+            return twin_value_error_response(exc)
+
+    @app.post("/api/v1/twin/schedule/tick", tags=["twin"], status_code=200)
+    def twin_schedule_tick_endpoint(request: TwinScheduleTickRequest) -> Any:
+        due = twin_tick(request.now)
+        return {"due": due, "count": len(due)}
 
     return app
 

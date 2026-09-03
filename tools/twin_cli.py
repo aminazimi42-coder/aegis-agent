@@ -205,6 +205,24 @@ def _cmd_email_send(args: argparse.Namespace) -> dict[str, Any]:
     return send_approved(args.tenant, args.action)
 
 
+def _cmd_schedule(args: argparse.Namespace) -> dict[str, Any]:
+    from core.twin_scheduler import schedule
+
+    return schedule(
+        args.tenant,
+        args.title,
+        args.due,
+        timezone_=args.timezone,
+    )
+
+
+def _cmd_schedule_tick(args: argparse.Namespace) -> dict[str, Any]:
+    from core.twin_scheduler import tick
+
+    due = tick(args.now)
+    return {"due": due, "count": len(due)}
+
+
 # ---------------------------------------------------------------------------#
 # Argument parsing
 # ---------------------------------------------------------------------------#
@@ -358,6 +376,23 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--tenant", required=True)
     p.add_argument("--action", required=True)
 
+    # schedule
+    p = sub.add_parser(
+        "schedule",
+        help="Schedule a durable commitment job (T41).",
+    )
+    p.add_argument("--tenant", required=True)
+    p.add_argument("--title", required=True)
+    p.add_argument("--due", required=True, help="Due-at ISO-8601 timestamp.")
+    p.add_argument("--timezone", default="UTC")
+
+    # schedule-tick
+    p = sub.add_parser(
+        "schedule-tick",
+        help="Tick the scheduler — mark due jobs.",
+    )
+    p.add_argument("--now", default=None, help="Override now ISO-8601 timestamp.")
+
     return parser
 
 
@@ -393,6 +428,8 @@ def main(argv: list[str] | None = None) -> int:
         "board-memo": _cmd_board_memo,
         "resume": _cmd_resume,
         "email-send": _cmd_email_send,
+        "schedule": _cmd_schedule,
+        "schedule-tick": _cmd_schedule_tick,
     }[args.command]
 
     try:
