@@ -21,6 +21,7 @@ from core.twin_actions import list_actions
 from core.twin_behavior import get_behavior, rebuild
 from core.twin_events import list_events
 from core.twin_interview import get_latest_profile
+from core.twin_style_lock import apply_style
 
 _MAX_ITEMS = 8
 
@@ -168,6 +169,7 @@ def render_brief(tenant_id: str) -> dict[str, Any]:
     pending_actions = _collect_pending_actions(tenant_id)
 
     content = _render_markdown(tenant_id, meetings, repos, pending_actions)
+    content = apply_style(tenant_id, content)
 
     brief_path = _brief_path(tenant_id)
     brief_path.parent.mkdir(parents=True, exist_ok=True)

@@ -19,6 +19,7 @@ from typing import Any
 from core.twin_interview import get_latest_profile
 from core.twin_persist import list_approvals
 from core.twin_scheduler import list_jobs
+from core.twin_style_lock import apply_style
 
 
 def _work_products_dir(tenant_id: str) -> Path:
@@ -103,6 +104,7 @@ def render_home(tenant_id: str) -> dict[str, Any]:
     brief_name = "morning_brief.md" if brief_path.exists() else None
 
     content = _render_markdown(tenant_id, pending, due, brief_name)
+    content = apply_style(tenant_id, content)
 
     out_dir = _work_products_dir(tenant_id)
     out_dir.mkdir(parents=True, exist_ok=True)

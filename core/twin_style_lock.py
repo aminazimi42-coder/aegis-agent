@@ -78,6 +78,57 @@ def _build_style_lock_md(tenant_id: str, sample_count: int, top_words: list[str]
     return "\n".join(lines)
 
 
+def apply_style(tenant_id: str, markdown: str) -> str:
+    """Prepend a Voice line from ``style_lock.md`` if it exists.
+
+    If ``work_products/{tenant_id}/style_lock.md`` is missing, return
+    *markdown* unchanged.  Otherwise read up to three words listed after
+    the ``## Top Words`` heading in that file and prepend a line
+    ``Voice: <words>`` followed by the original *markdown*.
+
+    Does not require *samples_dir* — only reads the existing lock file.
+    """
+    lock_path = _style_lock_path(tenant_id)
+    if not lock_path.is_file():
+        return markdown
+
+    text = lock_path.read_text(encoding="utf-8", errors="replace")
+    words = _extract_top_words(text, max_words=3)
+    if not words:
+        return markdown
+
+    voice_line = "Voice: " + " ".join(words)
+    return voice_line + "\n" + markdown
+
+
+def _extract_top_words(text: str, max_words: int = 3) -> list[str]:
+    """Extract up to *max_words* words from the ``## Top Words`` section."""
+    lines = text.splitlines()
+    in_top_words = False
+    words: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("## Top Words"):
+            in_top_words = True
+            continue
+        if in_top_words:
+            if stripped.startswith("## "):
+                break
+            if not stripped:
+                continue
+            # Lines look like "1. clarity" — take the word after the number.
+            parts = stripped.split(maxsplit=1)
+            if len(parts) == 2:
+                words.append(parts[1].strip())
+                if len(words) >= max_words:
+                    break
+            elif len(parts) == 1 and not parts[0].startswith("_"):
+                words.append(parts[0].strip())
+                if len(words) >= max_words:
+                    break
+    return words
+
+
 def lock_style(tenant_id: str, samples_dir: str) -> dict[str, Any]:
     """Lock a writing-style profile from local text samples.
 

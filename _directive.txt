@@ -1,30 +1,37 @@
-T46 — Restart contract tests for persist, spend, jobs. Do ONLY this directive. Do not start T47. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 5c61c61. Do not rewrite README. Source, comments, commit message: English only.
+T47 — Apply style lock to brief and home renders. Do ONLY this directive. Do not start T48. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 5f98c0e. Do not rewrite README. Source, comments, commit message: English only.
 
-Baseline on main: T01–T45. HEAD 5c61c61. pytest was 393 green after T45.
+Baseline on main: T01–T46. HEAD 5f98c0e. pytest was 395 green after T46.
 
-GOAL: one test module proves the durable pieces survive a second process. No new product feature.
+GOAL: if style_lock.md exists, morning brief and home mention Voice. If it does not exist, renders stay unchanged.
 
 Implement:
 
-1) tests/test_t46_restart_contract.py only (plus tiny helper in core/twin_persist.py only if a function is missing)
-- AEGIS_DATA_DIR temp shared across two subprocesses
-- Subprocess A: put_approval(... status pending), add_spend(tenant, 10), schedule a job due in the past after T03 commit in that process
-- Subprocess B: get_approval finds the row; get_budget spent >= 10; list_jobs sees the job
-- Tick in B flips due if still scheduled
+1) core/twin_style_lock.py
+- apply_style(tenant_id, markdown: str) -> str
+- If work_products/{tenant_id}/style_lock.md missing, return markdown unchanged
+- Else insert a line "Voice: " plus up to three words found after "Top words" or listed in that file, then the original markdown
+- Do not require samples_dir on apply
+
+2) core/twin_morning_brief.py and core/twin_home.py
+- After building markdown, pass it through apply_style before write
+
+3) tests/test_t47_style_apply.py
+- AEGIS_DATA_DIR temp
+- apply_style without a lock file returns the input
+- after T03 commit and lock_style on a temp dir with one .txt containing "clarity precision cadence extra", render_brief or render_home file contains "Voice:"
 - No live network
-- Do not add desktop, payments, or README claims
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; print(Path('tests/test_t46_restart_contract.py').is_file())"
+   ./.venv/bin/python -c "from core.twin_style_lock import apply_style; print(callable(apply_style))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 393
+   Required: 0 failed, count > 395
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "test(t46): restart contract for approvals budgets and jobs"
+6. git commit -m "feat(t47): apply style lock to brief and home"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
