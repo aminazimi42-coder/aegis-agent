@@ -42,6 +42,12 @@ from core.twin_actions import (
 from core.twin_actions import (
     reject as twin_action_reject,
 )
+from core.twin_behavior import (
+    get_behavior as twin_get_behavior,
+)
+from core.twin_behavior import (
+    rebuild as twin_rebuild_behavior,
+)
 from core.twin_events import ingest_event as twin_ingest_event
 from core.twin_evolution import evolve as twin_evolve
 from core.twin_evolution import weekly_digest as twin_weekly_digest
@@ -144,6 +150,12 @@ class TwinObserveGithubRequest(BaseModel):
     tenant_id: str
     repo: str
     max_commits: int = 20
+
+
+class TwinBehaviorRebuildRequest(BaseModel):
+    """Body for rebuilding the versioned behavioral snapshot."""
+
+    tenant_id: str
 
 
 def create_app() -> FastAPI:
@@ -647,6 +659,32 @@ def create_app() -> FastAPI:
                 status_code=400,
                 content={"detail": str(exc)},
             )
+
+    # --- Twin behavioral memory (T11) ---
+
+    @app.post(
+        "/api/v1/twin/behavior/rebuild", tags=["twin"], status_code=200
+    )
+    def twin_behavior_rebuild(
+        request: TwinBehaviorRebuildRequest,
+    ) -> Any:
+        try:
+            return twin_rebuild_behavior(request.tenant_id)
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": str(exc)},
+            )
+
+    @app.get("/api/v1/twin/behavior/{tenant_id}", tags=["twin"])
+    def twin_behavior_get(tenant_id: str) -> Any:
+        result = twin_get_behavior(tenant_id)
+        if result is None:
+            return JSONResponse(
+                status_code=404,
+                content={"detail": "no behavior snapshot for this tenant"},
+            )
+        return result
 
     # --- Twin proposed actions with human approval gate (T06) ---
 
