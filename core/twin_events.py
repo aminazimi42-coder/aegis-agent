@@ -24,8 +24,8 @@ from core.twin_interview import get_latest_profile
 # Event dataclass
 # ---------------------------------------------------------------------------#
 
-_VALID_SOURCES = {"git", "editor", "calendar", "manual"}
-_VALID_KINDS = {"commit", "edit", "meeting", "note"}
+_VALID_SOURCES = {"git", "editor", "calendar", "manual", "email"}
+_VALID_KINDS = {"commit", "edit", "meeting", "note", "message"}
 
 
 @dataclass

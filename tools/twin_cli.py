@@ -11,6 +11,7 @@ Usage::
     python tools/twin_cli.py actions-execute --action-id <ID>
     python tools/twin_cli.py render --tenant <ID>
     python tools/twin_cli.py brief-morning --tenant <ID>
+    python tools/twin_cli.py email-triage --tenant <ID> --dir <PATH>
 
 Each subcommand prints a JSON object to stdout (``json.dumps(default=str)``)
 and exits 0 on success.  On ``ValueError`` or ``PermissionError`` the CLI
@@ -99,6 +100,12 @@ def _cmd_brief_morning(args: argparse.Namespace) -> dict[str, Any]:
     return render_brief(args.tenant)
 
 
+def _cmd_email_triage(args: argparse.Namespace) -> dict[str, Any]:
+    from core.twin_email_triage import triage
+
+    return triage(args.tenant, args.dir)
+
+
 # ---------------------------------------------------------------------------#
 # Argument parsing
 # ---------------------------------------------------------------------------#
@@ -167,6 +174,11 @@ def _build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("brief-morning", help="Render a one-page morning brief.")
     p.add_argument("--tenant", required=True)
 
+    # email-triage
+    p = sub.add_parser("email-triage", help="Triage a folder of .eml files.")
+    p.add_argument("--tenant", required=True)
+    p.add_argument("--dir", required=True)
+
     return parser
 
 
@@ -186,6 +198,7 @@ def main(argv: list[str] | None = None) -> int:
         "render": _cmd_render,
         "calendar-ics": _cmd_calendar_ics,
         "brief-morning": _cmd_brief_morning,
+        "email-triage": _cmd_email_triage,
     }[args.command]
 
     try:

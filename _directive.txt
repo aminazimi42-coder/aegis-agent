@@ -1,44 +1,42 @@
-T18 — Morning one-page brief. Do ONLY this directive. Do not start T19. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend ed725c4. Do not rewrite README. Do not add email send, payments, OAuth, or desktop UI. Source, comments, commit message: English only.
+T19 — Local email triage drafts. Do ONLY this directive. Do not start T20. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 44164d7. Do not rewrite README. Do not send email, do not add IMAP/SMTP, payments, or OAuth. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T17. HEAD ed725c4. pytest was 199 green after T17.
+Baseline on main (do not regress): T01–T18. HEAD 44164d7. pytest was 204 green after T18.
 
-GOAL: a busy principal gets one local markdown page: today from calendar events, recent repos from behavior/git events, and pending proposed/approved actions. No LLM required.
+GOAL: read a folder of .eml files and write triage + draft replies as local markdown. No network send.
 
 Implement:
 
-1) core/twin_morning_brief.py
-- render_brief(tenant_id) -> dict {tenant_id, path, sections}
+1) core/twin_email_triage.py
+- triage(tenant_id, mail_dir) -> dict {tenant_id, ingested, path}
 - Require consented profile or raise ValueError("no consented profile")
-- Rebuild behavior if missing (safe import twin_behavior.rebuild)
-- Collect:
-  meetings: twin_events source=calendar kind=meeting (summary+start), up to 8
-  repos: from get_behavior snapshot repos or event payloads repo, up to 8
-  pending_actions: twin_actions list with status in {proposed, approved}, up to 8
-- Write Path(AEGIS_DATA_DIR or ./data)/work_products/{tenant_id}/morning_brief.md
-- File must contain headings Meetings, Repos, Pending actions
-- Overwrite on each call
+- Require Path(mail_dir).is_dir() or raise ValueError("mail dir not found")
+- Parse each *.eml with email.message_from_binary_file: From, Subject, first text part[:400]
+- Write work_products/{tenant_id}/email_triage.md with one section per message and a Draft reply: of 2 deterministic sentences (not a live LLM)
+- ingest_event source="email" kind="message" payload={from, subject} then evolve
+- Dedup by (from, subject)
 
-2) API POST /api/v1/twin/brief/morning body {tenant_id}
-3) CLI tools/twin_cli.py subcommand brief-morning --tenant ID
+2) API POST /api/v1/twin/email/triage body {tenant_id, mail_dir}
+3) CLI email-triage --tenant ID --dir PATH
 
-4) tests/test_t18_twin_morning_brief.py
+4) tests/test_t19_twin_email_triage.py
 - AEGIS_DATA_DIR temp
 - without profile ValueError
-- after T03 commit + ingest calendar meeting Standup + git repo acme/core: file exists, contains Standup and acme/core
+- write one tiny .eml From: a@b.com Subject: Budget review
+- after T03 commit: triage file contains Budget review and Draft
 - FastAPI 200
-- No live network / no paid LLM
+- No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_morning_brief import render_brief; print(callable(render_brief))"
+   ./.venv/bin/python -c "from core.twin_email_triage import triage; print(callable(triage))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 199
+   Required: 0 failed, count > 204
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t18): morning one-page brief from calendar git and actions"
+6. git commit -m "feat(t19): local eml triage drafts without sending mail"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

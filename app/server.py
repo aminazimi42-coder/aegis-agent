@@ -49,6 +49,7 @@ from core.twin_behavior import (
     rebuild as twin_rebuild_behavior,
 )
 from core.twin_calendar import ingest_ics as twin_ingest_ics
+from core.twin_email_triage import triage as twin_email_triage
 from core.twin_events import ingest_event as twin_ingest_event
 from core.twin_evolution import evolve as twin_evolve
 from core.twin_evolution import weekly_digest as twin_weekly_digest
@@ -178,6 +179,13 @@ class TwinMorningBriefRequest(BaseModel):
     """Body for rendering a one-page morning brief."""
 
     tenant_id: str
+
+
+class TwinEmailTriageRequest(BaseModel):
+    """Body for triaging a folder of .eml files."""
+
+    tenant_id: str
+    mail_dir: str
 
 
 def create_app() -> FastAPI:
@@ -742,6 +750,18 @@ def create_app() -> FastAPI:
     def twin_morning_brief(request: TwinMorningBriefRequest) -> Any:
         try:
             return twin_render_brief(request.tenant_id)
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": str(exc)},
+            )
+
+    # --- Twin email triage (T19) ---
+
+    @app.post("/api/v1/twin/email/triage", tags=["twin"], status_code=200)
+    def twin_email_triage_endpoint(request: TwinEmailTriageRequest) -> Any:
+        try:
+            return twin_email_triage(request.tenant_id, request.mail_dir)
         except ValueError as exc:
             return JSONResponse(
                 status_code=400,
