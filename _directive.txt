@@ -1,42 +1,37 @@
-T15 — LLM tool cage and structured complete. Do ONLY this directive. Do not start T16. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend f161f65. Do not rewrite README. Do not add payments, OAuth, or desktop UI. Do not call a live paid network. Source, comments, commit message: English only.
+T16 — LLM secret isolation and complete ledger. Do ONLY this directive. Do not start T17. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 65d40f9. Do not rewrite README. Do not add payments, OAuth, or desktop UI. Do not call a live paid network. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T14. HEAD f161f65. pytest was 190 green after T14. Default provider remains Echo.
+Baseline on main (do not regress): T01–T15. HEAD 65d40f9. pytest was 193 green after T15.
 
-GOAL: the model may only propose structured work inside an allowlist. It cannot claim an external action happened and cannot invoke a tool outside the cage.
+GOAL: API keys and PAT values must never enter the model prompt or the evidence ledger. Every complete_safe call must leave an auditable ledger row when the ledger is available.
 
 Implement:
 
 1) core/llm_safety.py
-- ALLOWED_TOOLS = ("weekly_digest", "render_work_products", "propose_actions")
-- complete_safe(prompt, *, tenant_id, model="aegis-cheap", max_tokens=128) -> dict
-  keys: text, model, prompt_tokens, completion_tokens, total_tokens, tool, ok
-- Call get_provider().complete then parse tool:
-  if provider text contains a line TOOL:<name> use that name else tool=""
-- If tool and tool not in ALLOWED_TOOLS: ok=False, tool stays the rejected name, text="rejected: tool not allowed"
-- Never execute twin_actions.execute from this module
-- Never write "executed" or "transferred" or "pushed to origin" into text when ok is True unless those words were already in the prompt (keep it simple: if ok, do not append any execution claim)
-- Use Echo path in tests; no live HTTP
+- SECRET_ENV_KEYS = ("AEGIS_LLM_API_KEY", "AEGIS_GITHUB_TOKEN")
+- redact_secrets(text) -> str: for each set env value with len>=8, replace all occurrences with "***"
+- complete_safe must redact the prompt before get_provider().complete
+- After complete (ok True or False), best-effort EvidenceLedger().append_entry with action="llm_complete_safe", payload without raw key: tenant_id, model, ok, tool, prompt_tokens, completion_tokens. If ledger import/append fails, swallow and still return the complete dict
+- Module source must not contain a hardcoded sk- key
 
-2) tests/test_t15_llm_safety.py
-- default complete_safe with Echo: ok True, tool "" or allowed
-- complete_safe after a monkeypatch of Echo/get_provider that returns text "TOOL:wire_transfer\nPAY" -> ok False and "rejected" in text.lower()
-- core/llm_safety.py source does not call execute(
-- AEGIS_DATA_DIR temp isolation
-- No live network
+2) tests/test_t16_llm_isolation.py
+- os.environ AEGIS_LLM_API_KEY=sk-test-isolation-key-123456
+- complete_safe prompt that includes that key: returned text must not contain sk-test-isolation-key-123456 (Echo would otherwise echo it)
+- core/llm_safety.py source has no sk-
+- AEGIS_DATA_DIR temp; no live network
 
-3) Do not change twin routes except you may no-op. Do not weaken T06 execute gate.
+Keep T15 tests green. Do not weaken the tool cage.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.llm_safety import complete_safe, ALLOWED_TOOLS; r=complete_safe('hello', tenant_id='t15'); print(r['ok'], 'execute' not in open('core/llm_safety.py').read(), 'propose_actions' in ALLOWED_TOOLS)"
-   Required: True True True
+   ./.venv/bin/python -c "import os; os.environ['AEGIS_LLM_API_KEY']='sk-test-isolation-key-123456'; from core.llm_safety import complete_safe, redact_secrets; t=complete_safe('use sk-test-isolation-key-123456', tenant_id='t16')['text']; print('sk-test-isolation-key-123456' not in t, '***' in redact_secrets('sk-test-isolation-key-123456'))"
+   Required: True True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 190
+   Required: 0 failed, count > 193
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t15): llm tool cage and structured complete"
+6. git commit -m "feat(t16): redact llm secrets and ledger complete_safe calls"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
