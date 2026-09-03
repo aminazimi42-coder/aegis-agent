@@ -30,6 +30,7 @@ from core.tool_tokens import ToolTokenManager
 from core.twin_events import ingest_event as twin_ingest_event
 from core.twin_evolution import evolve as twin_evolve
 from core.twin_evolution import weekly_digest as twin_weekly_digest
+from core.twin_git_observer import observe_repo as twin_observe_repo
 from core.twin_interview import (
     answer as twin_answer,
 )
@@ -105,6 +106,14 @@ class TwinEventRequest(BaseModel):
     source: str
     kind: str
     payload: dict[str, Any] = {}
+
+
+class TwinObserveGitRequest(BaseModel):
+    """Body for observing a local git repo and feeding commits to the twin."""
+
+    tenant_id: str
+    repo_path: str
+    max_commits: int = 20
 
 
 def create_app() -> FastAPI:
@@ -574,6 +583,22 @@ def create_app() -> FastAPI:
         except ValueError as exc:
             return JSONResponse(
                 status_code=404,
+                content={"detail": str(exc)},
+            )
+
+    # --- Twin local git observer (T05) ---
+
+    @app.post("/api/v1/twin/observe/git", tags=["twin"], status_code=200)
+    def twin_observe_git(request: TwinObserveGitRequest) -> Any:
+        try:
+            return twin_observe_repo(
+                tenant_id=request.tenant_id,
+                repo_path=request.repo_path,
+                max_commits=request.max_commits,
+            )
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
                 content={"detail": str(exc)},
             )
 

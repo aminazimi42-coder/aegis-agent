@@ -1,54 +1,43 @@
-T04 — Twin live-evolution loop. Do ONLY this directive. Do not start T05. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 55c01dd. Do not rewrite README. Do not add payments, bank transfer, calendar send, GitHub OAuth, Telegram, or desktop UI. Source files, comments, commit message: English only.
+T05 — Local git observer for the twin. Do ONLY this directive. Do not start T06. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend b37da48. Do not rewrite README. Do not add GitHub OAuth, tokens, payments, Telegram, or desktop UI. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): six agents, 1.0.0-rc1, SQLite, Echo LLM, T03 interview start/answer/commit/profile. pytest was 122 green after T03.
+Baseline on main (do not regress): T01–T04. Six agents, Echo LLM, Day-0 interview, event ingest + evolve + weekly digest. pytest was 128 green after T04.
 
-GOAL: after Day-0 consent, the twin must evolve from structured work events and produce a weekly digest. This is the learning loop, not the action loop. No money movement.
+GOAL: the twin must learn from a real local git working copy without the network. Scan commits, map each to ingest_event + evolve. No GitHub API.
 
 Implement:
 
-1) core/twin_events.py
-- Event dataclass: event_id, tenant_id, source (git|editor|calendar|manual), kind (commit|edit|meeting|note), payload dict, created_at
-- ingest_event(tenant_id, source, kind, payload) -> event
-- Reject ingest if no committed twin profile for tenant (ValueError("no consented profile"))
-- Persist table twin_events via core.persistence
-- list_events(tenant_id, limit=50)
+1) core/twin_git_observer.py
+- observe_repo(tenant_id, repo_path, *, max_commits=20) -> dict {tenant_id, repo, ingested, skipped, latest_sha}
+- Require a consented twin profile or raise ValueError("no consented profile")
+- Require repo_path/.git or raise ValueError("not a git repo")
+- Use subprocess git log -n max_commits --format=%H%x09%ad%x09%s with GIT_TERMINAL_PROMPT=0. No network remotes fetch
+- For each commit: ingest_event(source="git", kind="commit", payload={repo: basename or path name, sha, subject, committed_at}) then evolve(tenant_id, event)
+- Dedup by sha already stored in twin_events payload (do not ingest same sha twice)
+- Return ingested count of new shas only
 
-2) core/twin_evolution.py
-- evolve(tenant_id, event) updates layers using deterministic rules, not a live LLM:
-  - source git + kind commit -> append repo name from payload.repo into layers.repositories (unique)
-  - kind meeting -> set tools hint "calendar" if missing
-  - payload.risk in {low,medium,high} -> layers.risk_posture
-  - payload.role text -> do not overwrite role unless payload.overwrite_role is True
-- If layers actually change: new TwinProfile version = previous+1, new fingerprint, persist
-- If no layer change: return previous profile unchanged
-- weekly_digest(tenant_id) -> dict: tenant_id, profile_version, event_count, repos, last_event_at, highlights list[str] derived from events (no network)
+2) API
+- POST /api/v1/twin/observe/git body {tenant_id, repo_path, max_commits}
+Keep T03/T04 routes working.
 
-3) API in app/server.py prefix /api/v1/twin
-- POST /api/v1/twin/events  body {tenant_id, source, kind, payload}
-- GET  /api/v1/twin/digest/{tenant_id}
-Keep T03 routes working.
-
-4) tests/test_t04_twin_evolution.py
-- ingest without profile raises ValueError
-- after T03-style commit, ingest git commit event appends repo and bumps version to 2
-- second identical event does not bump version
-- weekly_digest returns event_count >= 1
-- FastAPI client: event 200, digest 200
-- Isolate with AEGIS_DATA_DIR temp dir
-- No live LLM/network
+3) tests/test_t05_twin_git_observer.py
+- Isolate AEGIS_DATA_DIR temp
+- Build a tiny temp git repo with two commits (git init, config user, commit)
+- Without profile: observe_repo raises ValueError
+- After T03-style commit: observe_repo ingested >= 1, weekly_digest event_count >= 1, profile repositories mentions the temp repo name
+- Second observe_repo on same repo ingested == 0 (dedup)
+- FastAPI client 200 for observe/git
+- No live network / no GitHub token
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
-3. Proof:
-   ./.venv/bin/python -c "import os,tempfile; os.environ['AEGIS_DATA_DIR']=tempfile.mkdtemp(); from core.twin_interview import start_session,answer,commit,QUESTIONS; from core.twin_evolution import evolve, weekly_digest; from core.twin_events import ingest_event; s=start_session('t4'); sid=s['session_id'];
-[answer(sid,q['id'],'a') for q in QUESTIONS]; commit(sid,True); e=ingest_event('t4','git','commit',{'repo':'acme/core'}); p=evolve('t4',e); d=weekly_digest('t4'); print(p['version'], d['event_count'], 'acme/core' in str(p.get('layers') or p))"
-   Required: version 2, event_count >= 1, True
+3. Proof: create a temp git repo in the proof script, run interview+commit, observe_repo, print ingested and second ingested
+   Required: first ingested >= 1 and second ingested == 0
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 122
+   Required: 0 failed, count > 128
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t04): twin event ingest, deterministic evolution, weekly digest"
+6. git commit -m "feat(t05): local git observer feeds twin events"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
