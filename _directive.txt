@@ -1,34 +1,29 @@
-T36 — README from the real repo. Do ONLY this directive. Do not start T37. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 1594428. Do not add payments or live LLM. Source and commit message: English only.
+T37 — GitHub Actions CI on main. Do ONLY this directive. Do not start T38. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend d9f2950. Do not rewrite README again. Do not add paid SaaS secrets. Source and commit message: English only.
 
-Baseline on main: T01–T35. HEAD 1594428. pytest was 320 green after T35.
+Baseline on main: T01–T36. HEAD d9f2950. pytest was 325 green after T36.
 
-GOAL: rewrite README.md so it matches files that exist today. No feature that is not in this tree.
+GOAL: one workflow that on push and pull_request to main runs ruff then pytest on Python 3.11.
 
 Implement:
 
-1) Inventory first (read-only):
-- tools/twin_cli.py subparsers
-- @app.post/@app.get paths under /api/v1/twin in app/server.py
-- core/twin_*.py module names
-- pytest count from running pytest -q is allowed
-- Keep existing hero svg if docs/assets/aegis-hero.svg exists
+1) .github/workflows/ci.yml
+- name: CI
+- on push and pull_request branches [main]
+- job test, runs-on ubuntu-latest
+- checkout@v4
+- setup-python@v5 with python-version 3.11
+- pip install -e ".[dev]"
+- python -m ruff check .
+- python -m pytest -q
+- no network calls in the job besides pip and GitHub
 
-2) Rewrite README.md in English, short:
-- Title + one sentence of what the tree actually is (FastAPI + local twin work products + human approve gate)
-- Quick start: venv, pytest, uvicorn if those files exist
-- Table of twin CLI commands that are in twin_cli.py (not invented)
-- Table of twin POST routes that are in server.py (not invented)
-- State EchoProvider / no paid LLM unless you find a real paid adapter wired as default
-- State SQLite under AEGIS_DATA_DIR
-- State free Render may cold-start
-- Do not claim a desktop UI unless you find one
-- Do not delete LICENSE badge if LICENSE exists
+2) Do not delete existing release.yml or security.yml
 
-3) tests/test_t36_readme.py
-- README.md exists
-- contains "EchoProvider" or "no paid LLM"
-- contains "brief-morning" and "email-send" and "audio-task"
-- contains "/api/v1/twin/resume/render"
+3) tests/test_t37_ci_workflow.py
+- Path(".github/workflows/ci.yml").is_file()
+- text contains "ruff check" and "pytest"
+- text contains "3.11"
+- text contains "pull_request"
 - No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -36,11 +31,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; t=Path('README.md').read_text(); print('brief-morning' in t and 'EchoProvider' in t or 'no paid LLM' in t.lower())"
+   ./.venv/bin/python -c "from pathlib import Path; t=Path('.github/workflows/ci.yml').read_text(); print('pytest' in t and '3.11' in t)"
+   Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 320
+   Required: 0 failed, count > 325
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "docs(t36): README matches twin CLI routes and local constraints"
+6. git commit -m "ci(t37): GitHub Actions ruff and pytest on main"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
