@@ -88,9 +88,12 @@ class TestT33TwinEmailSend(unittest.TestCase):
         action_id = self._insert_email_action("t33d", "Draft: Q3 update")
 
         # Approve the action.
-        from core.twin_actions import approve
+        from core.twin_actions import _action_digest, _load_action, approve
 
-        approve(action_id)
+        action = _load_action(action_id)
+        assert action is not None
+        digest = _action_digest(action)
+        approve(action_id, "t33d", "tester", digest)
 
         result = send_approved("t33d", action_id)
 
@@ -109,9 +112,12 @@ class TestT33TwinEmailSend(unittest.TestCase):
         self._full_interview("t33e")
         action_id = self._insert_email_action("t33e", "Draft: board memo")
 
-        from core.twin_actions import approve
+        from core.twin_actions import _action_digest, _load_action, approve
 
-        approve(action_id)
+        action = _load_action(action_id)
+        assert action is not None
+        digest = _action_digest(action)
+        approve(action_id, "t33e", "tester", digest)
 
         app = create_app()
         client = TestClient(app)

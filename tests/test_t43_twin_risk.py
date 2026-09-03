@@ -140,7 +140,18 @@ class TestT43TwinRisk(unittest.TestCase):
         first_id = actions[0]["action_id"]
 
         # Approve.
-        resp = client.post(f"/api/v1/twin/actions/{first_id}/approve")
+        from core.twin_actions import _action_digest, _load_action
+
+        _a = _load_action(first_id)
+        assert _a is not None
+        resp = client.post(
+            f"/api/v1/twin/actions/{first_id}/approve",
+            json={
+                "tenant_id": "t43c",
+                "actor_id": "tester",
+                "expected_payload_sha256": _action_digest(_a),
+            },
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["status"], "approved")
 

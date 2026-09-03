@@ -42,6 +42,7 @@ class TestT13TwinCli(unittest.TestCase):
 
     def setUp(self) -> None:
         self._tmp = tempfile.mkdtemp()
+        os.environ["AEGIS_DATA_DIR"] = self._tmp
         self._env = {**os.environ, "AEGIS_DATA_DIR": self._tmp}
 
     def tearDown(self) -> None:
@@ -147,10 +148,22 @@ class TestT13TwinCli(unittest.TestCase):
 
         # Approve the first action
         first_action_id = actions[0]["action_id"]
+        # Compute the current digest to pass as expected_payload_sha256.
+        from core.twin_actions import _action_digest, _load_action
+
+        _a = _load_action(first_action_id)
+        assert _a is not None
+        digest = _action_digest(_a)
         code, stdout = _run_cli(
             "actions-approve",
             "--action-id",
             first_action_id,
+            "--tenant",
+            "t13c",
+            "--actor",
+            "tester",
+            "--expected-payload-sha256",
+            digest,
             env=self._env,
         )
         self.assertEqual(code, 0, f"approve exit {code}: {stdout}")

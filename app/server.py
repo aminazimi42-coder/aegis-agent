@@ -176,6 +176,19 @@ class TwinActionProposeRequest(BaseModel):
     tenant_id: str
 
 
+class TwinActionApproveRequest(BaseModel):
+    """Body for approving a proposed twin action (T56).
+
+    The approval is bound to the exact canonical envelope digest of the
+    action payload — ``expected_payload_sha256`` must match the current
+    digest or the approval is refused.
+    """
+
+    tenant_id: str
+    actor_id: str
+    expected_payload_sha256: str
+
+
 class TwinObserveGithubRequest(BaseModel):
     """Body for observing a GitHub repo via PAT."""
 
@@ -1100,14 +1113,19 @@ def create_app() -> FastAPI:
     @app.post(
         "/api/v1/twin/actions/{action_id}/approve", tags=["twin"], status_code=200
     )
-    def twin_actions_approve(action_id: str) -> Any:
+    def twin_actions_approve(action_id: str, request: TwinActionApproveRequest) -> Any:
         try:
-            return twin_action_approve(action_id)
-        except ValueError as exc:
-            return JSONResponse(
-                status_code=404,
-                content={"detail": str(exc)},
+            return twin_action_approve(
+                action_id,
+                request.tenant_id,
+                request.actor_id,
+                request.expected_payload_sha256,
             )
+        except ValueError as exc:
+            msg = str(exc)
+            if "unknown action" in msg or "tenant mismatch" in msg:
+                return JSONResponse(status_code=404, content={"detail": msg})
+            return JSONResponse(status_code=409, content={"detail": msg})
 
     @app.post(
         "/api/v1/twin/actions/{action_id}/reject", tags=["twin"], status_code=200

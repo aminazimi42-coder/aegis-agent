@@ -8,6 +8,8 @@ side effects.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import sqlite3
 import threading
@@ -18,7 +20,7 @@ from uuid import uuid4
 
 from core.persistence import get_connection
 from core.twin_interview import get_latest_profile
-from core.twin_risk import attach_risk
+from core.twin_risk import attach_risk, classify
 
 # ---------------------------------------------------------------------------#
 # Constants
@@ -35,6 +37,70 @@ _VALID_STATUSES: frozenset[str] = frozenset(
 )
 
 _action_lock = threading.Lock()
+
+_POLICY_VERSION = "t56"
+
+
+# ---------------------------------------------------------------------------#
+# Canonical envelope & digest (T56)
+# ---------------------------------------------------------------------------#
+
+def _canonical_envelope(
+    action_id: str,
+    tenant_id: str,
+    kind: str,
+    title: str,
+    payload: Any,
+    effect_type: str | None,
+    risk_level: str,
+    policy_version: str = _POLICY_VERSION,
+) -> dict[str, Any]:
+    """Build the canonical, sorted-key envelope dict for an action.
+
+    ``effect_type`` defaults to ``kind`` when no separate field is present.
+    ``risk_level`` defaults to ``""`` when absent.  ``policy_version`` is
+    always ``"t56"``.
+    """
+    return {
+        "action_id": action_id,
+        "tenant_id": tenant_id,
+        "kind": kind,
+        "title": title,
+        "payload": payload,
+        "effect_type": effect_type if effect_type is not None else kind,
+        "risk_level": risk_level if risk_level else "",
+        "policy_version": policy_version,
+    }
+
+
+def _envelope_digest(envelope: dict[str, Any]) -> str:
+    """Return the SHA-256 hex digest of the canonical JSON envelope."""
+    serialized = json.dumps(
+        envelope,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    return hashlib.sha256(serialized).hexdigest()
+
+
+def _action_digest(action: dict[str, Any]) -> str:
+    """Compute the canonical envelope digest from an action dict."""
+    payload = action.get("payload")
+    effect_type = action.get("effect_type")
+    risk_level = action.get("risk_level", "")
+    if not risk_level:
+        risk_level = classify(action.get("title", ""))
+    envelope = _canonical_envelope(
+        action_id=action["action_id"],
+        tenant_id=action["tenant_id"],
+        kind=action["kind"],
+        title=action["title"],
+        payload=payload,
+        effect_type=effect_type,
+        risk_level=risk_level,
+    )
+    return _envelope_digest(envelope)
 
 
 # ---------------------------------------------------------------------------#
@@ -63,10 +129,22 @@ def _ensure_schema() -> None:
             """
         )
         # Add payload column to pre-T49 tables (best-effort).
-        try:
-            conn.execute("ALTER TABLE twin_actions ADD COLUMN payload TEXT")
-        except sqlite3.OperationalError:
-            pass
+        for col in ("payload",):
+            try:
+                conn.execute(f"ALTER TABLE twin_actions ADD COLUMN {col} TEXT")
+            except sqlite3.OperationalError:
+                pass
+        # T56 — approval binding columns.
+        for col in (
+            "payload_sha256 TEXT",
+            "approved_payload_sha256 TEXT",
+            "approved_by TEXT",
+            "approved_at TEXT",
+        ):
+            try:
+                conn.execute(f"ALTER TABLE twin_actions ADD COLUMN {col}")
+            except sqlite3.OperationalError:
+                pass
 
 
 # ---------------------------------------------------------------------------#
@@ -81,15 +159,26 @@ def _row_to_dict(row: sqlite3.Row | dict[str, Any]) -> dict[str, Any]:
     """Convert a DB row (or dict) into a plain action dict."""
     if isinstance(row, dict):
         return dict(row)
-    return {
+    keys = row.keys()
+    result: dict[str, Any] = {
         "action_id": row["action_id"],
         "tenant_id": row["tenant_id"],
         "kind": row["kind"],
         "title": row["title"],
         "status": row["status"],
         "created_at": row["created_at"],
-        "payload": _deserialize_payload(row["payload"]) if "payload" in row.keys() else None,
+        "payload": _deserialize_payload(row["payload"]) if "payload" in keys else None,
     }
+    # T56 optional columns.
+    if "payload_sha256" in keys:
+        result["payload_sha256"] = row["payload_sha256"]
+    if "approved_payload_sha256" in keys:
+        result["approved_payload_sha256"] = row["approved_payload_sha256"]
+    if "approved_by" in keys:
+        result["approved_by"] = row["approved_by"]
+    if "approved_at" in keys:
+        result["approved_at"] = row["approved_at"]
+    return result
 
 
 def _deserialize_payload(raw: str | None) -> Any:
@@ -107,7 +196,8 @@ def _deserialize_payload(raw: str | None) -> Any:
 def _load_action(action_id: str) -> dict[str, Any] | None:
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT action_id, tenant_id, kind, title, status, created_at, payload "
+            "SELECT action_id, tenant_id, kind, title, status, created_at, "
+            "payload, payload_sha256, approved_payload_sha256, approved_by, approved_at "
             "FROM twin_actions WHERE action_id = ?",
             (action_id,),
         ).fetchone()
@@ -193,10 +283,29 @@ def propose_actions(tenant_id: str) -> list[dict[str, Any]]:
     with _action_lock:
         with get_connection() as conn:
             for a in actions:
+                # Compute the canonical envelope digest for this action.
+                payload_val = a.get("_payload_json")
+                payload_for_digest = (
+                    json.loads(payload_val) if isinstance(payload_val, str) else payload_val
+                )
+                risk_level = a.get("risk_level", "")
+                if not risk_level:
+                    risk_level = classify(a.get("title", ""))
+                envelope = _canonical_envelope(
+                    action_id=a["action_id"],
+                    tenant_id=a["tenant_id"],
+                    kind=a["kind"],
+                    title=a["title"],
+                    payload=payload_for_digest,
+                    effect_type=a.get("effect_type"),
+                    risk_level=risk_level,
+                )
+                digest = _envelope_digest(envelope)
                 conn.execute(
                     "INSERT INTO twin_actions "
-                    "(action_id, tenant_id, kind, title, status, created_at, payload) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    "(action_id, tenant_id, kind, title, status, "
+                    "created_at, payload, payload_sha256) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         a["action_id"],
                         a["tenant_id"],
@@ -205,25 +314,73 @@ def propose_actions(tenant_id: str) -> list[dict[str, Any]]:
                         a["status"],
                         a["created_at"],
                         a.get("_payload_json"),
+                        digest,
                     ),
                 )
 
     return actions
 
 
-def approve(action_id: str) -> dict[str, Any]:
-    """Set an action's status to ``approved``.
+def approve(
+    action_id: str,
+    tenant_id: str | None = None,
+    actor_id: str | None = None,
+    expected_payload_sha256: str | None = None,
+) -> dict[str, Any]:
+    """Approve a proposed action after binding it to the exact envelope digest.
 
-    Raises ``ValueError`` if the action_id is unknown.
+    All four arguments after ``action_id`` are required — calling with only
+    ``action_id`` raises ``ValueError("digest required")``.
+
+    Within one transaction:
+    1. The row must exist.
+    2. ``tenant_id`` must match.
+    3. ``status`` must be ``proposed``.
+    4. ``expected_payload_sha256`` must equal the current envelope digest.
+
+    On success, sets ``approved_payload_sha256``, ``approved_by``,
+    ``approved_at`` and ``status = "approved"``.
     """
+    if expected_payload_sha256 is None:
+        raise ValueError("digest required")
+
     _ensure_schema()
     with _action_lock:
-        action = _load_action(action_id)
-        if action is None:
-            raise ValueError(f"unknown action: {action_id}")
-        _update_status(action_id, "approved")
-        action["status"] = "approved"
-        return action
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT action_id, tenant_id, kind, title, status, created_at, "
+                "payload, payload_sha256, approved_payload_sha256, approved_by, approved_at "
+                "FROM twin_actions WHERE action_id = ?",
+                (action_id,),
+            ).fetchone()
+            if row is None:
+                raise ValueError(f"unknown action: {action_id}")
+            if row["tenant_id"] != tenant_id:
+                raise ValueError("tenant mismatch")
+            if row["status"] != "proposed":
+                raise ValueError(
+                    f"action not proposed (current status: {row['status']})"
+                )
+            # Recompute the current digest from the stored row.
+            action_dict = _row_to_dict(row)
+            current_digest = _action_digest(action_dict)
+            if expected_payload_sha256 != current_digest:
+                raise ValueError("payload digest mismatch")
+            now = _now()
+            conn.execute(
+                "UPDATE twin_actions "
+                "SET status = 'approved', "
+                "    approved_payload_sha256 = ?, "
+                "    approved_by = ?, "
+                "    approved_at = ? "
+                "WHERE action_id = ?",
+                (expected_payload_sha256, actor_id, now, action_id),
+            )
+            action_dict["status"] = "approved"
+            action_dict["approved_payload_sha256"] = expected_payload_sha256
+            action_dict["approved_by"] = actor_id
+            action_dict["approved_at"] = now
+            return action_dict
 
 
 def reject(action_id: str) -> dict[str, Any]:
@@ -292,6 +449,18 @@ def execute(action_id: str) -> dict[str, Any]:
             raise ValueError(f"unknown action: {action_id}")
         if action["status"] != "approved":
             raise PermissionError("approval required")
+        # T56 — recompute the current envelope digest and compare to the
+        # approved_payload_sha256 captured at approve time.  Mismatch means
+        # the payload was mutated after approval.
+        current_digest = _action_digest(action)
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT approved_payload_sha256 FROM twin_actions WHERE action_id = ?",
+                (action_id,),
+            ).fetchone()
+        approved_digest = row["approved_payload_sha256"] if row else None
+        if approved_digest is None or current_digest != approved_digest:
+            raise ValueError("payload changed after approval")
         _update_status(action_id, "executed")
         action["status"] = "executed"
 
@@ -330,7 +499,8 @@ def list_actions(tenant_id: str) -> list[dict[str, Any]]:
     _ensure_schema()
     with get_connection() as conn:
         rows = conn.execute(
-            "SELECT action_id, tenant_id, kind, title, status, created_at, payload "
+            "SELECT action_id, tenant_id, kind, title, status, created_at, "
+            "payload, payload_sha256, approved_payload_sha256, approved_by, approved_at "
             "FROM twin_actions WHERE tenant_id = ? "
             "ORDER BY created_at ASC",
             (tenant_id,),

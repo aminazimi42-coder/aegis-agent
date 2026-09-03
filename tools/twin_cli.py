@@ -76,7 +76,12 @@ def _cmd_actions_propose(args: argparse.Namespace) -> dict[str, Any]:
 def _cmd_actions_approve(args: argparse.Namespace) -> dict[str, Any]:
     from core.twin_actions import approve
 
-    return approve(args.action_id)
+    return approve(
+        args.action_id,
+        args.tenant,
+        args.actor,
+        args.expected_payload_sha256,
+    )
 
 
 def _cmd_actions_execute(args: argparse.Namespace) -> dict[str, Any]:
@@ -279,6 +284,9 @@ def _build_parser() -> argparse.ArgumentParser:
     # actions-approve
     p = sub.add_parser("actions-approve", help="Approve a proposed action.")
     p.add_argument("--action-id", required=True)
+    p.add_argument("--tenant", required=True)
+    p.add_argument("--actor", required=True)
+    p.add_argument("--expected-payload-sha256", required=True)
 
     # actions-execute
     p = sub.add_parser("actions-execute", help="Execute an approved action.")

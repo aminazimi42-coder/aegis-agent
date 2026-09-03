@@ -15,7 +15,7 @@ import unittest
 from pathlib import Path
 
 from core.persistence import get_connection
-from core.twin_actions import approve, propose_actions
+from core.twin_actions import _action_digest, _load_action, approve, propose_actions
 from core.twin_email_send import send_approved
 from core.twin_events import ingest_event
 from core.twin_interview import QUESTIONS, answer, commit, start_session
@@ -95,7 +95,9 @@ class TestT51GoldenBusyDay(unittest.TestCase):
         self._set_action_title_payload(action_id, email_title, {"body": "Busy day pack"})
         self.assertEqual(classify(email_title), "L2")
 
-        approved = approve(action_id)
+        _action = _load_action(action_id)
+        assert _action is not None
+        approved = approve(action_id, tenant, "tester", _action_digest(_action))
         self.assertEqual(approved["status"], "approved")
 
         # 5. send_approved writes .eml under work_products/t51/outbox.

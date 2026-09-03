@@ -15,7 +15,7 @@ import unittest
 
 from app.server import create_app
 from core.platform_status import platform_status
-from core.twin_actions import approve, execute, propose_actions
+from core.twin_actions import _action_digest, _load_action, approve, execute, propose_actions
 from core.twin_evolution import evolve, weekly_digest
 from core.twin_interview import QUESTIONS, answer, commit, start_session
 from fastapi.testclient import TestClient
@@ -99,7 +99,9 @@ class TestT07E2EIntegrity(unittest.TestCase):
             execute(first_id)
 
         # 6. Approve then execute -> status executed.
-        approved = approve(first_id)
+        _action = _load_action(first_id)
+        assert _action is not None
+        approved = approve(first_id, tenant, "tester", _action_digest(_action))
         self.assertEqual(approved["status"], "approved")
         executed = execute(first_id)
         self.assertEqual(executed["status"], "executed")

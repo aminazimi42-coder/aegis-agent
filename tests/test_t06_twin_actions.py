@@ -17,6 +17,8 @@ import unittest
 
 from app.server import create_app
 from core.twin_actions import (
+    _action_digest,
+    _load_action,
     approve,
     execute,
     list_actions,
@@ -78,7 +80,9 @@ class TestT06TwinActions(unittest.TestCase):
         actions = propose_actions("t6c")
         first_id = actions[0]["action_id"]
 
-        approved = approve(first_id)
+        _action = _load_action(first_id)
+        assert _action is not None
+        approved = approve(first_id, "t6c", "tester", _action_digest(_action))
         self.assertEqual(approved["status"], "approved")
 
         executed = execute(first_id)
@@ -93,7 +97,7 @@ class TestT06TwinActions(unittest.TestCase):
 
     def test_unknown_action_id_raises_value_error(self) -> None:
         with self.assertRaises(ValueError):
-            approve("nonexistent-id")
+            approve("nonexistent-id", "t6x", "tester", "deadbeef")
         with self.assertRaises(ValueError):
             reject("nonexistent-id")
         with self.assertRaises(ValueError):
@@ -131,7 +135,19 @@ class TestT06TwinActions(unittest.TestCase):
         first_id = body["actions"][0]["action_id"]
 
         # Approve.
-        resp = client.post(f"/api/v1/twin/actions/{first_id}/approve")
+        from core.twin_actions import _action_digest as _digest
+        from core.twin_actions import _load_action as _load
+
+        _a = _load(first_id)
+        assert _a is not None
+        resp = client.post(
+            f"/api/v1/twin/actions/{first_id}/approve",
+            json={
+                "tenant_id": "t6f",
+                "actor_id": "tester",
+                "expected_payload_sha256": _digest(_a),
+            },
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["status"], "approved")
 

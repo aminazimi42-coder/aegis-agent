@@ -1,48 +1,47 @@
-T55 — Reproducible green baseline. Do ONLY this directive. Do not start T56. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 45483ca. Do not rewrite README or LICENSE. Do not add a cloud KMS. Source, comments, commit message: English only.
+T56 — Bind approval to the exact payload. Do ONLY this directive. Do not start T57. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend f1c5d52. Do not rewrite README or LICENSE. Do not add SMTP. Source, comments, commit message: English only.
 
-Baseline on main: T01–T54. HEAD 45483ca. pytest was 433 green after T54.
+Baseline on main: T01–T55. HEAD f1c5d52. pytest was 436 green after T55.
 
-GOAL: declared Python 3.11 install plus CI reproduce one green suite. Default key store is kms_adapter. Persistence failure is not swallowed.
+GOAL: one approval authorizes one immutable action envelope. Execute refuses if the row no longer matches the approved digest.
 
 Implement:
 
-1) pyproject.toml
-- Keep python >=3.11
-- Dev extra must include the HTTP test client Starlette actually imports (httpx and, if the resolved Starlette requires it, httpx2)
-- Do not drop pytest or ruff
+1) core/twin_actions.py
+- Canonical envelope fields: action_id, tenant_id, kind, title, payload, effect_type (kind if no separate field), risk_level if present else "", policy_version="t56"
+- Serialize with json.dumps(..., sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+- SHA-256 hex as payload_sha256
+- Additive ALTER: payload_sha256, approved_payload_sha256, approved_by, approved_at
+- On propose/insert, store payload_sha256
+- approve(action_id, tenant_id, actor_id, expected_payload_sha256) in one transaction: row exists, tenant matches, status is proposed, expected digest equals current envelope digest, then set approved + approved_payload_sha256 + approved_by
+- Second approve, approve after reject/execute: raise a short English error
+- execute recomputes digest and compares to approved_payload_sha256; mismatch raises
+- Keep a thin wrapper only if old unit tests must compile: if approve is called with action_id only, raise ValueError("digest required") — do not auto-approve
+- Update existing tests that called approve(action_id) so they pass tenant_id, actor_id, and the current digest
 
-2) .github/workflows/ci.yml
-- Stay on Python 3.11
-- After install, print: python version, then pytest --collect-only -q | tail
-- Then ruff check . and pytest -q
-- If uv.lock exists, prefer `uv sync --frozen --extra dev` when uv is available; otherwise keep pip install -e ".[dev]"
+2) app/server.py and tools/twin_cli.py
+- Approve route/CLI require tenant_id, actor_id, expected_payload_sha256
+- Stable English 400/409 body via existing error helper if present
 
-3) core/key_manager.py
-- Default persist path: kms_adapter only
-- Do not auto-select kms_enterprise because it imported
-- register_private_key must not swallow store errors; raise a short English error on persist failure
-- Isolate any file paths under AEGIS_DATA_DIR when that env is set
-
-4) tests/test_t55_build_contract.py
+3) tests/test_t56_approval_binding.py
 - AEGIS_DATA_DIR temp
-- test_declared_test_client_dependency_imports (import httpx succeeds)
-- test_default_key_store_round_trip_under_aegis_data_dir
-- test_persistence_failure_is_not_swallowed (if a store hook can be forced to fail)
-- Do not xfail. No live network. Do not pre-create .kms files to hide a fail
-
-5) Fix tests/test_key_manager.py only if it still expects enterprise store while default is adapter.
+- test_mutated_payload_invalidates_approval
+- test_mutated_title_invalidates_approval
+- test_approve_requires_expected_digest
+- test_rejected_action_cannot_be_resurrected
+- test_restart_preserves_approval_digest_and_actor
+- No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "import httpx; from core.key_manager import KeyManager; print(hasattr(KeyManager, 'register_private_key'))"
+   ./.venv/bin/python -c "from core.twin_actions import approve; import inspect; print('expected_payload_sha256' in inspect.signature(approve).parameters)"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 433
+   Required: 0 failed, count > 436
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "build(t55): lock reproducible test baseline"
+6. git commit -m "feat(t56): bind approvals to immutable action payloads"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

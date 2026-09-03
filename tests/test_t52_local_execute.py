@@ -21,7 +21,7 @@ from uuid import uuid4
 
 from app.server import create_app
 from core.persistence import get_connection
-from core.twin_actions import approve, execute, propose_actions
+from core.twin_actions import _action_digest, _load_action, approve, execute, propose_actions
 from core.twin_interview import QUESTIONS, answer, commit, start_session
 from fastapi.testclient import TestClient
 
@@ -102,7 +102,9 @@ class TestT52LocalExecute(unittest.TestCase):
             payload={"body": "Please send the weekly pack"},
             status="proposed",
         )
-        approve(action_id)
+        _action = _load_action(action_id)
+        assert _action is not None
+        approve(action_id, "t52b", "tester", _action_digest(_action))
         result = execute(action_id)
         self.assertEqual(result["status"], "executed")
         self.assertEqual(result["action_id"], action_id)
@@ -128,7 +130,9 @@ class TestT52LocalExecute(unittest.TestCase):
             title="Review weekly digest",
             status="proposed",
         )
-        approve(action_id)
+        _action = _load_action(action_id)
+        assert _action is not None
+        approve(action_id, "t52c", "tester", _action_digest(_action))
         result = execute(action_id)
         self.assertEqual(result["status"], "executed")
 
