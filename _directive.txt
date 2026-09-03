@@ -1,28 +1,31 @@
-T43 — Action risk levels L0–L3. Do ONLY this directive. Do not start T44. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 0ae09df. Do not rewrite README. Do not send mail or take payment. Source, comments, commit message: English only.
+T44 — Memory control list and forget. Do ONLY this directive. Do not start T45. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 509f284. Do not rewrite README. Do not call a cloud model. Source, comments, commit message: English only.
 
-Baseline on main: T01–T42. HEAD 0ae09df. pytest was 357 green after T42.
+Baseline on main: T01–T43. HEAD 509f284. pytest was 377 green after T43.
 
-GOAL: every proposed action carries a risk level. L0 observe may stay proposed. L2 write and L3 external still need human approve. No auto-execute.
+GOAL: the principal can see what the twin stored and drop one field. No encryption product in this slice.
 
 Implement:
 
-1) core/twin_risk.py
-- classify(title: str) -> "L0"|"L1"|"L2"|"L3"
-- L3 if title lower contains pay, wire, deploy, production, delete account
-- L2 if contains email, send, push, commit, write, invoice
-- L1 if contains draft, plan, brief, summary
-- else L0
-- attach_risk(action: dict) -> dict with risk_level set
+1) core/twin_memory_control.py
+- show(tenant_id) -> {tenant_id, path, fields}
+- Require consented profile or raise ValueError("no consented profile")
+- Write work_products/{tenant_id}/memory.md listing profile keys that exist (name, role, and any other keys present). Skip secrets.
+- forget(tenant_id, field) -> same shape
+- Persist forgotten field names in SQLite table forgotten(tenant_id, field, at) via twin_persist
+- show must omit forgotten fields
+- Overwrite memory.md on each show/forget
 
-2) When propose_actions or plan_goal creates an action, set risk_level on the stored row if the schema allows a column; otherwise put risk_level in the returned dict and in goal_plan.md
-- approve() unchanged: still required before email-send
-- Do not auto-approve L0 in this slice
+2) API POST /api/v1/twin/memory/show body {tenant_id}
+   POST /api/v1/twin/memory/forget body {tenant_id, field}
+3) CLI memory-show --tenant
+   CLI memory-forget --tenant --field
 
-3) tests/test_t43_twin_risk.py
-- classify("deploy to production") == "L3"
-- classify("draft the reply") == "L1"
-- after T03 commit propose or plan_goal result includes risk_level
-- FastAPI existing approve route still 200
+4) tests/test_t44_twin_memory_control.py
+- AEGIS_DATA_DIR temp
+- without profile ValueError
+- after T03 commit show markdown contains tenant id or a profile key
+- forget("role") then show markdown does not contain a Role heading
+- FastAPI 200 on show
 - No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -30,12 +33,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_risk import classify; print(classify('deploy to production'))"
-   Required: L3
+   ./.venv/bin/python -c "from core.twin_memory_control import show, forget; print(callable(show))"
+   Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 357
+   Required: 0 failed, count > 377
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t43): classify proposed actions L0-L3"
+6. git commit -m "feat(t44): memory control list and forget field"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

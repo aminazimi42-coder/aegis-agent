@@ -59,6 +59,12 @@ def init_schema() -> None:
                 status     TEXT,
                 created_at TEXT
             );
+            CREATE TABLE IF NOT EXISTS forgotten (
+                tenant_id TEXT,
+                field     TEXT,
+                at        TEXT,
+                PRIMARY KEY (tenant_id, field)
+            );
             """
         )
         conn.commit()

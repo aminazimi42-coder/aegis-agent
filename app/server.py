@@ -79,6 +79,8 @@ from core.twin_interview import (
     start_session as twin_start,
 )
 from core.twin_meeting_brief import render_meetings as twin_render_meetings
+from core.twin_memory_control import forget as twin_memory_forget
+from core.twin_memory_control import show as twin_memory_show
 from core.twin_morning_brief import render_brief as twin_render_brief
 from core.twin_persist import get_approval as twin_get_approval
 from core.twin_persist import (
@@ -337,6 +339,19 @@ class TwinGoalPlanRequest(BaseModel):
 
     tenant_id: str
     text: str
+
+
+class TwinMemoryShowRequest(BaseModel):
+    """Body for listing the twin's stored memory fields (T44)."""
+
+    tenant_id: str
+
+
+class TwinMemoryForgetRequest(BaseModel):
+    """Body for dropping one field from the twin's memory listing (T44)."""
+
+    tenant_id: str
+    field: str
 
 
 def create_app() -> FastAPI:
@@ -1154,6 +1169,22 @@ def create_app() -> FastAPI:
     def twin_goal_plan(request: TwinGoalPlanRequest) -> Any:
         try:
             return twin_plan_goal(request.tenant_id, request.text)
+        except ValueError as exc:
+            return twin_value_error_response(exc)
+
+    # --- Memory control list and forget (T44) --- #
+
+    @app.post("/api/v1/twin/memory/show", tags=["twin"], status_code=200)
+    def twin_memory_show_endpoint(request: TwinMemoryShowRequest) -> Any:
+        try:
+            return twin_memory_show(request.tenant_id)
+        except ValueError as exc:
+            return twin_value_error_response(exc)
+
+    @app.post("/api/v1/twin/memory/forget", tags=["twin"], status_code=200)
+    def twin_memory_forget_endpoint(request: TwinMemoryForgetRequest) -> Any:
+        try:
+            return twin_memory_forget(request.tenant_id, request.field)
         except ValueError as exc:
             return twin_value_error_response(exc)
 
