@@ -1,36 +1,37 @@
-T52 — Local execute after approve. Do ONLY this directive. Do not start T53. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 6556c25. Do not rewrite README. Do not open sockets. Source, comments, commit message: English only.
+T53 — Honest shipped-capability lock after T38–T52. Do ONLY this directive. Do not start T54. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend a56427f. Do not add desktop UI, Stripe, license keys, or a default cloud LLM. Source, comments, commit message: English only.
 
-Baseline on main: T01–T51. HEAD 6556c25. pytest was 417 green after T51.
+Baseline on main: T01–T52. HEAD a56427f. pytest was 422 green after T52.
 
-GOAL: execute() still refuses unapproved actions. After approve, email-kind writes local outbox; other kinds write a local executed.md. No SMTP.
+GOAL: one STATUS.md the principal can trust. Tests lock the claims. No new product column.
 
 Implement:
 
-1) core/twin_actions.py execute
-- Keep PermissionError("approval required") if status is not approved
-- After marking executed:
-  - if title or kind lower contains "email", call send_approved(tenant_id, action_id) best-effort
-  - else write work_products/{tenant_id}/executed.md containing action_id and title
-- Do not call HTTP
+1) STATUS.md at repo root (overwrite if present)
+Required English headings and facts, no hype:
+- Shipped: EchoProvider default; complete_safe; SQLite persist for approvals, budgets, jobs; scheduler tick does not send mail; goal plan proposes only; risk L0–L3; memory show/forget; home.md; style on brief/home; resume name; outbox payload body; golden busy-day test; execute after approve writes local outbox or executed.md; CI on push
+- Not shipped: installable desktop app, payment or license inside Aegis, cloud LLM as the default
+- Optional: HTTP provider only when env vars are set
 
-2) tests/test_t52_local_execute.py
-- AEGIS_DATA_DIR temp
-- unapproved execute raises PermissionError
-- after T03 commit, approve an email-titled action with payload body, execute creates an .eml or executed.md
-- FastAPI execute route if present still rejects unapproved
+2) tests/test_t53_status_lock.py
+- STATUS.md contains "EchoProvider" and "Not shipped"
+- from core.llm_provider import get_provider; type(get_provider()).__name__ == "EchoProvider" with default env
+- Path("core").rglob("*").as_posix() joined lower must not contain "stripe"
+- execute, render_home, schedule, send_approved are callable
 - No live network
+
+3) Do not rewrite the whole README. One line in README under an existing heading may point to STATUS.md if a Testing or Twin heading already exists.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_actions import execute; print(callable(execute))"
+   ./.venv/bin/python -c "from pathlib import Path; print(Path('STATUS.md').is_file())"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 417
+   Required: 0 failed, count > 422
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t52): local execute after approve writes outbox or executed.md"
+6. git commit -m "docs(t53): lock honest shipped capability status"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

@@ -146,6 +146,8 @@ and `/api/v1/platform/status`.
 
 ## Testing
 
+See **STATUS.md** for the honest shipped-capability lock.
+
 ```bash
 ./.venv/bin/python -m pytest -q
 ./.venv/bin/python -m ruff check .
