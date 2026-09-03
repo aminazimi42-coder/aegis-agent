@@ -1,28 +1,27 @@
-T33 — Send an approved email draft to a local outbox. Do ONLY this directive. Do not start T34. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend c181ef6. Do not rewrite README. Do not talk to SMTP or IMAP. Source, comments, commit message: English only.
+T34 — Local audio sidecar to a proposed task. Do ONLY this directive. Do not start T35. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend cea3de5. Do not rewrite README. Do not call cloud speech-to-text or whisper. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T32. HEAD c181ef6. pytest was 294+ after T32.
+Baseline on main (do not regress): T01–T33. HEAD cea3de5. pytest was 307 green after T33.
 
-GOAL: after a human-approved twin action of kind email, copy the draft text into work_products/{tenant_id}/outbox/. No network send.
+GOAL: if the principal drops note.wav plus note.txt next to it, treat the txt as the transcript and reuse T30. No audio decode.
 
 Implement:
 
-1) core/twin_email_send.py
-- send_approved(tenant_id, action_id) -> dict {tenant_id, path, action_id}
+1) core/twin_audio_task.py
+- from_audio(tenant_id, audio_path) -> dict from from_transcript
 - Require consented profile or raise ValueError("no consented profile")
-- Load action; if missing raise ValueError("action not found")
-- If action status is not approved raise ValueError("not approved")
-- Write work_products/{tenant_id}/outbox/{action_id}.eml with Subject and body from action title/payload
-- Header line "X-Aegis-Send: local-outbox-only"
-- Do not open a socket
+- Require Path(audio_path).is_file() or raise ValueError("audio not found")
+- sidecar = same stem + ".txt"; if missing raise ValueError("transcript sidecar not found")
+- Call core.twin_transcript_task.from_transcript(tenant_id, sidecar)
+- Also write work_products/{tenant_id}/audio_task.md pointing at the sidecar name
 
-2) API POST /api/v1/twin/email/send body {tenant_id, action_id}
-3) CLI email-send --tenant ID --action ID
+2) API POST /api/v1/twin/audio/task body {tenant_id, audio_path}
+3) CLI audio-task --tenant ID --file PATH
 
-4) tests/test_t33_twin_email_send.py
+4) tests/test_t34_twin_audio_task.py
 - AEGIS_DATA_DIR temp
 - without profile ValueError
-- after T03 + propose + approve of an email-like action: outbox file exists and contains local-outbox-only
-- unapproved action raises
+- after T03 commit write dummy.wav bytes and dummy.txt "Call the Berlin hotel tonight": result title or markdown contains Berlin hotel
+- missing sidecar raises
 - FastAPI 200
 - No live network
 
@@ -31,12 +30,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_email_send import send_approved; print(callable(send_approved))"
+   ./.venv/bin/python -c "from core.twin_audio_task import from_audio; print(callable(from_audio))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 294
+   Required: 0 failed, count > 307
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t33): send approved email draft to local outbox only"
+6. git commit -m "feat(t34): local audio sidecar transcript to proposed task"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

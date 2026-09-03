@@ -42,6 +42,7 @@ from core.twin_actions import (
 from core.twin_actions import (
     reject as twin_action_reject,
 )
+from core.twin_audio_task import from_audio as twin_from_audio
 from core.twin_behavior import (
     get_behavior as twin_get_behavior,
 )
@@ -279,6 +280,13 @@ class TwinTranscriptTaskRequest(BaseModel):
 
     tenant_id: str
     transcript_path: str
+
+
+class TwinAudioTaskRequest(BaseModel):
+    """Body for turning a local audio file + .txt sidecar into one proposed task."""
+
+    tenant_id: str
+    audio_path: str
 
 
 class TwinBoardMemoRequest(BaseModel):
@@ -1021,6 +1029,18 @@ def create_app() -> FastAPI:
     def twin_transcript_task(request: TwinTranscriptTaskRequest) -> Any:
         try:
             return twin_from_transcript(request.tenant_id, request.transcript_path)
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": str(exc)},
+            )
+
+    # --- Twin audio task (T34) ---
+
+    @app.post("/api/v1/twin/audio/task", tags=["twin"], status_code=200)
+    def twin_audio_task(request: TwinAudioTaskRequest) -> Any:
+        try:
+            return twin_from_audio(request.tenant_id, request.audio_path)
         except ValueError as exc:
             return JSONResponse(
                 status_code=400,
