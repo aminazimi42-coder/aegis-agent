@@ -1,37 +1,33 @@
-T16 — LLM secret isolation and complete ledger. Do ONLY this directive. Do not start T17. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 65d40f9. Do not rewrite README. Do not add payments, OAuth, or desktop UI. Do not call a live paid network. Source, comments, commit message: English only.
+T17 — Twin speech policy and budget stop. Do ONLY this directive. Do not start T18. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 05b6613. Do not rewrite README. Do not add payments, OAuth, or desktop UI. Do not call a live paid network. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T15. HEAD 65d40f9. pytest was 193 green after T15.
+Baseline on main (do not regress): T01–T16. HEAD 05b6613. pytest was 196 green after T16.
 
-GOAL: API keys and PAT values must never enter the model prompt or the evidence ledger. Every complete_safe call must leave an auditable ledger row when the ledger is available.
+GOAL: the model must not claim an external action happened. If the token budget is exhausted, complete_safe must not call the provider.
 
-Implement:
+Implement in core/llm_safety.py:
 
-1) core/llm_safety.py
-- SECRET_ENV_KEYS = ("AEGIS_LLM_API_KEY", "AEGIS_GITHUB_TOKEN")
-- redact_secrets(text) -> str: for each set env value with len>=8, replace all occurrences with "***"
-- complete_safe must redact the prompt before get_provider().complete
-- After complete (ok True or False), best-effort EvidenceLedger().append_entry with action="llm_complete_safe", payload without raw key: tenant_id, model, ok, tool, prompt_tokens, completion_tokens. If ledger import/append fails, swallow and still return the complete dict
-- Module source must not contain a hardcoded sk- key
+- FORBIDDEN_CLAIMS: tuple of lowercase phrases: "transferred funds", "pushed to origin", "payment sent", "email sent"
+- After provider returns, if ok and any forbidden phrase is in text.lower(): set ok=False and text="rejected: external action claim"
+- Before get_provider().complete, if env AEGIS_LLM_BUDGET_EXHAUSTED is "1": do not call complete; return ok=False, text="rejected: budget exhausted", tokens 0, tool=""
+- Keep redact_secrets and the T15 tool cage. Keep ledger best-effort.
 
-2) tests/test_t16_llm_isolation.py
-- os.environ AEGIS_LLM_API_KEY=sk-test-isolation-key-123456
-- complete_safe prompt that includes that key: returned text must not contain sk-test-isolation-key-123456 (Echo would otherwise echo it)
-- core/llm_safety.py source has no sk-
+tests/test_t17_llm_policy.py
+- Monkeypatch provider to return "payment sent to vendor" -> ok False and rejected in text
+- With AEGIS_LLM_BUDGET_EXHAUSTED=1, complete_safe does not need a live provider; ok False and "budget" in text.lower()
+- T15 wire_transfer still rejected
 - AEGIS_DATA_DIR temp; no live network
-
-Keep T15 tests green. Do not weaken the tool cage.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "import os; os.environ['AEGIS_LLM_API_KEY']='sk-test-isolation-key-123456'; from core.llm_safety import complete_safe, redact_secrets; t=complete_safe('use sk-test-isolation-key-123456', tenant_id='t16')['text']; print('sk-test-isolation-key-123456' not in t, '***' in redact_secrets('sk-test-isolation-key-123456'))"
+   ./.venv/bin/python -c "import os; os.environ['AEGIS_LLM_BUDGET_EXHAUSTED']='1'; from core.llm_safety import complete_safe; r=complete_safe('hi', tenant_id='t17'); print(r['ok'] is False, 'budget' in r['text'].lower())"
    Required: True True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 193
+   Required: 0 failed, count > 196
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t16): redact llm secrets and ledger complete_safe calls"
+6. git commit -m "feat(t17): reject external-action claims and stop on exhausted budget"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

@@ -21,6 +21,13 @@ ALLOWED_TOOLS: tuple[str, ...] = (
     "propose_actions",
 )
 
+FORBIDDEN_CLAIMS: tuple[str, ...] = (
+    "transferred funds",
+    "pushed to origin",
+    "payment sent",
+    "email sent",
+)
+
 SECRET_ENV_KEYS: tuple[str, ...] = (
     "AEGIS_LLM_API_KEY",
     "AEGIS_GITHUB_TOKEN",
@@ -48,6 +55,28 @@ def _parse_tool(text: str) -> str:
         if stripped.startswith("TOOL:"):
             return stripped[len("TOOL:"):].strip()
     return ""
+
+
+def _ledger_best_effort(tenant_id: str, result: dict[str, Any]) -> None:
+    """Append a best-effort ledger entry; never raise."""
+    try:
+        from core.evidence_ledger import EvidenceLedger
+
+        EvidenceLedger().append_entry(
+            tenant_id=tenant_id,
+            actor="llm_safety",
+            action="llm_complete_safe",
+            payload={
+                "tenant_id": tenant_id,
+                "model": result["model"],
+                "ok": result["ok"],
+                "tool": result["tool"],
+                "prompt_tokens": result["prompt_tokens"],
+                "completion_tokens": result["completion_tokens"],
+            },
+        )
+    except Exception:
+        pass
 
 
 def complete_safe(
@@ -80,6 +109,21 @@ def complete_safe(
     reads provider output and classifies it against the allowlist.
     """
     safe_prompt = redact_secrets(prompt)
+
+    # If the token budget is exhausted, do not call the provider at all.
+    if os.environ.get("AEGIS_LLM_BUDGET_EXHAUSTED") == "1":
+        result = {
+            "text": "rejected: budget exhausted",
+            "model": model,
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+            "tool": "",
+            "ok": False,
+        }
+        _ledger_best_effort(tenant_id, result)
+        return result
+
     provider = get_provider()
     raw = provider.complete(safe_prompt, model=model, max_tokens=max_tokens)
 
@@ -92,6 +136,11 @@ def complete_safe(
         # tool stays as the rejected name
         text = "rejected: tool not allowed"
 
+    # Reject claims of external actions that the model cannot have performed.
+    if ok and any(phrase in text.lower() for phrase in FORBIDDEN_CLAIMS):
+        ok = False
+        text = "rejected: external action claim"
+
     result = {
         "text": text,
         "model": raw.get("model", model),
@@ -102,24 +151,5 @@ def complete_safe(
         "ok": ok,
     }
 
-    # Best-effort ledger entry — never let a ledger failure break the call.
-    try:
-        from core.evidence_ledger import EvidenceLedger
-
-        EvidenceLedger().append_entry(
-            tenant_id=tenant_id,
-            actor="llm_safety",
-            action="llm_complete_safe",
-            payload={
-                "tenant_id": tenant_id,
-                "model": result["model"],
-                "ok": result["ok"],
-                "tool": result["tool"],
-                "prompt_tokens": result["prompt_tokens"],
-                "completion_tokens": result["completion_tokens"],
-            },
-        )
-    except Exception:
-        pass
-
+    _ledger_best_effort(tenant_id, result)
     return result
