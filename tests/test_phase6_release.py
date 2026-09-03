@@ -7,11 +7,11 @@ from core.config import load_config
 
 class PhaseSixReleaseTests(unittest.TestCase):
     def test_release_configuration_is_valid(self):
-        config = load_config({"environment": "production", "version": "1.0.0"})
+        config = load_config({"environment": "production", "version": "1.0.0-rc1"})
 
         self.assertEqual(config.environment, "production")
-        self.assertEqual(config.version, "1.0.0")
-        self.assertEqual(config.agent_count, 4)
+        self.assertEqual(config.version, "1.0.0-rc1")
+        self.assertEqual(config.agent_count, 6)
 
     def test_release_status_is_healthy(self):
         snapshot = health_snapshot()
@@ -24,11 +24,11 @@ class PhaseSixReleaseTests(unittest.TestCase):
             "Deploy the platform to production and validate release quality"
         )
 
-        self.assertEqual(workflow["agent_count"], 4)
-        self.assertEqual(len(workflow["results"]), 4)
+        self.assertEqual(workflow["agent_count"], 6)
+        self.assertEqual(len(workflow["results"]), 6)
         self.assertEqual(
             {item["agent_name"] for item in workflow["results"]},
-            {"Alina", "Kian", "Bita", "Aylin"},
+            {"Alina", "Kian", "Bita", "Aylin", "Ahmad", "Amin"},
         )
 
 

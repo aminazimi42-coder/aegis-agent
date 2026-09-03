@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aegis-agent-platform"
-version = "0.6.0-a"
+version = "1.0.0-rc1"
 description = "Foundation multi-agent SaaS framework for enterprise orchestration"
 authors = [ { name = "Amin Azimi" } ]
 readme = "README.md"

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
+from agents.ahmad.agent import AhmadAgent
 from agents.alina.agent import AlinaAgent
+from agents.amin.agent import AminAgent
 from agents.aylin.agent import AylinAgent
 from agents.bita.agent import BitaAgent
 from agents.kian.agent import KianAgent
@@ -22,6 +24,8 @@ class AICore:
             "Kian": KianAgent(),
             "Bita": BitaAgent(),
             "Aylin": AylinAgent(),
+            "Ahmad": AhmadAgent(),
+            "Amin": AminAgent(),
         }
 
     def resolve_agent_name(self, task: str) -> str:
@@ -30,24 +34,48 @@ class AICore:
 
         if any(
             keyword in lower_task
-            for keyword in ["plan", "strategy", "coordinate", "prioritize", "route"]
+            for keyword in [
+                "plan", "strategy", "coordinate", "prioritize", "route",
+            ]
         ):
             return "Alina"
         if any(
             keyword in lower_task
-            for keyword in ["execute", "deploy", "run", "operate", "monitor", "optimize"]
+            for keyword in [
+                "execute", "deploy", "run", "operate", "monitor", "optimize",
+            ]
         ):
             return "Kian"
         if any(
             keyword in lower_task
-            for keyword in ["analyze", "reason", "synthesize", "summarize", "risk", "insight"]
+            for keyword in [
+                "analyze", "reason", "synthesize", "summarize", "risk", "insight",
+            ]
         ):
             return "Bita"
         if any(
             keyword in lower_task
-            for keyword in ["validate", "verify", "check", "quality", "audit", "test"]
+            for keyword in [
+                "validate", "verify", "check", "quality", "audit", "test",
+            ]
         ):
             return "Aylin"
+        if any(
+            keyword in lower_task
+            for keyword in [
+                "security", "kms", "oversight", "incident", "sandbox",
+                "authority", "key rotation", "secure",
+            ]
+        ):
+            return "Ahmad"
+        if any(
+            keyword in lower_task
+            for keyword in [
+                "finance", "invoice", "settlement", "budget", "token economy",
+                "pay", "charge", "settle",
+            ]
+        ):
+            return "Amin"
         return "Alina"
 
     def catalog(self) -> List[Dict[str, Any]]:
@@ -89,8 +117,8 @@ class AICore:
         }
 
     def run_workflow(self, task: str) -> List[Dict[str, Any]]:
-        """Collect the specialized output of all four agents for a task."""
-        ordered_names = ["Alina", "Kian", "Bita", "Aylin"]
+        """Collect the specialized output of all six agents for a task."""
+        ordered_names = ["Alina", "Kian", "Bita", "Aylin", "Ahmad", "Amin"]
         results: List[Dict[str, Any]] = []
 
         for name in ordered_names:

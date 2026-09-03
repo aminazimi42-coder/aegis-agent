@@ -1,3 +1,5 @@
+import os
+import tempfile
 import unittest
 
 from core.evidence_ledger import EvidenceLedger
@@ -6,6 +8,13 @@ from core.tenant_memory import TenantMemoryVault
 
 
 class ReversibleWorkflowTests(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.mkdtemp()
+        os.environ["AEGIS_DATA_DIR"] = self._tmp
+
+    def tearDown(self):
+        del os.environ["AEGIS_DATA_DIR"]
+
     def test_rollback_deletes_memory_and_ledger(self):
         ledger = EvidenceLedger()
         tenant_memory = TenantMemoryVault()

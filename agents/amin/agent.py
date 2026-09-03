@@ -4,15 +4,15 @@ from core.agent_base import BaseAgent
 
 
 class AminAgent(BaseAgent):
-    """Oversight specialist scaffold for Amin supervisory workflows."""
+    """Finance and executive bridge specialist."""
 
     name = "Amin"
-    role = "Amin oversight"
+    role = "Finance and executive bridge"
     description = (
         "Provides secondary authority, review checkpoints, and governance "
-        "coverage for supervision loops."
+        "coverage for finance flows, invoicing, and executive directives."
     )
-    capabilities = ["oversight", "review", "audit", "governance"]
+    capabilities = ["finance", "invoicing", "settlement", "executive", "oversight", "audit"]
     metadata = {
         "log": {
             "channel": "oversight",
@@ -31,5 +31,6 @@ class AminAgent(BaseAgent):
     def handle(self, task: str) -> str:
         return (
             f"{self.name} review: confirm the oversight checkpoint, audit "
-            f"the path, and validate readiness for {task}"
+            f"the financial path, settle the token budget, and validate "
+            f"readiness for {task}"
         )

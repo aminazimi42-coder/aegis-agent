@@ -1,5 +1,5 @@
-"""Ahmed oversight agent scaffold."""
+"""Ahmad security and oversight agent scaffold."""
 
-from .agent import AhmedAgent
+from .agent import AhmadAgent
 
-__all__ = ["AhmedAgent"]
+__all__ = ["AhmadAgent"]

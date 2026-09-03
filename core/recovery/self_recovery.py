@@ -38,9 +38,9 @@ class SelfRecovery:
                 f"{self.environment} to {normalized_environment}."
             )
 
-        if self.agent_count != 4:
-            actions.append("Adjusted agent count to the production-safe default of four agents.")
-            runtime_agent_count = 4
+        if self.agent_count != 6:
+            actions.append("Adjusted agent count to the production-safe default of six agents.")
+            runtime_agent_count = 6
         else:
             runtime_agent_count = self.agent_count
 

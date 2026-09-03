@@ -123,7 +123,7 @@ def diagnostics() -> DiagnosticsResponse:
             "ok"
             if all(
                 security_policy.is_allowed(agent_name)
-                for agent_name in ["Alina", "Kian", "Bita", "Aylin", "Amin", "Ahmed"]
+                for agent_name in ["Alina", "Kian", "Bita", "Aylin", "Amin", "Ahmad"]
             )
             else "blocked"
         ),

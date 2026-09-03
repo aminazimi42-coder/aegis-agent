@@ -3,7 +3,7 @@ from __future__ import annotations
 from time import monotonic
 from typing import Any
 
-from agents.ahmad.agent import AhmedAgent
+from agents.ahmad.agent import AhmadAgent
 from agents.amin.agent import AminAgent
 
 from core.agent_registry import AGENT_REGISTRY
@@ -31,7 +31,7 @@ class PlatformMetrics:
         ]
 
         oversight_components = []
-        for agent in (AminAgent(), AhmedAgent()):
+        for agent in (AminAgent(), AhmadAgent()):
             details = agent.metadata.copy()
             oversight_components.append(
                 {

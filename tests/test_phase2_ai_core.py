@@ -6,11 +6,11 @@ from core.ai_core import AICore
 
 
 class PhaseTwoAITests(unittest.TestCase):
-    def test_agent_registry_contains_four_agents(self):
-        self.assertEqual(len(AGENT_REGISTRY), 4)
+    def test_agent_registry_contains_six_agents(self):
+        self.assertEqual(len(AGENT_REGISTRY), 6)
         self.assertEqual(
             [agent.name for agent in AGENT_REGISTRY],
-            ["Alina", "Kian", "Bita", "Aylin"],
+            ["Alina", "Kian", "Bita", "Aylin", "Ahmad", "Amin"],
         )
 
     def test_ai_core_dispatches_task_to_expected_agent(self):
@@ -26,7 +26,7 @@ class PhaseTwoAITests(unittest.TestCase):
         self.assertIn("platform_name", payload)
         self.assertIn("agent_count", payload)
         self.assertIn("results", payload)
-        self.assertEqual(payload["agent_count"], 4)
+        self.assertEqual(payload["agent_count"], 6)
 
 
 if __name__ == "__main__":

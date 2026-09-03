@@ -1,11 +1,13 @@
-name: Ahmed
-role: Ahmed oversight
+name: Ahmad
+role: Security and oversight
 status: scaffolded
-owner: Ahmed
+owner: Ahmad
 capabilities:
   - oversight
   - governance
   - review
+  - security
+  - kms
 logs:
   channel: oversight
   level: info

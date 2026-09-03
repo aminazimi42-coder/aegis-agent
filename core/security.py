@@ -7,7 +7,7 @@ from typing import Any
 class SecurityPolicy:
     """Platform security scaffold with deterministic allow-list and injection protection."""
 
-    ALLOWED_AGENTS = {"Alina", "Kian", "Bita", "Aylin", "Amin", "Ahmed"}
+    ALLOWED_AGENTS = {"Alina", "Kian", "Bita", "Aylin", "Amin", "Ahmad"}
     THREAT_PATTERNS = (
         re.compile(r"(?i)(?:union\s+select|drop\s+table|insert\s+into|delete\s+from|alter\s+table|update\s+set)"),
         re.compile(r"(?i)(?:;\s*(?:drop|alter|truncate|delete|update|insert)\b|--\s*$|/\*|\*/)"),

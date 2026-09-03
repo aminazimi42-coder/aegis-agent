@@ -27,4 +27,22 @@ AGENT_REGISTRY: list[AgentSpec] = [
         description="Responsible for quality assurance, verification, and final checks.",
         capabilities=["validation", "quality", "review"],
     ),
+    AgentSpec(
+        name="Ahmad",
+        role="Security and oversight",
+        description=(
+            "Responsible for security posture, KMS rotation oversight, "
+            "and incident triage."
+        ),
+        capabilities=["security", "oversight", "governance", "kms"],
+    ),
+    AgentSpec(
+        name="Amin",
+        role="Finance and executive bridge",
+        description=(
+            "Responsible for token economy management, invoicing, "
+            "and executive directives."
+        ),
+        capabilities=["finance", "invoicing", "settlement", "executive"],
+    ),
 ]

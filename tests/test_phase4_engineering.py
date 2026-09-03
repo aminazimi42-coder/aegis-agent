@@ -10,7 +10,7 @@ class PhaseFourEngineeringTests(unittest.TestCase):
         config = load_config({})
 
         self.assertEqual(config.platform_name, "Aegis Agent Platform")
-        self.assertEqual(config.agent_count, 4)
+        self.assertEqual(config.agent_count, 6)
         self.assertTrue(config.environment in {"development", "staging", "production"})
 
     def test_security_policy_enforces_rules(self):
@@ -18,7 +18,7 @@ class PhaseFourEngineeringTests(unittest.TestCase):
 
         self.assertTrue(policy.is_allowed("Alina"))
         self.assertTrue(policy.is_allowed("Amin"))
-        self.assertTrue(policy.is_allowed("Ahmed"))
+        self.assertTrue(policy.is_allowed("Ahmad"))
         self.assertFalse(policy.is_allowed("UnknownAgent"))
 
     def test_security_policy_blocks_injection_attempts(self):

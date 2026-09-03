@@ -10,12 +10,12 @@ from core.runtime.runtime_context import RuntimeContext
 
 class ProductionReadyFrameworkTests(unittest.TestCase):
     def test_runtime_context_bootstrap(self):
-        config = load_config({"environment": "production", "version": "0.6.0-a"})
+        config = load_config({"environment": "production", "version": "1.0.0-rc1"})
         context = RuntimeContext.from_config(config)
 
         self.assertEqual(context.environment, "production")
-        self.assertEqual(context.agent_count, 4)
-        self.assertEqual(context.version, "0.6.0-a")
+        self.assertEqual(context.agent_count, 6)
+        self.assertEqual(context.version, "1.0.0-rc1")
 
     def test_self_recovery_reconciles_runtime_state(self):
         recovery = SelfRecovery("development", 3)
@@ -23,7 +23,7 @@ class ProductionReadyFrameworkTests(unittest.TestCase):
 
         self.assertTrue(outcome["reconciled"])
         self.assertEqual(outcome["runtime"]["environment"], "production")
-        self.assertEqual(outcome["runtime"]["agent_count"], 4)
+        self.assertEqual(outcome["runtime"]["agent_count"], 6)
 
     def test_readiness_check_reports_health(self):
         report = readiness_check()
@@ -32,7 +32,7 @@ class ProductionReadyFrameworkTests(unittest.TestCase):
         self.assertEqual(report["status"], "healthy")
 
     def test_runtime_service_bootstrap_runs_cleanly(self):
-        config = load_config({"environment": "production", "version": "0.6.0-a"})
+        config = load_config({"environment": "production", "version": "1.0.0-rc1"})
         context = RuntimeContext.from_config(config)
         service = RuntimeService(context)
         startup = service.bootstrap()

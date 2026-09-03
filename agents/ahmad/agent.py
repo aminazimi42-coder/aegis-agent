@@ -3,21 +3,21 @@ from __future__ import annotations
 from core.agent_base import BaseAgent
 
 
-class AhmedAgent(BaseAgent):
-    """Oversight specialist scaffold for Ahmed authority workflows."""
+class AhmadAgent(BaseAgent):
+    """Security and oversight specialist."""
 
-    name = "Ahmed"
-    role = "Ahmed oversight"
+    name = "Ahmad"
+    role = "Security and oversight"
     description = (
         "Provides governance, stewardship, and oversight coverage "
-        "for elevated authority workflows."
+        "for elevated authority workflows, KMS rotation, and incident triage."
     )
-    capabilities = ["oversight", "governance", "review", "escalation"]
+    capabilities = ["oversight", "governance", "review", "escalation", "security", "kms"]
     metadata = {
         "log": {
             "channel": "oversight",
             "level": "info",
-            "owner": "Ahmed",
+            "owner": "Ahmad",
             "component": "ahmad",
             "scope": "governance",
         },
@@ -30,6 +30,10 @@ class AhmedAgent(BaseAgent):
 
     def handle(self, task: str) -> str:
         return (
-            f"{self.name} governance: maintain the strategic oversight view "
-            f"and confirm the authority path for {task}"
+            f"{self.name} governance: maintain the strategic oversight view, "
+            f"rotate KMS keys, and confirm the authority path for {task}"
         )
+
+
+# Backward-compatible alias
+AhmedAgent = AhmadAgent

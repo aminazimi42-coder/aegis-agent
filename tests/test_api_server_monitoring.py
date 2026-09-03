@@ -1,3 +1,5 @@
+import os
+import tempfile
 import unittest
 
 from app.server import create_app
@@ -6,8 +8,13 @@ from fastapi.testclient import TestClient
 
 class PhaseTwoAPITests(unittest.TestCase):
     def setUp(self):
+        self._tmp = tempfile.mkdtemp()
+        os.environ["AEGIS_DATA_DIR"] = self._tmp
         self.app = create_app()
         self.client = TestClient(self.app)
+
+    def tearDown(self):
+        del os.environ["AEGIS_DATA_DIR"]
 
     def test_health_endpoint(self):
         response = self.client.get("/health")
@@ -27,10 +34,10 @@ class PhaseTwoAPITests(unittest.TestCase):
         response = self.client.get("/api/v1/agents")
         self.assertEqual(response.status_code, 200)
         payload = response.json()
-        self.assertEqual(len(payload["agents"]), 4)
+        self.assertEqual(len(payload["agents"]), 6)
         self.assertEqual(
             {item["name"] for item in payload["agents"]},
-            {"Alina", "Kian", "Bita", "Aylin"},
+            {"Alina", "Kian", "Bita", "Aylin", "Ahmad", "Amin"},
         )
 
     def test_task_dispatch_endpoint(self):

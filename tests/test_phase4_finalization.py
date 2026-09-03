@@ -19,7 +19,10 @@ class PhaseFourFinalizationTests(unittest.TestCase):
 
         self.assertIn("quality_gate", payload)
         self.assertTrue(payload["quality_gate"]["passed"])
-        self.assertIn(payload["selected_agent"], {"Alina", "Kian", "Bita", "Aylin"})
+        self.assertIn(
+            payload["selected_agent"],
+            {"Alina", "Kian", "Bita", "Aylin", "Ahmad", "Amin"},
+        )
 
     def test_platform_status_includes_telemetry(self):
         status = platform_status()

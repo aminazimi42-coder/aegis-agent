@@ -13,7 +13,7 @@ class ReleaseStatus:
 
     def is_ready(self) -> bool:
         return (
-            self.config.agent_count == 4
+            self.config.agent_count == 6
             and self.config.environment in {"development", "staging", "production"}
             and health_snapshot()["status"] == "healthy"
         )

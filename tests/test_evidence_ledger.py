@@ -1,9 +1,18 @@
+import os
+import tempfile
 import unittest
 
 from core.evidence_ledger import EvidenceLedger
 
 
 class EvidenceLedgerTests(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.mkdtemp()
+        os.environ["AEGIS_DATA_DIR"] = self._tmp
+
+    def tearDown(self):
+        del os.environ["AEGIS_DATA_DIR"]
+
     def test_append_and_verify_chain(self):
         ledger = EvidenceLedger()
         _ = ledger.append_entry(tenant_id="t1", actor="a1", action="create", payload={"v": 1})

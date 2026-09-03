@@ -11,7 +11,7 @@ class AppConfig:
 
     platform_name: str = "Aegis Agent Platform"
     environment: str = "development"
-    agent_count: int = 4
+    agent_count: int = 6
     debug: bool = False
     log_level: str = "INFO"
     version: str = "1.0.0-rc1"
@@ -22,7 +22,7 @@ def load_config(overrides: Optional[Dict[str, Any]] = None) -> AppConfig:
     values = {
         "platform_name": os.getenv("AEGIS_PLATFORM_NAME", "Aegis Agent Platform"),
         "environment": os.getenv("AEGIS_ENVIRONMENT", "development"),
-        "agent_count": int(os.getenv("AEGIS_AGENT_COUNT", "4")),
+        "agent_count": int(os.getenv("AEGIS_AGENT_COUNT", "6")),
         "debug": os.getenv("AEGIS_DEBUG", "false").lower() == "true",
         "log_level": os.getenv("AEGIS_LOG_LEVEL", "INFO"),
         "version": os.getenv("AEGIS_VERSION", "1.0.0-rc1"),

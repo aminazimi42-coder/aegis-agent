@@ -22,7 +22,7 @@ class EndToEndIntegrationTests(unittest.TestCase):
 
         policy = SecurityPolicy()
         self.assertTrue(policy.is_allowed("Amin"))
-        self.assertTrue(policy.is_allowed("Ahmed"))
+        self.assertTrue(policy.is_allowed("Ahmad"))
         self.assertFalse(policy.is_allowed("UnknownAgent"))
 
     def test_token_budget_and_cache_tracking(self):
@@ -60,7 +60,7 @@ class EndToEndIntegrationTests(unittest.TestCase):
 
         agents_response = self.client.get("/api/v1/agents")
         self.assertEqual(agents_response.status_code, 200)
-        self.assertEqual(len(agents_response.json()["agents"]), 4)
+        self.assertEqual(len(agents_response.json()["agents"]), 6)
 
         tasks_response = self.client.get("/api/v1/tasks")
         self.assertEqual(tasks_response.status_code, 200)

@@ -16,7 +16,7 @@ def health_snapshot() -> dict:
     return {
         "service": "Aegis Agent Platform",
         "status": HealthStatus.HEALTHY.value,
-        "agent_count": 4,
+        "agent_count": 6,
         "version": "1.0.0-rc1",
         "checks": {
             "config": "ok",
@@ -39,7 +39,7 @@ def health_snapshot() -> dict:
                     "component": "ahmad",
                     "channel": "oversight",
                     "level": "info",
-                    "owner": "Ahmed",
+                    "owner": "Ahmad",
                     "scope": "governance",
                 },
             },
