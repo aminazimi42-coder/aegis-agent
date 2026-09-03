@@ -46,6 +46,7 @@ from core.twin_events import ingest_event as twin_ingest_event
 from core.twin_evolution import evolve as twin_evolve
 from core.twin_evolution import weekly_digest as twin_weekly_digest
 from core.twin_git_observer import observe_repo as twin_observe_repo
+from core.twin_github_observer import observe_github as twin_observe_github
 from core.twin_interview import (
     answer as twin_answer,
 )
@@ -135,6 +136,14 @@ class TwinActionProposeRequest(BaseModel):
     """Body for proposing twin actions from the profile + digest."""
 
     tenant_id: str
+
+
+class TwinObserveGithubRequest(BaseModel):
+    """Body for observing a GitHub repo via PAT."""
+
+    tenant_id: str
+    repo: str
+    max_commits: int = 20
 
 
 def create_app() -> FastAPI:
@@ -615,6 +624,22 @@ def create_app() -> FastAPI:
             return twin_observe_repo(
                 tenant_id=request.tenant_id,
                 repo_path=request.repo_path,
+                max_commits=request.max_commits,
+            )
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": str(exc)},
+            )
+
+    # --- Twin GitHub PAT observer (T10) ---
+
+    @app.post("/api/v1/twin/observe/github", tags=["twin"], status_code=200)
+    def twin_observe_github_endpoint(request: TwinObserveGithubRequest) -> Any:
+        try:
+            return twin_observe_github(
+                tenant_id=request.tenant_id,
+                repo=request.repo,
                 max_commits=request.max_commits,
             )
         except ValueError as exc:

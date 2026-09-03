@@ -1,38 +1,46 @@
-T09 — Paid-LLM adapter with Echo fallback. Do ONLY this directive. Do not start T10. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 938e762. Do not rewrite README except one line if a provider env list is missing. Do not add GitHub OAuth, desktop UI, or payments. Source, comments, commit message: English only.
+T10 — GitHub PAT read-only observer. Do ONLY this directive. Do not start T11. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 0481fd7. Do not rewrite README. Do not add OAuth app flow, desktop UI, or payments. Source, comments, commit message: English only.
 
-Baseline on main (do not regress): T01–T08. pytest was 156 green after T08. core/llm_provider.py already has EchoProvider, HttpProvider, get_provider().
+Baseline on main (do not regress): T01–T09. pytest was 162 green after T09.
 
-GOAL: when AEGIS_LLM_PROVIDER=http and AEGIS_LLM_BASE_URL + AEGIS_LLM_API_KEY are set, use HttpProvider. On any network/HTTP/parse error, fall back to EchoProvider and do not raise. Never log or persist the API key. Tests must not call a live network.
+GOAL: read public-or-private repo commits via GitHub REST using a PAT in AEGIS_GITHUB_TOKEN, map them through ingest_event + evolve. Tests mock urllib. No live GitHub in CI.
 
 Implement:
 
-1) core/llm_provider.py
-- HttpProvider.complete: wrap urlopen in try/except (URLError, TimeoutError, OSError, ValueError, json errors). On failure return EchoProvider().complete(...) with the same prompt/model/max_tokens
-- Keep Authorization header. Do not print api_key
-- get_provider stays: http only if kind==http AND base_url AND api_key, else Echo
-- Optional: accept OpenAI-style body.choices[0].text or body.text — still no live call in tests
+1) core/twin_github_observer.py
+- observe_github(tenant_id, repo, *, max_commits=20) -> dict {tenant_id, repo, ingested, skipped}
+- repo format "owner/name"
+- Require consented twin profile or raise ValueError("no consented profile")
+- Require os.environ["AEGIS_GITHUB_TOKEN"] or raise ValueError("missing github token")
+- GET https://api.github.com/repos/{repo}/commits?per_page={max_commits} with headers Accept application/vnd.github+json and Authorization Bearer <token>
+- Timeout 20s. On HTTP/network/parse error raise ValueError("github observe failed") — do not ingest partial garbage
+- For each commit sha+message: ingest_event source="github" kind="commit" payload={repo, sha, subject} then evolve
+- Dedup by sha already in twin_events (same idea as local git observer)
+- Never print or persist the token
 
-2) tests/test_t09_paid_llm_adapter.py
-- default get_provider is EchoProvider
-- with env http + url + key and urllib.request.urlopen monkeypatched to return a fake JSON body, complete returns that text and does not use ECHO[ prefix
-- with env http + url + key and urlopen raising OSError, complete falls back to Echo (text startswith ECHO[)
-- module source of llm_provider.py does not contain a hardcoded sk- key
-- Isolate env vars in setUp/tearDown
+2) API
+- POST /api/v1/twin/observe/github body {tenant_id, repo, max_commits}
+Keep T03–T09 routes working.
+
+3) tests/test_t10_twin_github_observer.py
+- AEGIS_DATA_DIR temp + env isolation
+- without profile: ValueError
+- with profile, no token: ValueError
+- with profile+token and urlopen monkeypatched to a list of two fake commits: ingested >= 1
+- second call with same fake payload ingested == 0
+- FastAPI client 200 when token set and urlopen patched
 - No live network
-
-3) Do not change twin routes. Keep platform_status working.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.llm_provider import get_provider, EchoProvider; p=get_provider(); print(type(p).__name__, p.complete('hi', model='aegis-cheap', max_tokens=8)['text'][:5])"
-   Required: EchoProvider and ECHO[
+   ./.venv/bin/python -c "from core.twin_github_observer import observe_github; print('fn', callable(observe_github))"
+   Required: fn True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 156
+   Required: 0 failed, count > 162
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t09): http llm adapter with echo fallback, no live network in tests"
+6. git commit -m "feat(t10): github PAT read-only observer feeds twin events"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
