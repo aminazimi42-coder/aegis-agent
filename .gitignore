@@ -1,12 +1,16 @@
+.kms/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.egg-info/
 .venv/
 .env
 .env.*
 .pytest_cache/
 .mypy_cache/
+.ruff_cache/
+.agents.db
 .coverage
 .DS_Store
 *.log
