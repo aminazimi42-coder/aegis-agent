@@ -4,8 +4,8 @@ Covers:
 - Unapproved execute raises PermissionError.
 - After T03 commit + approve, an email-titled action with payload body
   is executed and creates an .eml in the local outbox.
-- A non-email action is executed and creates executed.md under
-  work_products/{tenant_id}/.
+- A non-email action is executed and creates receipts/{action_id}.md under
+  work_products/{tenant_id}/receipts/.
 - FastAPI execute route still rejects unapproved actions with 403.
 - AEGIS_DATA_DIR temp isolation; no live network.
 """
@@ -120,8 +120,8 @@ class TestT52LocalExecute(unittest.TestCase):
         text = open(eml_file, encoding="utf-8").read()
         self.assertIn("Please send the weekly pack", text)
 
-    def test_non_email_action_writes_executed_md(self) -> None:
-        """After approve, a non-email action writes executed.md."""
+    def test_non_email_action_writes_receipt(self) -> None:
+        """After approve, a non-email action writes receipts/{action_id}.md."""
         tenant = "t52c"
         self._full_interview(tenant)
         action_id = self._insert_action(
@@ -137,9 +137,9 @@ class TestT52LocalExecute(unittest.TestCase):
         self.assertEqual(result["status"], "executed")
 
         md_path = os.path.join(
-            self._tmp, "work_products", tenant, "executed.md"
+            self._tmp, "work_products", tenant, "receipts", f"{action_id}.md"
         )
-        self.assertTrue(os.path.isfile(md_path), f"executed.md not found at {md_path}")
+        self.assertTrue(os.path.isfile(md_path), f"receipt not found at {md_path}")
         text = open(md_path, encoding="utf-8").read()
         self.assertIn(action_id, text)
         self.assertIn("Review weekly digest", text)

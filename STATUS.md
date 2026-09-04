@@ -24,8 +24,8 @@ Honest lock of what is actually shipped in this tree as of T53.
 - **Outbox payload** includes a `body` field (`core/twin_email_send.py`).
 - **Golden busy-day test** covers the propose → approve → outbox flow
   (`tests/test_t52_busy_day_brief.py`).
-- **Execute after approve** writes a local outbox file or `executed.md`
-  (`core/twin_actions.py`).
+- **Execute after approve** writes a local outbox file or
+  `receipts/{action_id}.md` (`core/twin_actions.py`).
 - **CI on push** (`.github/workflows/ci.yml`) runs `ruff check` and
   `pytest -q` on Python 3.11.
 

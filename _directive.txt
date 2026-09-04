@@ -1,38 +1,41 @@
-T58 — One canonical home queue from twin_actions. Do ONLY this directive. Do not start T59. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 91f6719. Do not rewrite LICENSE or README. Do not weaken T56 digest or T57 tenant checks. English only.
+T59 — Execution is true only after the receipt exists. Do ONLY this directive. Do not start T60. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 26bead8. Do not rewrite LICENSE or README. Do not weaken T56 digest or T57 tenant checks. English only.
 
-Baseline on main: T01–T57. HEAD 91f6719. pytest was 448 green after T57.
+Baseline on main: T01–T58. HEAD 26bead8. pytest was 451 green after T58.
 
-GOAL: home.md, morning brief, and list APIs show the same twin_actions rows. Stop treating generic persist approvals as the operator queue.
+GOAL: SQLite must not say executed before the local receipt is on disk. If the write fails, status stays approved.
 
 Implement:
 
-1) core/twin_home.py
-- Pending section lists twin_actions with status proposed
-- Separate approved-but-not-executed rows
-- Each row: action_id, title, risk if present, tenant stays implicit
-- Do not call list_approvals as the source of the queue
+1) core/twin_actions.py execute()
+- Keep tenant + digest gates first
+- Write the receipt while status is still approved
+- Email kind: send_approved must succeed (raise, do not swallow) before status becomes executed
+- Other kinds: write work_products/{tenant_id}/receipts/{action_id}.md (one file per action_id)
+- Only then UPDATE status to executed in the same lock
+- If the write raises, do not change status
+- Second execute of an already-executed id must not rewrite a second receipt as success; raise a short English error
+- Keep T56 digest check
 
-2) core/twin_morning_brief.py if it prints pending work
-- Same source: twin_actions, not generic approvals
-
-3) tests/test_t58_home_queue.py
+2) tests/test_t59_execute_truth.py
 - AEGIS_DATA_DIR temp
-- propose at least one twin action
-- test_home_lists_every_proposed_twin_action
-- test_generic_approval_row_is_not_the_home_queue
+- test_status_stays_approved_when_receipt_write_fails
+- test_executed_row_has_receipt_file
+- test_second_execute_does_not_claim_success
 - No live network
+
+Update older tests only if they asserted the old executed.md path or swallowed write errors.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "import inspect, core.twin_home as h; print('list_actions' in inspect.getsource(h) or 'twin_actions' in inspect.getsource(h))"
+   ./.venv/bin/python -c "import inspect, core.twin_actions as t; print('receipts' in inspect.getsource(t.execute))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 448
+   Required: 0 failed, count > 451
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t58): home queue reads twin_actions"
+6. git commit -m "feat(t59): execute only after local receipt write"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

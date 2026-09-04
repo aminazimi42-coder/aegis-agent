@@ -414,14 +414,18 @@ def _is_email_action(action: dict[str, Any]) -> bool:
     return "email" in haystack
 
 
-def _write_executed_md(action: dict[str, Any]) -> Path:
-    """Write ``work_products/{tenant_id}/executed.md`` for non-email actions."""
+def _write_receipt(action: dict[str, Any]) -> Path:
+    """Write ``work_products/{tenant_id}/receipts/{action_id}.md``.
+
+    One file per *action_id*.  Returns the path of the written receipt.
+    """
     tenant_id = action["tenant_id"]
-    wp_dir = _work_products_dir(tenant_id)
-    wp_dir.mkdir(parents=True, exist_ok=True)
-    md_path = wp_dir / "executed.md"
+    action_id = action["action_id"]
+    receipts_dir = _work_products_dir(tenant_id) / "receipts"
+    receipts_dir.mkdir(parents=True, exist_ok=True)
+    md_path = receipts_dir / f"{action_id}.md"
     lines = [
-        f"action_id: {action['action_id']}",
+        f"action_id: {action_id}",
         f"title: {action['title']}",
         f"kind: {action['kind']}",
         f"tenant_id: {tenant_id}",
@@ -433,21 +437,17 @@ def _write_executed_md(action: dict[str, Any]) -> Path:
 def execute(action_id: str, tenant_id: str | None = None) -> dict[str, Any]:
     """Execute an approved action.
 
+    The local receipt (or outbox ``.eml`` for email actions) must exist on
+    disk *before* the SQLite status becomes ``executed``.  If the write
+    raises, status stays ``approved``.
+
     If ``tenant_id`` is provided, the action's ``tenant_id`` must match or
-    ``ValueError("tenant mismatch")`` is raised.
+    ``ValueError("tenant mismatch")`` is raised.  Raises
+    ``PermissionError("approval required")`` if the action is not in the
+    ``approved`` status.  Raises ``ValueError`` if the action_id is unknown.
 
-    Raises ``PermissionError("approval required")`` if the action is not
-    in the ``approved`` status.  Raises ``ValueError`` if the action_id
-    is unknown.
-
-    After marking the action ``executed`` in SQLite:
-    - If the title or kind contains "email" (case-insensitive), call
-      ``send_approved(tenant_id, action_id)`` best-effort (writes a local
-      outbox ``.eml`` file).
-    - Otherwise write ``work_products/{tenant_id}/executed.md`` containing
-      the action_id and title.
-
-    No HTTP, no socket, no SMTP — purely local side effects.
+    A second execute of an already-executed id raises ``ValueError`` instead
+    of rewriting a second receipt as success.
     """
     _ensure_schema()
     with _action_lock:
@@ -456,6 +456,8 @@ def execute(action_id: str, tenant_id: str | None = None) -> dict[str, Any]:
             raise ValueError(f"unknown action: {action_id}")
         if tenant_id is not None and action["tenant_id"] != tenant_id:
             raise ValueError("tenant mismatch")
+        if action["status"] == "executed":
+            raise ValueError("action already executed")
         if action["status"] != "approved":
             raise PermissionError("approval required")
         # T56 — recompute the current envelope digest and compare to the
@@ -470,6 +472,18 @@ def execute(action_id: str, tenant_id: str | None = None) -> dict[str, Any]:
         approved_digest = row["approved_payload_sha256"] if row else None
         if approved_digest is None or current_digest != approved_digest:
             raise ValueError("payload changed after approval")
+
+        # Write the local receipts/ file (or outbox .eml for email actions)
+        # while status is still ``approved``.  If this raises, status must
+        # NOT change to ``executed``.
+        if _is_email_action(action):
+            from core.twin_email_send import send_approved
+
+            send_approved(action["tenant_id"], action_id)
+        else:
+            _write_receipt(action)
+
+        # Only now flip status to executed inside the same lock.
         _update_status(action_id, "executed")
         action["status"] = "executed"
 
@@ -485,20 +499,6 @@ def execute(action_id: str, tenant_id: str | None = None) -> dict[str, Any]:
         )
     except Exception:
         pass
-
-    # Local side effect: email actions go to the outbox; others write executed.md.
-    if _is_email_action(action):
-        try:
-            from core.twin_email_send import send_approved
-
-            send_approved(action["tenant_id"], action_id)
-        except Exception:
-            pass
-    else:
-        try:
-            _write_executed_md(action)
-        except Exception:
-            pass
 
     return action
 
