@@ -1,8 +1,12 @@
-"""Executive home page from real local state (T45).
+"""Executive home page from real local state (T45/T58).
 
 ``render_home(tenant_id)`` writes ``work_products/{tenant_id}/home.md`` — a
-short page a busy principal can read in seconds: pending approvals, due
+short page a busy principal can read in seconds: pending twin_actions
+(status ``proposed``), approved-but-not-executed actions, due
 commitments, and a pointer to the morning brief when one exists.
+
+The canonical operator queue is ``twin_actions`` — **not** the generic
+``approvals`` table from ``twin_persist``.
 
 Requires a consented twin profile and raises ``ValueError("no consented
 profile")`` otherwise.  No live network calls, no LLM, no side effects beyond
@@ -16,8 +20,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from core.twin_actions import list_actions
 from core.twin_interview import get_latest_profile
-from core.twin_persist import list_approvals
 from core.twin_scheduler import list_jobs
 from core.twin_style_lock import apply_style
 
@@ -28,10 +32,14 @@ def _work_products_dir(tenant_id: str) -> Path:
     return base / "work_products" / tenant_id
 
 
-def _pending_approvals(tenant_id: str) -> list[dict[str, Any]]:
-    """Return approvals for *tenant_id* whose status is ``pending``."""
-    rows = list_approvals(tenant_id)
-    return [r for r in rows if r.get("status") == "pending"]
+def _pending_actions(tenant_id: str) -> list[dict[str, Any]]:
+    """Return twin_actions rows for *tenant_id* whose status is ``proposed``."""
+    return [a for a in list_actions(tenant_id) if a.get("status") == "proposed"]
+
+
+def _approved_not_executed(tenant_id: str) -> list[dict[str, Any]]:
+    """Return twin_actions rows for *tenant_id* that are approved but not yet executed."""
+    return [a for a in list_actions(tenant_id) if a.get("status") == "approved"]
 
 
 def _due_jobs(tenant_id: str) -> list[dict[str, Any]]:
@@ -46,6 +54,7 @@ def _due_jobs(tenant_id: str) -> list[dict[str, Any]]:
 def _render_markdown(
     tenant_id: str,
     pending: list[dict[str, Any]],
+    approved: list[dict[str, Any]],
     due: list[dict[str, Any]],
     brief_name: str | None,
     file_names: list[str],
@@ -57,13 +66,27 @@ def _render_markdown(
         "",
         f"_Generated: {now}_",
         "",
-        "## Pending approvals",
+        "## Pending actions",
         "",
     ]
     if pending:
         for item in pending:
-            title = item.get("title") or item.get("id") or "(untitled)"
-            lines.append(f"- {title}")
+            action_id = item.get("action_id") or item.get("id") or ""
+            title = item.get("title") or "(untitled)"
+            risk = item.get("risk_level") or ""
+            lines.append(f"- **{action_id}** — {title}" + (f" _(risk: {risk})_" if risk else ""))
+    else:
+        lines.append("(none)")
+    lines.append("")
+
+    lines.append("## Approved — not yet executed")
+    lines.append("")
+    if approved:
+        for item in approved:
+            action_id = item.get("action_id") or item.get("id") or ""
+            title = item.get("title") or "(untitled)"
+            risk = item.get("risk_level") or ""
+            lines.append(f"- **{action_id}** — {title}" + (f" _(risk: {risk})_" if risk else ""))
     else:
         lines.append("(none)")
     lines.append("")
@@ -107,7 +130,8 @@ def render_home(tenant_id: str) -> dict[str, Any]:
     if get_latest_profile(tenant_id) is None:
         raise ValueError("no consented profile")
 
-    pending = _pending_approvals(tenant_id)
+    pending = _pending_actions(tenant_id)
+    approved = _approved_not_executed(tenant_id)
     due = _due_jobs(tenant_id)
 
     brief_path = _work_products_dir(tenant_id) / "morning_brief.md"
@@ -122,7 +146,7 @@ def render_home(tenant_id: str) -> dict[str, Any]:
             if f.is_file() and f.name != "home.md"
         )
 
-    content = _render_markdown(tenant_id, pending, due, brief_name, file_names)
+    content = _render_markdown(tenant_id, pending, approved, due, brief_name, file_names)
     content = apply_style(tenant_id, content)
 
     home_path = out_dir / "home.md"

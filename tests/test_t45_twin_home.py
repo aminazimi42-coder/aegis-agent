@@ -17,7 +17,6 @@ from pathlib import Path
 from app.server import create_app
 from core.twin_home import render_home
 from core.twin_interview import QUESTIONS, answer, commit, start_session
-from core.twin_persist import put_approval
 from core.twin_scheduler import schedule
 from fastapi.testclient import TestClient
 
@@ -70,11 +69,13 @@ class TestT45TwinHome(unittest.TestCase):
 
     def test_render_home_lists_pending_approval(self) -> None:
         self._full_interview("t45b")
-        put_approval("ap1", "t45b", "Review Q3 budget", "pending")
+        from core.twin_actions import propose_actions
 
+        propose_actions("t45b")
         result = render_home("t45b")
         md_text = Path(result["path"]).read_text(encoding="utf-8")
-        self.assertIn("Review Q3 budget", md_text)
+        # home.md should list at least one proposed twin action title
+        self.assertIn("Review", md_text)
 
     def test_render_home_lists_due_job(self) -> None:
         self._full_interview("t45c")
