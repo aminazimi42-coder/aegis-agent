@@ -515,3 +515,69 @@ def list_actions(tenant_id: str) -> list[dict[str, Any]]:
             (tenant_id,),
         ).fetchall()
     return [_row_to_dict(r) for r in rows]
+
+
+# ---------------------------------------------------------------------------#
+# Specialist proposals (T60)
+# ---------------------------------------------------------------------------#
+
+def insert_specialist_proposal(
+    tenant_id: str,
+    agent_name: str,
+    title: str,
+    payload: Any,
+) -> dict[str, Any]:
+    """Insert one twin_action row with ``status = "proposed"``.
+
+    Called **only** by :meth:`BaseAgent.propose`.  The ``kind`` is
+    prefixed with the agent's name (``f"{agent_name}:propose"``).
+    Human approve/execute remains the only path to ``executed``.
+    """
+    _ensure_schema()
+    kind = f"{agent_name}:propose"
+    action_id = f"act-{uuid4().hex[:12]}"
+    now = _now()
+    payload_json = (
+        json.dumps(payload, ensure_ascii=False)
+        if payload is not None
+        else None
+    )
+    risk_level = classify(title)
+    envelope = _canonical_envelope(
+        action_id=action_id,
+        tenant_id=tenant_id,
+        kind=kind,
+        title=title,
+        payload=payload,
+        effect_type=kind,
+        risk_level=risk_level,
+    )
+    digest = _envelope_digest(envelope)
+    with _action_lock:
+        with get_connection() as conn:
+            conn.execute(
+                "INSERT INTO twin_actions "
+                "(action_id, tenant_id, kind, title, status, "
+                "created_at, payload, payload_sha256) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    action_id,
+                    tenant_id,
+                    kind,
+                    title,
+                    "proposed",
+                    now,
+                    payload_json,
+                    digest,
+                ),
+            )
+    return {
+        "action_id": action_id,
+        "tenant_id": tenant_id,
+        "kind": kind,
+        "title": title,
+        "status": "proposed",
+        "created_at": now,
+        "payload": payload,
+        "payload_sha256": digest,
+    }

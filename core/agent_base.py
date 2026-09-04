@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import Any
 
 from core.agent_registry import AGENT_REGISTRY
 
@@ -13,6 +14,21 @@ class BaseAgent(ABC):
     description: str = "Unspecified specialist role."
     capabilities: list[str] = []
     metadata: dict = {}
+
+    def propose(self, tenant_id: str) -> dict[str, Any]:
+        """Propose one twin_action row with status ``proposed``.
+
+        Inserts an action whose ``kind`` is prefixed with the agent's
+        name (``f"{self.name}:propose"``) via
+        :func:`core.twin_actions.insert_specialist_proposal`.
+
+        Specialists must never call ``twin_actions.execute``; the only
+        path to ``executed`` is human approval followed by execution.
+        """
+        from core.twin_actions import insert_specialist_proposal
+
+        title = f"{self.name} proposal for {tenant_id}"
+        return insert_specialist_proposal(tenant_id, self.name, title, {})
 
     def profile(self) -> dict:
         """Return the canonical metadata for the agent."""
@@ -44,7 +60,12 @@ class BaseAgent(ABC):
         )
 
     def execute(self, task: str) -> str:
-        """Execute the specialist workflow for a task."""
+        """Execute the specialist workflow for a task.
+
+        This is a lightweight text-generation stub.  It must **never**
+        import or call :func:`core.twin_actions.execute`; the only path
+        to an executed twin_action is human approval.
+        """
         return (
             f"{self.name} execution: perform the delivery path and "
             f"monitor the operation for {task}"

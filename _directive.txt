@@ -1,41 +1,41 @@
-T59 — Execution is true only after the receipt exists. Do ONLY this directive. Do not start T60. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 26bead8. Do not rewrite LICENSE or README. Do not weaken T56 digest or T57 tenant checks. English only.
+T60 — Six specialists propose; none execute. Do ONLY this directive. Do not start T61. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 05aad0b. Do not rewrite LICENSE or README. Do not weaken T56–T59. English only.
 
-Baseline on main: T01–T58. HEAD 26bead8. pytest was 451 green after T58.
+Baseline on main: T01–T59. HEAD 05aad0b. pytest was 455 green after T59.
 
-GOAL: SQLite must not say executed before the local receipt is on disk. If the write fails, status stays approved.
+GOAL: Bita, Kian, Alina, Aylin, Ahmad, Amin each expose propose(tenant_id) that inserts one twin_actions row with status proposed. No specialist may call twin_actions.execute.
 
 Implement:
 
-1) core/twin_actions.py execute()
-- Keep tenant + digest gates first
-- Write the receipt while status is still approved
-- Email kind: send_approved must succeed (raise, do not swallow) before status becomes executed
-- Other kinds: write work_products/{tenant_id}/receipts/{action_id}.md (one file per action_id)
-- Only then UPDATE status to executed in the same lock
-- If the write raises, do not change status
-- Second execute of an already-executed id must not rewrite a second receipt as success; raise a short English error
-- Keep T56 digest check
+1) core/agent_base.py
+- Add propose(self, tenant_id: str) -> dict
+- Default implementation inserts via a helper in twin_actions, kind prefixed with the agent name, status proposed
+- execute(self, ...) must not import or call twin_actions.execute
 
-2) tests/test_t59_execute_truth.py
+2) core/twin_actions.py
+- Add insert_specialist_proposal(tenant_id, agent_name, title, payload) used only by propose()
+- Keep human approve/execute as the only path to executed
+
+3) Each of agents/{bita,kian,alina,aylin,ahmad,amin}/agent.py
+- Inherit propose or override title only
+- Do not add side effects, network, or execute()
+
+4) tests/test_t60_specialist_propose.py
 - AEGIS_DATA_DIR temp
-- test_status_stays_approved_when_receipt_write_fails
-- test_executed_row_has_receipt_file
-- test_second_execute_does_not_claim_success
+- test_all_six_agents_propose_into_one_queue
+- test_no_specialist_module_calls_execute
 - No live network
-
-Update older tests only if they asserted the old executed.md path or swallowed write errors.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "import inspect, core.twin_actions as t; print('receipts' in inspect.getsource(t.execute))"
+   ./.venv/bin/python -c "from agents.alina.agent import AlinaAgent; print(hasattr(AlinaAgent(), 'propose'))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 451
+   Required: 0 failed, count > 455
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t59): execute only after local receipt write"
+6. git commit -m "feat(t60): six specialists propose into one action queue"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
