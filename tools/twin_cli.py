@@ -87,7 +87,7 @@ def _cmd_actions_approve(args: argparse.Namespace) -> dict[str, Any]:
 def _cmd_actions_execute(args: argparse.Namespace) -> dict[str, Any]:
     from core.twin_actions import execute
 
-    return execute(args.action_id)
+    return execute(args.action_id, args.tenant)
 
 
 def _cmd_render(args: argparse.Namespace) -> dict[str, Any]:
@@ -291,6 +291,7 @@ def _build_parser() -> argparse.ArgumentParser:
     # actions-execute
     p = sub.add_parser("actions-execute", help="Execute an approved action.")
     p.add_argument("--action-id", required=True)
+    p.add_argument("--tenant", required=True)
 
     # render
     p = sub.add_parser("render", help="Render local work-product files.")

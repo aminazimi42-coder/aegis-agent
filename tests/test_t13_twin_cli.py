@@ -124,6 +124,8 @@ class TestT13TwinCli(unittest.TestCase):
             "actions-execute",
             "--action-id",
             first_action_id,
+            "--tenant",
+            "t13b",
             env=self._env,
         )
         self.assertEqual(code, 2, f"execute should fail exit 2, got {code}: {stdout}")
@@ -175,6 +177,8 @@ class TestT13TwinCli(unittest.TestCase):
             "actions-execute",
             "--action-id",
             first_action_id,
+            "--tenant",
+            "t13c",
             env=self._env,
         )
         self.assertEqual(code, 0, f"execute exit {code}: {stdout}")

@@ -89,7 +89,7 @@ class TestT52LocalExecute(unittest.TestCase):
         self.assertGreaterEqual(len(actions), 1)
         first_id = actions[0]["action_id"]
         with self.assertRaises(PermissionError):
-            execute(first_id)
+            execute(first_id, "t52a")
 
     def test_email_action_executes_to_outbox(self) -> None:
         """After approve, an email-titled action with payload body writes .eml."""
@@ -105,7 +105,7 @@ class TestT52LocalExecute(unittest.TestCase):
         _action = _load_action(action_id)
         assert _action is not None
         approve(action_id, "t52b", "tester", _action_digest(_action))
-        result = execute(action_id)
+        result = execute(action_id, "t52b")
         self.assertEqual(result["status"], "executed")
         self.assertEqual(result["action_id"], action_id)
 
@@ -133,7 +133,7 @@ class TestT52LocalExecute(unittest.TestCase):
         _action = _load_action(action_id)
         assert _action is not None
         approve(action_id, "t52c", "tester", _action_digest(_action))
-        result = execute(action_id)
+        result = execute(action_id, "t52c")
         self.assertEqual(result["status"], "executed")
 
         md_path = os.path.join(
@@ -151,7 +151,10 @@ class TestT52LocalExecute(unittest.TestCase):
         first_id = actions[0]["action_id"]
         app = create_app()
         client = TestClient(app)
-        resp = client.post(f"/api/v1/twin/actions/{first_id}/execute")
+        resp = client.post(
+            f"/api/v1/twin/actions/{first_id}/execute",
+            json={"tenant_id": "t52d"},
+        )
         self.assertEqual(resp.status_code, 403)
 
     def test_no_live_network(self) -> None:

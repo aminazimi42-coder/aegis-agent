@@ -96,14 +96,14 @@ class TestT07E2EIntegrity(unittest.TestCase):
 
         # 5. Execute before approve raises PermissionError.
         with self.assertRaises(PermissionError):
-            execute(first_id)
+            execute(first_id, tenant)
 
         # 6. Approve then execute -> status executed.
         _action = _load_action(first_id)
         assert _action is not None
         approved = approve(first_id, tenant, "tester", _action_digest(_action))
         self.assertEqual(approved["status"], "approved")
-        executed = execute(first_id)
+        executed = execute(first_id, tenant)
         self.assertEqual(executed["status"], "executed")
 
 

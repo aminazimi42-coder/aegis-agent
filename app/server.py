@@ -333,6 +333,18 @@ class TwinEmailSendRequest(BaseModel):
     action_id: str
 
 
+class TwinActionExecuteRequest(BaseModel):
+    """Body for executing an approved twin action (T57 — tenant binding)."""
+
+    tenant_id: str
+
+
+class TwinActionRejectRequest(BaseModel):
+    """Body for rejecting a proposed twin action (T57 — tenant binding)."""
+
+    tenant_id: str
+
+
 class TwinScheduleRequest(BaseModel):
     """Body for scheduling a durable commitment job (T41)."""
 
@@ -1130,30 +1142,36 @@ def create_app() -> FastAPI:
     @app.post(
         "/api/v1/twin/actions/{action_id}/reject", tags=["twin"], status_code=200
     )
-    def twin_actions_reject(action_id: str) -> Any:
+    def twin_actions_reject(action_id: str, request: TwinActionRejectRequest) -> Any:
         try:
-            return twin_action_reject(action_id)
+            return twin_action_reject(action_id, request.tenant_id)
         except ValueError as exc:
+            msg = str(exc)
+            if "tenant mismatch" in msg:
+                return JSONResponse(status_code=403, content={"detail": msg})
             return JSONResponse(
                 status_code=404,
-                content={"detail": str(exc)},
+                content={"detail": msg},
             )
 
     @app.post(
         "/api/v1/twin/actions/{action_id}/execute", tags=["twin"], status_code=200
     )
-    def twin_actions_execute(action_id: str) -> Any:
+    def twin_actions_execute(action_id: str, request: TwinActionExecuteRequest) -> Any:
         try:
-            return twin_action_execute(action_id)
+            return twin_action_execute(action_id, request.tenant_id)
         except PermissionError as exc:
             return JSONResponse(
                 status_code=403,
                 content={"detail": str(exc)},
             )
         except ValueError as exc:
+            msg = str(exc)
+            if "tenant mismatch" in msg:
+                return JSONResponse(status_code=403, content={"detail": msg})
             return JSONResponse(
                 status_code=404,
-                content={"detail": str(exc)},
+                content={"detail": msg},
             )
 
     @app.get("/api/v1/twin/actions/{tenant_id}", tags=["twin"])

@@ -1,47 +1,36 @@
-T56 — Bind approval to the exact payload. Do ONLY this directive. Do not start T57. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend f1c5d52. Do not rewrite README or LICENSE. Do not add SMTP. Source, comments, commit message: English only.
+T57 CONTINUE — finish tenant binding only. Do not start T58. Do not read task_instruction.txt. Do not patch SKILL.md. Do not force-push or amend cca81f9. Do not rewrite LICENSE or README. Do not revert T56 digest binding. English only.
 
-Baseline on main: T01–T55. HEAD f1c5d52. pytest was 436 green after T55.
+Remote main is still cca81f9 (T56). T57 never pushed. Local disk may already contain a partial T57 edit (+26/-28). Use that work. Do not start from a blank file if the T57 changes are already present.
 
-GOAL: one approval authorizes one immutable action envelope. Execute refuses if the row no longer matches the approved digest.
+GOAL unchanged: action_id is not enough. Caller tenant_id must equal action.tenant_id before execute, reject, or outbox write.
 
-Implement:
+Required end state:
+1) execute(action_id, tenant_id) and reject(action_id, tenant_id) refuse on tenant mismatch
+2) send_approved(tenant_id, action_id) refuses before writing .eml on tenant mismatch
+3) server + twin_cli require tenant_id
+4) tests/test_t57_tenant_binding.py with the four named cases
+5) older execute(action_id) call sites updated
+6) T56 digest checks still work
 
-1) core/twin_actions.py
-- Canonical envelope fields: action_id, tenant_id, kind, title, payload, effect_type (kind if no separate field), risk_level if present else "", policy_version="t56"
-- Serialize with json.dumps(..., sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
-- SHA-256 hex as payload_sha256
-- Additive ALTER: payload_sha256, approved_payload_sha256, approved_by, approved_at
-- On propose/insert, store payload_sha256
-- approve(action_id, tenant_id, actor_id, expected_payload_sha256) in one transaction: row exists, tenant matches, status is proposed, expected digest equals current envelope digest, then set approved + approved_payload_sha256 + approved_by
-- Second approve, approve after reject/execute: raise a short English error
-- execute recomputes digest and compares to approved_payload_sha256; mismatch raises
-- Keep a thin wrapper only if old unit tests must compile: if approve is called with action_id only, raise ValueError("digest required") — do not auto-approve
-- Update existing tests that called approve(action_id) so they pass tenant_id, actor_id, and the current digest
+First commands:
+- git status
+- git log -1 --oneline
+- git diff --stat
 
-2) app/server.py and tools/twin_cli.py
-- Approve route/CLI require tenant_id, actor_id, expected_payload_sha256
-- Stable English 400/409 body via existing error helper if present
+If HEAD is not cca81f9 and you did not commit T57, stop and print the SHA.
+If T57 files are already edited, finish them. Do not delete them to rewrite from scratch unless they are broken.
 
-3) tests/test_t56_approval_binding.py
-- AEGIS_DATA_DIR temp
-- test_mutated_payload_invalidates_approval
-- test_mutated_title_invalidates_approval
-- test_approve_requires_expected_digest
-- test_rejected_action_cannot_be_resurrected
-- test_restart_preserves_approval_digest_and_actor
-- No live network
-
-Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
+Then run verification in order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_actions import approve; import inspect; print('expected_payload_sha256' in inspect.signature(approve).parameters)"
+   ./.venv/bin/python -c "from core.twin_actions import execute; import inspect; print('tenant_id' in inspect.signature(execute).parameters)"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 436
+   Required: 0 failed, count > 442
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t56): bind approvals to immutable action payloads"
+6. git commit -m "feat(t57): bind tenant to approve execute and outbox"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

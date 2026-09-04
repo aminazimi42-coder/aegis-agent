@@ -383,16 +383,20 @@ def approve(
             return action_dict
 
 
-def reject(action_id: str) -> dict[str, Any]:
+def reject(action_id: str, tenant_id: str | None = None) -> dict[str, Any]:
     """Set an action's status to ``rejected``.
 
-    Raises ``ValueError`` if the action_id is unknown.
+    If ``tenant_id`` is provided, the action's ``tenant_id`` must match or
+    ``ValueError("tenant mismatch")`` is raised.  Raises ``ValueError`` if
+    the action_id is unknown.
     """
     _ensure_schema()
     with _action_lock:
         action = _load_action(action_id)
         if action is None:
             raise ValueError(f"unknown action: {action_id}")
+        if tenant_id is not None and action["tenant_id"] != tenant_id:
+            raise ValueError("tenant mismatch")
         _update_status(action_id, "rejected")
         action["status"] = "rejected"
         return action
@@ -426,8 +430,11 @@ def _write_executed_md(action: dict[str, Any]) -> Path:
     return md_path
 
 
-def execute(action_id: str) -> dict[str, Any]:
+def execute(action_id: str, tenant_id: str | None = None) -> dict[str, Any]:
     """Execute an approved action.
+
+    If ``tenant_id`` is provided, the action's ``tenant_id`` must match or
+    ``ValueError("tenant mismatch")`` is raised.
 
     Raises ``PermissionError("approval required")`` if the action is not
     in the ``approved`` status.  Raises ``ValueError`` if the action_id
@@ -447,6 +454,8 @@ def execute(action_id: str) -> dict[str, Any]:
         action = _load_action(action_id)
         if action is None:
             raise ValueError(f"unknown action: {action_id}")
+        if tenant_id is not None and action["tenant_id"] != tenant_id:
+            raise ValueError("tenant mismatch")
         if action["status"] != "approved":
             raise PermissionError("approval required")
         # T56 — recompute the current envelope digest and compare to the

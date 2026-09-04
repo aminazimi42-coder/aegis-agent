@@ -73,7 +73,7 @@ class TestT06TwinActions(unittest.TestCase):
         actions = propose_actions("t6b")
         first_id = actions[0]["action_id"]
         with self.assertRaises(PermissionError):
-            execute(first_id)
+            execute(first_id, "t6b")
 
     def test_approve_then_execute_status_executed(self) -> None:
         self._full_interview("t6c")
@@ -85,14 +85,14 @@ class TestT06TwinActions(unittest.TestCase):
         approved = approve(first_id, "t6c", "tester", _action_digest(_action))
         self.assertEqual(approved["status"], "approved")
 
-        executed = execute(first_id)
+        executed = execute(first_id, "t6c")
         self.assertEqual(executed["status"], "executed")
 
     def test_reject_sets_status_rejected(self) -> None:
         self._full_interview("t6d")
         actions = propose_actions("t6d")
         first_id = actions[0]["action_id"]
-        rejected = reject(first_id)
+        rejected = reject(first_id, "t6d")
         self.assertEqual(rejected["status"], "rejected")
 
     def test_unknown_action_id_raises_value_error(self) -> None:
@@ -152,7 +152,10 @@ class TestT06TwinActions(unittest.TestCase):
         self.assertEqual(resp.json()["status"], "approved")
 
         # Execute.
-        resp = client.post(f"/api/v1/twin/actions/{first_id}/execute")
+        resp = client.post(
+            f"/api/v1/twin/actions/{first_id}/execute",
+            json={"tenant_id": "t6f"},
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["status"], "executed")
 
@@ -177,7 +180,10 @@ class TestT06TwinActions(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         first_id = resp.json()["actions"][0]["action_id"]
 
-        resp = client.post(f"/api/v1/twin/actions/{first_id}/execute")
+        resp = client.post(
+            f"/api/v1/twin/actions/{first_id}/execute",
+            json={"tenant_id": "t6g"},
+        )
         self.assertEqual(resp.status_code, 403)
 
     def test_fastapi_get_actions_list(self) -> None:

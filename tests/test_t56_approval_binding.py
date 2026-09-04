@@ -146,7 +146,7 @@ class TestT56ApprovalBinding(unittest.TestCase):
         self._full_interview("t56d")
         tenant = "t56d"
         action_id = self._insert_action(tenant, title="Review weekly digest")
-        reject(action_id)
+        reject(action_id, tenant)
 
         action = _load_action(action_id)
         assert action is not None
@@ -177,7 +177,7 @@ class TestT56ApprovalBinding(unittest.TestCase):
         self.assertIsNotNone(reloaded["approved_at"])
 
         # Execute should succeed since the digest matches.
-        result = execute(action_id)
+        result = execute(action_id, "t56e")
         self.assertEqual(result["status"], "executed")
 
     def test_no_live_network(self) -> None:

@@ -59,6 +59,11 @@ def send_approved(tenant_id: str, action_id: str) -> dict[str, Any]:
     if action is None:
         raise ValueError("action not found")
 
+    # T57 — tenant binding: the caller's tenant_id must match the action's
+    # tenant_id before any outbox file is written.
+    if action["tenant_id"] != tenant_id:
+        raise ValueError("tenant mismatch")
+
     # 3. Approval gate — accept ``approved`` or ``executed`` (an action
     #    that was already executed by ``execute()`` is still a valid send target).
     if action["status"] not in ("approved", "executed"):
