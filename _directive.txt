@@ -1,37 +1,34 @@
-T64 — Why-replay survives process restart. Do ONLY this directive. Do not start T65. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 5093962. Do not rewrite LICENSE or README. Do not weaken T56–T63. English only.
+T65 — Persist approve and reject feedback. Do ONLY this directive. Do not start T66. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 882523a. Do not rewrite LICENSE or README. Do not weaken T56–T64. English only.
 
-Baseline on main: T01–T63. HEAD 5093962. pytest was 471 green after T63.
+Baseline on main: T01–T64. HEAD 882523a. pytest was 473 green after T64.
 
-GOAL: the reason an action was approved or rejected is stored in SQLite and readable after a new connection.
+GOAL: each approve or reject appends one durable feedback row the twin can later use for style and risk. No model training in this slice.
 
 Implement:
 
 1) core/twin_actions.py
-- Additive ALTER: why_text TEXT
-- approve(..., why: str | None = None) stores why_text
-- reject(..., why: str | None = None) stores why_text
-- replay_why(action_id: str) -> str reads why_text from a fresh get_connection()
-- Empty why is allowed and stored as ""
+- Additive table twin_feedback(action_id, tenant_id, decision, why_text, created_at)
+- approve and reject insert one row after the status write
+- list_feedback(tenant_id) returns that tenant's rows only
 
-2) tests/test_t64_why_replay.py
+2) tests/test_t65_feedback.py
 - AEGIS_DATA_DIR temp
-- test_approve_why_survives_new_connection
-- test_reject_why_survives_new_connection
+- test_approve_writes_feedback_row
+- test_reject_writes_feedback_row
+- test_list_feedback_is_tenant_scoped
 - No live network
-
-Update older approve/reject call sites only if signatures break.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_actions import replay_why; print(callable(replay_why))"
+   ./.venv/bin/python -c "from core.twin_actions import list_feedback; print(callable(list_feedback))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 471
+   Required: 0 failed, count > 473
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t64): persist why-replay across restart"
+6. git commit -m "feat(t65): persist approve reject feedback rows"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

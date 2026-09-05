@@ -151,6 +151,25 @@ def _ensure_schema() -> None:
         except sqlite3.OperationalError:
             pass
 
+        # T65 — feedback table (approve/reject durable rows).
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS twin_feedback (
+                action_id   TEXT    NOT NULL,
+                tenant_id   TEXT    NOT NULL,
+                decision    TEXT    NOT NULL,
+                why_text    TEXT    NOT NULL DEFAULT '',
+                created_at  TEXT    NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS ix_twin_feedback_tenant
+            ON twin_feedback (tenant_id)
+            """
+        )
+
 
 # ---------------------------------------------------------------------------#
 # Internal helpers
@@ -391,6 +410,13 @@ def approve(
             action_dict["approved_by"] = actor_id
             action_dict["approved_at"] = now
             action_dict["why_text"] = why or ""
+            # T65 — durable feedback row.
+            conn.execute(
+                "INSERT INTO twin_feedback "
+                "(action_id, tenant_id, decision, why_text, created_at) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (action_id, action_dict["tenant_id"], "approve", why or "", now),
+            )
             return action_dict
 
 
@@ -419,6 +445,13 @@ def reject(
                 "WHERE action_id = ?",
                 (why or "", action_id),
             )
+            # T65 — durable feedback row.
+            conn.execute(
+                "INSERT INTO twin_feedback "
+                "(action_id, tenant_id, decision, why_text, created_at) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (action_id, action["tenant_id"], "reject", why or "", _now()),
+            )
         action["status"] = "rejected"
         action["why_text"] = why or ""
         return action
@@ -438,6 +471,32 @@ def replay_why(action_id: str) -> str:
     if row is None:
         return ""
     return row["why_text"] or ""
+
+
+def list_feedback(tenant_id: str) -> list[dict[str, Any]]:
+    """Return all feedback rows for ``tenant_id`` ordered by ``created_at``.
+
+    Each row is a dict with keys: ``action_id``, ``tenant_id``, ``decision``,
+    ``why_text``, ``created_at``.
+    """
+    _ensure_schema()
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT action_id, tenant_id, decision, why_text, created_at "
+            "FROM twin_feedback WHERE tenant_id = ? "
+            "ORDER BY created_at ASC",
+            (tenant_id,),
+        ).fetchall()
+    return [
+        {
+            "action_id": r["action_id"],
+            "tenant_id": r["tenant_id"],
+            "decision": r["decision"],
+            "why_text": r["why_text"],
+            "created_at": r["created_at"],
+        }
+        for r in rows
+    ]
 
 
 def _work_products_dir(tenant_id: str) -> Path:
