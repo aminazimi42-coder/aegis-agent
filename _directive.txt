@@ -1,21 +1,26 @@
-T86 — Default data lives in the user home, not the repo. Do ONLY this directive. Do not start T87. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 0a210da. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe or a license server. Do not un-quarantine desktop_engine.py. Do not add Electron. Do not weaken T56–T85. English only.
+T87 — Install aegis command outside the git tree. Do ONLY this directive. Do not start T88. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend c94c651. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe or a license server. Do not un-quarantine desktop_engine.py. Do not add Electron. Do not weaken T56–T86. English only.
 
-Baseline on main: T01–T85. HEAD 0a210da. pytest was 553 green after T85.
+Baseline on main: T01–T86. HEAD c94c651. pytest was 556 green after T86.
 
-GOAL: when AEGIS_DATA_DIR is unset, data_root is ~/.aegis, never the git tree.
+GOAL: scripts/install_local.sh installs a user command at ~/.local/bin/aegis that does not write into the repo.
 
 Implement:
 
-1) core/twin_local_view.py data_root()
-- If AEGIS_DATA_DIR is set and non-empty, use that path (existing behavior)
-- Else use Path.home() / ".aegis"
-- Create the directory
-- Do not default to cwd/data
+1) scripts/install_local.sh
+- POSIX sh, starts with #!/bin/sh
+- PREFIX="${AEGIS_PREFIX:-$HOME/.local/aegis}"
+- BIN="${AEGIS_BIN:-$HOME/.local/bin}"
+- Create PREFIX/venv with python3 -m venv
+- pip install -e the repo root into that venv
+- Write BIN/aegis that execs PREFIX/venv/bin/python -m core.twin_local "$@"
+- mkdir -p PREFIX and BIN
+- Do not write into the git working tree except this script
 
-2) tests/test_t86_user_data_home.py
-- test_unset_env_uses_home_aegis
-- test_aegis_data_dir_still_wins
-- Do not write into the real user home; mock Path.home
+2) tests/test_t87_install_local.py
+- test_install_script_exists
+- test_script_targets_home_local_not_repo
+- Forbidden in script body: Stripe, desktop_engine
+- Do not run the installer against the real home
 - No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -23,12 +28,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_local_view import data_root; import os; print('AEGIS_DATA_DIR' in dir(os))"
+   ./.venv/bin/python -c "from pathlib import Path; print(Path('scripts/install_local.sh').is_file())"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 553
+   Required: 0 failed, count > 556
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t86): default data root is user home aegis"
+6. git commit -m "feat(t87): install aegis command outside git tree"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
