@@ -1,22 +1,22 @@
-T68 — Scheduler stores UTC instants. Do ONLY this directive. Do not start T69. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 4e7ce0e. Do not rewrite LICENSE or README Author. Do not weaken T56–T67. English only.
+T69 — Local SQLite backup and restore. Do ONLY this directive. Do not start T70. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 79ec6e8. Do not rewrite LICENSE or README Author. Do not weaken T56–T68. English only.
 
-Baseline on main: T01–T67. HEAD 4e7ce0e. pytest was 482 green after T67.
+Baseline on main: T01–T68. HEAD 79ec6e8. pytest was 490 green after T68.
 
-GOAL: every job due_at is stored as a timezone-aware UTC instant. Naive local strings are normalized before insert.
+GOAL: one tenant can snapshot profile, actions, jobs, and receipts to a local file and restore them. Neighbor tenants stay intact. No network.
 
 Implement:
 
-1) core/twin_scheduler.py
-- Add normalize_due_at(due_at: str, timezone_: str = "UTC") -> str
-- Result must end with +00:00 or Z
-- schedule() writes the normalized value
-- list/compare uses that UTC value
-- Invalid due_at raises ValueError
+1) core/twin_backup.py
+- backup_tenant(tenant_id: str, dest: Path) -> Path
+- restore_tenant(tenant_id: str, src: Path) -> dict
+- Snapshot includes profile rows, twin_actions rows, jobs rows, and receipt files under work_products/{tenant_id}/receipts when present
+- Restore overwrites only that tenant
+- dest is a .sqlite or .zip under AEGIS_DATA_DIR; pick one and keep it local
 
-2) tests/test_t68_scheduler_utc.py
-- AEGIS_DATA_DIR temp
-- test_naive_string_becomes_utc
-- test_stored_due_at_is_utc
+2) tests/test_t69_backup_restore.py
+- AEGIS_DATA_DIR temp, two tenants
+- test_backup_then_restore_roundtrip
+- test_neighbor_untouched
 - No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -24,12 +24,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_scheduler import normalize_due_at; print(normalize_due_at('2026-09-05T12:00:00','UTC').endswith(('Z','+00:00')))"
+   ./.venv/bin/python -c "from core.twin_backup import backup_tenant, restore_tenant; print(callable(backup_tenant) and callable(restore_tenant))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 482
+   Required: 0 failed, count > 490
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t68): normalize scheduler due_at to UTC"
+6. git commit -m "feat(t69): local tenant sqlite backup restore"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
