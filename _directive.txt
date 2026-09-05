@@ -1,28 +1,23 @@
-T60 — Six specialists propose; none execute. Do ONLY this directive. Do not start T61. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 05aad0b. Do not rewrite LICENSE or README. Do not weaken T56–T59. English only.
+T61 — Forget all active stores and write a deletion receipt. Do ONLY this directive. Do not start T62. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 4d548a0. Do not rewrite LICENSE or README. Do not weaken T56–T60. English only.
 
-Baseline on main: T01–T59. HEAD 05aad0b. pytest was 455 green after T59.
+Baseline on main: T01–T60. HEAD 4d548a0. pytest was 458 green after T60.
 
-GOAL: Bita, Kian, Alina, Aylin, Ahmad, Amin each expose propose(tenant_id) that inserts one twin_actions row with status proposed. No specialist may call twin_actions.execute.
+GOAL: one tenant call clears that tenant's active twin stores and leaves a local receipt. Neighbor tenants stay intact.
 
 Implement:
 
-1) core/agent_base.py
-- Add propose(self, tenant_id: str) -> dict
-- Default implementation inserts via a helper in twin_actions, kind prefixed with the agent name, status proposed
-- execute(self, ...) must not import or call twin_actions.execute
+1) core/twin_memory_control.py
+- Add forget_all(tenant_id: str) -> dict
+- Clear forgotten+visible memory listing for that tenant
+- Delete or empty that tenant's twin_actions rows
+- Do not delete another tenant's rows
+- Write work_products/{tenant_id}/deletion_receipt.md with tenant_id and UTC time
+- Return {tenant_id, receipt_path, cleared: True}
 
-2) core/twin_actions.py
-- Add insert_specialist_proposal(tenant_id, agent_name, title, payload) used only by propose()
-- Keep human approve/execute as the only path to executed
-
-3) Each of agents/{bita,kian,alina,aylin,ahmad,amin}/agent.py
-- Inherit propose or override title only
-- Do not add side effects, network, or execute()
-
-4) tests/test_t60_specialist_propose.py
-- AEGIS_DATA_DIR temp
-- test_all_six_agents_propose_into_one_queue
-- test_no_specialist_module_calls_execute
+2) tests/test_t61_forget_all.py
+- AEGIS_DATA_DIR temp, two tenants
+- test_forget_all_clears_actions_and_writes_receipt
+- test_neighbor_tenant_survives
 - No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -30,12 +25,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from agents.alina.agent import AlinaAgent; print(hasattr(AlinaAgent(), 'propose'))"
+   ./.venv/bin/python -c "from core.twin_memory_control import forget_all; print(callable(forget_all))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 455
+   Required: 0 failed, count > 458
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t60): six specialists propose into one action queue"
+6. git commit -m "feat(t61): forget all tenant stores with deletion receipt"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

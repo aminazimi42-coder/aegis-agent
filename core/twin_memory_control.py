@@ -164,6 +164,72 @@ def show(tenant_id: str) -> dict[str, Any]:
     }
 
 
+def forget_all(tenant_id: str) -> dict[str, Any]:
+    """Clear all active twin stores for *tenant_id* and write a deletion receipt.
+
+    Clears:
+    - All forgotten-field rows for this tenant (``forgotten`` table).
+    - The visible memory listing (``work_products/{tenant_id}/memory.md``).
+    - All ``twin_actions`` rows for this tenant.
+
+    Neighbour tenants are never touched.
+
+    Writes ``work_products/{tenant_id}/deletion_receipt.md`` containing the
+    tenant_id and the UTC deletion time.
+
+    Returns ``{tenant_id, receipt_path, cleared: True}`` where *receipt_path*
+    is the absolute path to ``deletion_receipt.md``.
+    """
+    # 1. Clear forgotten rows for this tenant only.
+    init_schema()
+    conn = _connect()
+    try:
+        conn.execute(
+            "DELETE FROM forgotten WHERE tenant_id = ?",
+            (tenant_id,),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    # 2. Remove the visible memory listing (memory.md).
+    out_dir = _work_products_dir(tenant_id)
+    memory_md = out_dir / "memory.md"
+    if memory_md.exists():
+        memory_md.unlink()
+
+    # 3. Delete this tenant's twin_actions rows (neighbour stays intact).
+    from core.twin_actions import _ensure_schema as _ensure_actions_schema
+
+    _ensure_actions_schema()
+    from core.persistence import get_connection
+
+    with get_connection() as conn2:
+        conn2.execute(
+            "DELETE FROM twin_actions WHERE tenant_id = ?",
+            (tenant_id,),
+        )
+
+    # 4. Write the deletion receipt.
+    out_dir.mkdir(parents=True, exist_ok=True)
+    receipt_path = out_dir / "deletion_receipt.md"
+    now_utc = datetime.now(timezone.utc).isoformat()
+    lines = [
+        f"# Deletion Receipt — {tenant_id}",
+        "",
+        f"tenant_id: {tenant_id}",
+        f"deleted_at: {now_utc}",
+        "",
+    ]
+    receipt_path.write_text("\n".join(lines), encoding="utf-8")
+
+    return {
+        "tenant_id": tenant_id,
+        "receipt_path": receipt_path.as_posix(),
+        "cleared": True,
+    }
+
+
 def forget(tenant_id: str, field: str) -> dict[str, Any]:
     """Drop *field* from the memory listing for *tenant_id*.
 
