@@ -17,6 +17,8 @@ from .sandbox import SandboxRunner
 from .scorecard import ScorecardSingleton
 from .types import AgentSpec
 
+QUARANTINED = True
+
 
 @dataclass
 class Capsule:

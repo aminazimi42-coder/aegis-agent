@@ -23,14 +23,15 @@ class Phase32FinancialTests(unittest.TestCase):
 
     def test_send_reminder(self):
         tenant = "tenant32"
-        # register a bridge
+        # register a bridge — quarantined: send raises RuntimeError
         BridgeManagerSingleton.register("email", EmailBridge())
         inv_id = FinanceBridgeSingleton.charge(tenant, 1.0, "USD", "reminder test")
         ok = FinancialAutomationSingleton.send_reminders(
             tenant, "email", "user@example.com", inv_id
         )
-        self.assertTrue(ok)
-        # ledger should have recorded the reminder
+        # quarantined bridge cannot send — reminder should fail gracefully
+        self.assertFalse(ok)
+        # ledger should have recorded the charge
         snap = EvidenceLedgerSingleton.snapshot()
         self.assertGreaterEqual(snap["count"], 1)
 

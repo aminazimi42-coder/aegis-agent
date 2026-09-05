@@ -1,44 +1,23 @@
 from __future__ import annotations
 
-import time
 from typing import Any, Dict
 
-from core.evidence_ledger import EvidenceLedgerSingleton
-from core.usage_meter import UsageMeterSingleton
+QUARANTINED = True
 
 
 class OmnichannelBridge:
     def send(self, tenant_id: str, recipient: str, message: str) -> Dict[str, Any]:
-        raise NotImplementedError()
+        raise RuntimeError("quarantined")
 
 
 class SlackBridge(OmnichannelBridge):
     def send(self, tenant_id: str, recipient: str, message: str) -> Dict[str, Any]:
-        # Simulate send latency and return a fake message id
-        time.sleep(0.001)
-        msg_id = f"slk-{int(time.time()*1000)}"
-        EvidenceLedgerSingleton.append_entry(
-            tenant_id=tenant_id,
-            actor="omnichannel/slack",
-            action="send",
-            payload={"recipient": recipient, "message_id": msg_id},
-        )
-        UsageMeterSingleton.record_usage(tenant_id, tokens=1, model="bridge/slack")
-        return {"ok": True, "id": msg_id}
+        raise RuntimeError("quarantined")
 
 
 class EmailBridge(OmnichannelBridge):
     def send(self, tenant_id: str, recipient: str, message: str) -> Dict[str, Any]:
-        time.sleep(0.001)
-        msg_id = f"eml-{int(time.time()*1000)}"
-        EvidenceLedgerSingleton.append_entry(
-            tenant_id=tenant_id,
-            actor="omnichannel/email",
-            action="send",
-            payload={"recipient": recipient, "message_id": msg_id},
-        )
-        UsageMeterSingleton.record_usage(tenant_id, tokens=1, model="bridge/email")
-        return {"ok": True, "id": msg_id}
+        raise RuntimeError("quarantined")
 
 
 class BridgeManager:

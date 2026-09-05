@@ -18,13 +18,13 @@ class Phase26GovernanceTests(unittest.TestCase):
 
     def test_omnichannel_and_marketplace(self):
         tenant = "tenant26"
-        # register bridges
+        # register bridges — quarantined: send must not succeed as live
         BridgeManagerSingleton.register("slack", SlackBridge())
         BridgeManagerSingleton.register("email", EmailBridge())
-        r1 = BridgeManagerSingleton.send("slack", tenant, "#general", "hello")
-        r2 = BridgeManagerSingleton.send("email", tenant, "a@example.com", "hello")
-        self.assertIn("id", r1)
-        self.assertIn("id", r2)
+        with self.assertRaises(RuntimeError):
+            BridgeManagerSingleton.send("slack", tenant, "#general", "hello")
+        with self.assertRaises(RuntimeError):
+            BridgeManagerSingleton.send("email", tenant, "a@example.com", "hello")
         # marketplace register
         MarketplaceSyncSingleton.register_capsule(tenant, "capsule-1", {"name": "capsule"})
         caps = MarketplaceSyncSingleton.list_capsules()

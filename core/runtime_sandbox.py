@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
+QUARANTINED = True
+
 
 class RuntimeSandboxError(Exception):
     pass

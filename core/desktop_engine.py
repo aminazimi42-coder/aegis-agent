@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from core.ai_core import AICore
 
+QUARANTINED = True
+
 
 class DesktopEngine:
     """Lightweight desktop companion core engine.

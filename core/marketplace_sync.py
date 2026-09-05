@@ -6,6 +6,8 @@ from typing import Dict, List
 
 from core.evidence_ledger import EvidenceLedgerSingleton
 
+QUARANTINED = True
+
 MARKET_DIR = Path(".market")
 MARKET_DIR.mkdir(exist_ok=True)
 

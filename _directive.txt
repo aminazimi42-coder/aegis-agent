@@ -1,38 +1,33 @@
-T66 — One complete_safe gateway; Echo default; HTTP labeled. Do ONLY this directive. Do not start T67. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 7ccca01. Do not rewrite LICENSE or README. Do not weaken T56–T65. English only.
+T67 — Quarantine product scaffolds that are not the twin core. Do ONLY this directive. Do not start T68. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend e77fecf. Do not rewrite LICENSE or README Author. Do not weaken T56–T66. English only.
 
-Baseline on main: T01–T65. HEAD 7ccca01. pytest was 476 green after T65.
+Baseline on main: T01–T66. HEAD e77fecf. pytest was 479 green after T66.
 
-GOAL: every model call goes through complete_safe. Default provider is Echo. If HTTP is selected, the result is labeled so callers cannot mistake it for Echo.
+GOAL: marketplace, fake sandbox, pay/auto-pay, omnichannel send, desktop_engine, and KG stubs cannot be mistaken for live product paths.
 
 Implement:
 
-1) core/llm_safety.py complete_safe
-- Always call get_provider()
-- Result dict must include provider_kind: "echo" or "http"
-- If provider_kind is http, also set fallback_label to "http-fallback"
-- Do not add a second completion entry point
+1) For each existing module among core/capsule_marketplace.py, core/marketplace_sync.py, core/runtime_sandbox.py, core/sandbox.py, core/omnichannel.py, core/desktop_engine.py and any kg stub:
+- Add module constant QUARANTINED = True
+- Public send/pay/charge functions must raise RuntimeError("quarantined") or no-op with that label
+- Do not add Stripe or live SMTP
 
-2) core/llm_provider.py
-- Keep Echo as get_provider() default
-- HTTP path stays opt-in via existing env/config only
-
-3) tests/test_t66_complete_safe_gateway.py
-- AEGIS_DATA_DIR temp
-- test_default_provider_kind_is_echo
-- test_http_result_is_labeled
-- No live network (mock HTTP if needed)
+2) tests/test_t67_quarantine.py
+- Import those modules when present
+- Assert QUARANTINED is True
+- Assert a send/pay-like call cannot succeed as live
+- No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.llm_safety import complete_safe; r=complete_safe('ping', tenant_id='t66'); print(r.get('provider_kind')=='echo')"
+   ./.venv/bin/python -c "import core.omnichannel as o; print(getattr(o,'QUARANTINED',False))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 476
+   Required: 0 failed, count > 479
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t66): label complete_safe provider kind"
+6. git commit -m "feat(t67): quarantine non-core product scaffolds"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

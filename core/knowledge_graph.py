@@ -6,6 +6,8 @@ from typing import Dict, List, Tuple
 
 from core.evidence_ledger import EvidenceLedgerSingleton
 
+QUARANTINED = True
+
 
 @dataclass
 class Node:
