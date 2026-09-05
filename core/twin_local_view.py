@@ -49,6 +49,34 @@ def data_root() -> Path:
     return root
 
 
+def provider_status() -> dict[str, Any]:
+    """Return a dict describing which LLM path is active.
+
+    Keys:
+
+    * ``kind`` — ``"echo"`` when the active provider is
+      :class:`~core.llm_provider.EchoProvider` (either because
+      :func:`offline_mode` is True or because no HTTP provider is
+      configured), or ``"http-fallback"`` when
+      :func:`~core.llm_provider.get_provider` returns an
+      :class:`~core.llm_provider.HttpProvider` and
+      :func:`offline_mode` is False.
+    * ``offline`` — the boolean value of :func:`offline_mode`.
+
+    Does **not** call ``complete()`` or open any network connection;
+    ``get_provider()`` only constructs a provider object.
+    """
+    from core.llm_provider import HttpProvider, get_provider
+
+    is_offline = offline_mode()
+    if is_offline:
+        return {"kind": "echo", "offline": True}
+    provider = get_provider()
+    if isinstance(provider, HttpProvider):
+        return {"kind": "http-fallback", "offline": False}
+    return {"kind": "echo", "offline": False}
+
+
 def read_home(tenant_id: str) -> str:
     """Return the markdown text of ``home.md`` for *tenant_id*.
 
