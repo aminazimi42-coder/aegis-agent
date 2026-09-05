@@ -70,7 +70,6 @@ def set_quota(
     accepted or stored.
     """
     row = {
-        "tenant_id": tenant_id,
         "remaining": int(remaining),
         "period_end": str(period_end),
     }

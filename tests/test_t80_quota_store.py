@@ -54,13 +54,17 @@ class TestT80QuotaStore(unittest.TestCase):
         """The quota row is a JSON file on disk, not a twin_actions entry."""
         set_quota("t80-actions", remaining=7, period_end="2026-10-01")
 
-        # The JSON file must exist under AEGIS_DATA_DIR.
+        # The JSON file must exist under AEGIS_DATA_DIR and the tenant
+        # identity is encoded in the filename (not in the JSON payload).
         files = list(Path(self._tmp).rglob("*.json"))
-        contents = []
-        for f in files:
-            contents.append(f.read_text(encoding="utf-8"))
-        blob = "\n".join(contents)
-        self.assertIn("t80-actions", blob)
+        file_names = [str(f) for f in files]
+        self.assertTrue(
+            any("t80-actions" in name for name in file_names),
+            "expected a quota JSON file whose name contains 't80-actions'",
+        )
+        blob = "\n".join(
+            f.read_text(encoding="utf-8") for f in files
+        )
         self.assertIn("7", blob)
 
         # twin_actions for the tenant must remain empty.
