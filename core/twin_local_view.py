@@ -1,18 +1,21 @@
-"""Local home viewer — read home.md from disk without HTTP (T75).
+"""Local home viewer — read home.md and queue from disk/SQLite (T75, T76).
 
 ``read_home(tenant_id)`` returns the text of
 ``work_products/{tenant_id}/home.md`` directly from the local filesystem.
 If the file does not yet exist, :func:`render_home` is called first to
 materialise it, then the freshly written file is read back.
 
-No network libraries are used — the operator can read the home page from
-``AEGIS_DATA_DIR`` without touching the network.
+``list_queue(tenant_id)`` returns a dict with keys ``pending`` and
+``approved_waiting``, sourced solely from ``twin_actions`` in the local
+SQLite database — no HTTP, no ``urllib``, no ``requests``, no sockets.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
+from core.twin_actions import list_actions
 from core.twin_home import _work_products_dir, render_home
 
 
@@ -29,3 +32,28 @@ def read_home(tenant_id: str) -> str:
     if not home_path.is_file():
         render_home(tenant_id)
     return home_path.read_text(encoding="utf-8")
+
+
+def list_queue(tenant_id: str) -> dict[str, list[dict[str, Any]]]:
+    """Return the local action queue for *tenant_id* from ``twin_actions``.
+
+    The returned dict has two keys:
+
+    * ``pending`` — actions whose status is ``"proposed"``.
+    * ``approved_waiting`` — actions whose status is ``"approved"``
+      (approved but not yet executed).
+
+    Actions with status ``"executed"`` or ``"rejected"`` are excluded.
+    No network libraries are used — the data is read from the local
+    SQLite database only.
+    """
+    actions = list_actions(tenant_id)
+    pending: list[dict[str, Any]] = []
+    approved_waiting: list[dict[str, Any]] = []
+    for a in actions:
+        status = a.get("status", "")
+        if status == "proposed":
+            pending.append(a)
+        elif status == "approved":
+            approved_waiting.append(a)
+    return {"pending": pending, "approved_waiting": approved_waiting}
