@@ -46,6 +46,19 @@ def _approved_not_executed(tenant_id: str) -> list[dict[str, Any]]:
     return [a for a in list_actions(tenant_id) if a.get("status") == "approved"]
 
 
+def _rejected_actions(tenant_id: str) -> list[dict[str, Any]]:
+    """Return twin_actions rows for *tenant_id* whose status is ``rejected``.
+
+    Each row is enriched with ``why_text`` from :func:`replay_why`.
+    """
+    from core.twin_actions import replay_why
+
+    rejected = [a for a in list_actions(tenant_id) if a.get("status") == "rejected"]
+    for a in rejected:
+        a["why_text"] = replay_why(a["action_id"])
+    return rejected
+
+
 def _due_jobs(tenant_id: str) -> list[dict[str, Any]]:
     """Return scheduled jobs for *tenant_id* whose status is ``due``."""
     try:
@@ -59,6 +72,7 @@ def _render_markdown(
     tenant_id: str,
     pending: list[dict[str, Any]],
     approved: list[dict[str, Any]],
+    rejected: list[dict[str, Any]],
     due: list[dict[str, Any]],
     brief_name: str | None,
     file_names: list[str],
@@ -91,6 +105,24 @@ def _render_markdown(
             title = item.get("title") or "(untitled)"
             risk = item.get("risk_level") or ""
             lines.append(f"- **{action_id}** — {title}" + (f" _(risk: {risk})_" if risk else ""))
+    else:
+        lines.append("(none)")
+    lines.append("")
+
+    lines.append("## Rejected")
+    lines.append("")
+    if rejected:
+        for item in rejected:
+            action_id = item.get("action_id") or item.get("id") or ""
+            title = item.get("title") or "(untitled)"
+            risk = item.get("risk_level") or ""
+            why = item.get("why_text") or ""
+            line = f"- **{action_id}** — {title}"
+            if risk:
+                line += f" _(risk: {risk})_"
+            if why:
+                line += f" — _{why}_"
+            lines.append(line)
     else:
         lines.append("(none)")
     lines.append("")
@@ -136,6 +168,7 @@ def render_home(tenant_id: str) -> dict[str, Any]:
 
     pending = _pending_actions(tenant_id)
     approved = _approved_not_executed(tenant_id)
+    rejected = _rejected_actions(tenant_id)
     due = _due_jobs(tenant_id)
 
     brief_path = _work_products_dir(tenant_id) / "morning_brief.md"
@@ -150,7 +183,7 @@ def render_home(tenant_id: str) -> dict[str, Any]:
             if f.is_file() and f.name != "home.md"
         )
 
-    content = _render_markdown(tenant_id, pending, approved, due, brief_name, file_names)
+    content = _render_markdown(tenant_id, pending, approved, rejected, due, brief_name, file_names)
     content = apply_style(tenant_id, content)
 
     home_path = out_dir / "home.md"
