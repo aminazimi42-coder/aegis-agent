@@ -20,7 +20,7 @@ from uuid import uuid4
 
 from core.persistence import get_connection
 from core.twin_interview import get_latest_profile
-from core.twin_risk import attach_risk, classify
+from core.twin_risk import ALLOWED_L0_EFFECTS, attach_risk, classify
 
 # ---------------------------------------------------------------------------#
 # Constants
@@ -472,6 +472,21 @@ def execute(action_id: str, tenant_id: str | None = None) -> dict[str, Any]:
         approved_digest = row["approved_payload_sha256"] if row else None
         if approved_digest is None or current_digest != approved_digest:
             raise ValueError("payload changed after approval")
+
+        # T63 — L0 allow-list guard.  An action whose kind/effect is not on
+        # the explicit local allow-list may **not** be treated as L0
+        # (observe-only).  If the title alone would classify as L0 but the
+        # kind is unknown, refuse to execute — unknown effects must not
+        # silently pass as no-side-effect.
+        kind = action.get("kind", "")
+        effect = action.get("effect_type") or kind
+        title_only_risk = classify(action.get("title", ""))
+        if title_only_risk == "L0" and effect not in ALLOWED_L0_EFFECTS and not (
+            ":" in effect and effect.rsplit(":", 1)[-1] in ALLOWED_L0_EFFECTS
+        ):
+            raise PermissionError(
+                f"unknown effect cannot be L0: {effect!r}"
+            )
 
         # Write the local receipts/ file (or outbox .eml for email actions)
         # while status is still ``approved``.  If this raises, status must

@@ -1,23 +1,20 @@
-T62 — Tenant purge is idempotent and neighbor-safe. Do ONLY this directive. Do not start T63. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 2675441. Do not rewrite LICENSE or README. Do not weaken T56–T61. English only.
+T63 — Unknown effects stay off the L0 path. Do ONLY this directive. Do not start T64. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend ea56847. Do not rewrite LICENSE or README. Do not weaken T56–T62. English only.
 
-Baseline on main: T01–T61. HEAD 2675441. pytest was 461 green after T61.
+Baseline on main: T01–T62. HEAD ea56847. pytest was 465 green after T62.
 
-GOAL: a typed confirm purge for one tenant can run twice with the same result. A second tenant is untouched.
+GOAL: only an explicit local allow-list can be L0. Unknown kind or effect is not auto-approved and cannot execute as L0.
 
 Implement:
 
-1) core/twin_memory_control.py
-- Add purge_tenant(tenant_id: str, confirm: str) -> dict
-- confirm must equal "PURGE " + tenant_id exactly, else raise ValueError("typed confirm required")
-- Call the T61 forget_all path or the same clears
-- Second call with the same confirm still returns cleared True and does not raise
-- Do not delete another tenant's actions or receipt
+1) core/twin_risk.py or a small helper next to it
+- ALLOWED_L0_EFFECTS = frozenset of existing local kinds only: file observe, git observe, local .eml outbox, review_digest, review_repos, prepare_weekly_plan, and specialist propose kinds already in use
+- classify: unknown effect is at least L1, never L0
+- execute() or a guard called from execute refuses L0 treatment for unknown kinds
 
-2) tests/test_t62_tenant_purge.py
-- AEGIS_DATA_DIR temp, two tenants
-- test_wrong_confirm_is_rejected
-- test_purge_twice_is_idempotent
-- test_neighbor_survives_purge
+2) tests/test_t63_policy_allowlist.py
+- AEGIS_DATA_DIR temp
+- test_unknown_kind_is_not_l0
+- test_known_local_kind_can_still_be_l0
 - No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -25,12 +22,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_memory_control import purge_tenant; print(callable(purge_tenant))"
+   ./.venv/bin/python -c "from core.twin_risk import ALLOWED_L0_EFFECTS; print(isinstance(ALLOWED_L0_EFFECTS, frozenset))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 461
+   Required: 0 failed, count > 465
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t62): idempotent typed tenant purge"
+6. git commit -m "feat(t63): unknown effects cannot be L0"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
