@@ -78,3 +78,16 @@ def set_quota(
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(row, sort_keys=True), encoding="utf-8")
     return {"remaining": int(remaining), "period_end": str(period_end)}
+
+
+def consume_quota(tenant_id: str, n: int = 1) -> int:
+    """Decrement *tenant_id*'s remaining quota by *n* and return the new value.
+
+    The remaining value never drops below 0.  When no row exists yet the
+    default remaining is 0, so consuming returns 0.  ``period_end`` is
+    preserved across the decrement.
+    """
+    current = get_quota(tenant_id)
+    new_remaining = max(0, int(current["remaining"]) - n)
+    set_quota(tenant_id, remaining=new_remaining, period_end=current["period_end"])
+    return new_remaining

@@ -169,5 +169,14 @@ def complete_safe(
     if provider_kind == "http":
         result["fallback_label"] = "http-fallback"
 
+    # HTTP-path completions consume one quota unit; Echo does not.
+    if provider_kind == "http":
+        try:
+            from core.twin_quota import consume_quota
+
+            consume_quota(tenant_id, 1)
+        except Exception:
+            pass
+
     _ledger_best_effort(tenant_id, result)
     return result
