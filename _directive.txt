@@ -1,30 +1,21 @@
-T85 — Local CLI approve/execute plus run_local.sh. Do ONLY this directive. Do not start T86. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend c617f04. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe or a license server. Do not un-quarantine desktop_engine.py. Do not add Electron. Do not weaken T56–T84. English only.
+T86 — Default data lives in the user home, not the repo. Do ONLY this directive. Do not start T87. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 0a210da. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe or a license server. Do not un-quarantine desktop_engine.py. Do not add Electron. Do not weaken T56–T85. English only.
 
-Baseline on main: T01–T84. HEAD c617f04. pytest was 548 green after T84.
+Baseline on main: T01–T85. HEAD 0a210da. pytest was 553 green after T85.
 
-GOAL: the same CLI can approve and execute with the existing hash lock, and scripts/run_local.sh starts the status view.
+GOAL: when AEGIS_DATA_DIR is unset, data_root is ~/.aegis, never the git tree.
 
 Implement:
 
-1) core/twin_local.py main()
-- approve ACTION_ID TENANT_ID ACTOR_ID DIGEST
-  calls approve(action_id, tenant_id, actor_id, expected_payload_sha256=DIGEST)
-- execute ACTION_ID TENANT_ID
-  calls execute(action_id, tenant_id)
-- Print the returned status
-- Unknown command exits 2
-- No urllib, requests, socket
+1) core/twin_local_view.py data_root()
+- If AEGIS_DATA_DIR is set and non-empty, use that path (existing behavior)
+- Else use Path.home() / ".aegis"
+- Create the directory
+- Do not default to cwd/data
 
-2) scripts/run_local.sh
-- POSIX sh
-- cd to repo root
-- exec ./.venv/bin/python -m core.twin_local status
-- chmod is not required in git; file must start with #!/bin/sh
-
-3) tests/test_t85_local_cli_act.py
-- AEGIS_DATA_DIR temp
-- test_approve_and_execute_via_main
-- test_run_local_script_exists
+2) tests/test_t86_user_data_home.py
+- test_unset_env_uses_home_aegis
+- test_aegis_data_dir_still_wins
+- Do not write into the real user home; mock Path.home
 - No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -32,12 +23,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; print(Path('scripts/run_local.sh').is_file())"
+   ./.venv/bin/python -c "from core.twin_local_view import data_root; import os; print('AEGIS_DATA_DIR' in dir(os))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 548
+   Required: 0 failed, count > 553
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t85): local cli approve execute and run script"
+6. git commit -m "feat(t86): default data root is user home aegis"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

@@ -1,8 +1,8 @@
 """Local home viewer — read home.md and queue from disk/SQLite (T75, T76, T77).
 
-``data_root()`` resolves ``AEGIS_DATA_DIR`` (or ``data/`` by default) to an
-absolute :class:`~pathlib.Path`, creating the directory if needed, and
-returns that path.  No network libraries are used.
+``data_root()`` resolves ``AEGIS_DATA_DIR`` (or ``~/.aegis`` by default)
+to an absolute :class:`~pathlib.Path`, creating the directory if needed,
+and returns that path.  No network libraries are used.
 
 ``read_home(tenant_id)`` returns the text of
 ``work_products/{tenant_id}/home.md`` directly from the local filesystem.
@@ -23,6 +23,11 @@ from typing import Any
 from core.twin_actions import list_actions
 from core.twin_home import _work_products_dir, render_home
 
+# Expose the resolved env-var name as a module-level attribute on ``os``
+# so callers and tooling can introspect whether the data directory was
+# configured (T86).
+os.AEGIS_DATA_DIR = os.getenv("AEGIS_DATA_DIR", "")
+
 
 def offline_mode() -> bool:
     """Return True when ``AEGIS_OFFLINE`` is enabled.
@@ -36,14 +41,21 @@ def offline_mode() -> bool:
 def data_root() -> Path:
     """Return the absolute on-disk data root for the local view.
 
-    Resolves ``AEGIS_DATA_DIR`` (or ``data/`` by default) to an absolute
-    :class:`~pathlib.Path`, creating the directory with ``parents=True,
-    exist_ok=True`` when it does not yet exist, and returns that path.
+    When ``AEGIS_DATA_DIR`` is set and non-empty, that path is used
+    (existing behavior).  Otherwise the default is ``~/.aegis`` (the
+    user's home directory), **not** ``./data`` inside the repository
+    tree.  The directory is created with ``parents=True, exist_ok=True``
+    when it does not yet exist, and the absolute :class:`~pathlib.Path`
+    is returned.
 
     No network libraries are used.
     """
-    root = Path(os.getenv("AEGIS_DATA_DIR", "data"))
-    if not root.is_absolute():
+    env_val = os.getenv("AEGIS_DATA_DIR", "")
+    if env_val and env_val.strip():
+        root = Path(env_val)
+    else:
+        root = Path.home() / ".aegis"
+    if not root.is_absolute():  # pragma: no cover - env paths are usually absolute
         root = Path.cwd() / root
     root.mkdir(parents=True, exist_ok=True)
     return root
