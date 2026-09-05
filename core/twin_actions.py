@@ -145,6 +145,11 @@ def _ensure_schema() -> None:
                 conn.execute(f"ALTER TABLE twin_actions ADD COLUMN {col}")
             except sqlite3.OperationalError:
                 pass
+        # T64 — why-replay column.
+        try:
+            conn.execute("ALTER TABLE twin_actions ADD COLUMN why_text TEXT")
+        except sqlite3.OperationalError:
+            pass
 
 
 # ---------------------------------------------------------------------------#
@@ -178,6 +183,8 @@ def _row_to_dict(row: sqlite3.Row | dict[str, Any]) -> dict[str, Any]:
         result["approved_by"] = row["approved_by"]
     if "approved_at" in keys:
         result["approved_at"] = row["approved_at"]
+    if "why_text" in keys:
+        result["why_text"] = row["why_text"]
     return result
 
 
@@ -197,7 +204,8 @@ def _load_action(action_id: str) -> dict[str, Any] | None:
     with get_connection() as conn:
         row = conn.execute(
             "SELECT action_id, tenant_id, kind, title, status, created_at, "
-            "payload, payload_sha256, approved_payload_sha256, approved_by, approved_at "
+            "payload, payload_sha256, approved_payload_sha256, approved_by, approved_at, "
+            "why_text "
             "FROM twin_actions WHERE action_id = ?",
             (action_id,),
         ).fetchone()
@@ -326,6 +334,7 @@ def approve(
     tenant_id: str | None = None,
     actor_id: str | None = None,
     expected_payload_sha256: str | None = None,
+    why: str | None = None,
 ) -> dict[str, Any]:
     """Approve a proposed action after binding it to the exact envelope digest.
 
@@ -372,18 +381,24 @@ def approve(
                 "SET status = 'approved', "
                 "    approved_payload_sha256 = ?, "
                 "    approved_by = ?, "
-                "    approved_at = ? "
+                "    approved_at = ?, "
+                "    why_text = ? "
                 "WHERE action_id = ?",
-                (expected_payload_sha256, actor_id, now, action_id),
+                (expected_payload_sha256, actor_id, now, why or "", action_id),
             )
             action_dict["status"] = "approved"
             action_dict["approved_payload_sha256"] = expected_payload_sha256
             action_dict["approved_by"] = actor_id
             action_dict["approved_at"] = now
+            action_dict["why_text"] = why or ""
             return action_dict
 
 
-def reject(action_id: str, tenant_id: str | None = None) -> dict[str, Any]:
+def reject(
+    action_id: str,
+    tenant_id: str | None = None,
+    why: str | None = None,
+) -> dict[str, Any]:
     """Set an action's status to ``rejected``.
 
     If ``tenant_id`` is provided, the action's ``tenant_id`` must match or
@@ -397,9 +412,32 @@ def reject(action_id: str, tenant_id: str | None = None) -> dict[str, Any]:
             raise ValueError(f"unknown action: {action_id}")
         if tenant_id is not None and action["tenant_id"] != tenant_id:
             raise ValueError("tenant mismatch")
-        _update_status(action_id, "rejected")
+        with get_connection() as conn:
+            conn.execute(
+                "UPDATE twin_actions "
+                "SET status = 'rejected', why_text = ? "
+                "WHERE action_id = ?",
+                (why or "", action_id),
+            )
         action["status"] = "rejected"
+        action["why_text"] = why or ""
         return action
+
+
+def replay_why(action_id: str) -> str:
+    """Read the ``why_text`` for *action_id* from a fresh connection.
+
+    Returns ``""`` when the action is unknown or no reason was recorded.
+    """
+    _ensure_schema()
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT why_text FROM twin_actions WHERE action_id = ?",
+            (action_id,),
+        ).fetchone()
+    if row is None:
+        return ""
+    return row["why_text"] or ""
 
 
 def _work_products_dir(tenant_id: str) -> Path:

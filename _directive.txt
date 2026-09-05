@@ -1,33 +1,37 @@
-T63 — Unknown effects stay off the L0 path. Do ONLY this directive. Do not start T64. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend ea56847. Do not rewrite LICENSE or README. Do not weaken T56–T62. English only.
+T64 — Why-replay survives process restart. Do ONLY this directive. Do not start T65. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 5093962. Do not rewrite LICENSE or README. Do not weaken T56–T63. English only.
 
-Baseline on main: T01–T62. HEAD ea56847. pytest was 465 green after T62.
+Baseline on main: T01–T63. HEAD 5093962. pytest was 471 green after T63.
 
-GOAL: only an explicit local allow-list can be L0. Unknown kind or effect is not auto-approved and cannot execute as L0.
+GOAL: the reason an action was approved or rejected is stored in SQLite and readable after a new connection.
 
 Implement:
 
-1) core/twin_risk.py or a small helper next to it
-- ALLOWED_L0_EFFECTS = frozenset of existing local kinds only: file observe, git observe, local .eml outbox, review_digest, review_repos, prepare_weekly_plan, and specialist propose kinds already in use
-- classify: unknown effect is at least L1, never L0
-- execute() or a guard called from execute refuses L0 treatment for unknown kinds
+1) core/twin_actions.py
+- Additive ALTER: why_text TEXT
+- approve(..., why: str | None = None) stores why_text
+- reject(..., why: str | None = None) stores why_text
+- replay_why(action_id: str) -> str reads why_text from a fresh get_connection()
+- Empty why is allowed and stored as ""
 
-2) tests/test_t63_policy_allowlist.py
+2) tests/test_t64_why_replay.py
 - AEGIS_DATA_DIR temp
-- test_unknown_kind_is_not_l0
-- test_known_local_kind_can_still_be_l0
+- test_approve_why_survives_new_connection
+- test_reject_why_survives_new_connection
 - No live network
+
+Update older approve/reject call sites only if signatures break.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_risk import ALLOWED_L0_EFFECTS; print(isinstance(ALLOWED_L0_EFFECTS, frozenset))"
+   ./.venv/bin/python -c "from core.twin_actions import replay_why; print(callable(replay_why))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 465
+   Required: 0 failed, count > 471
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t63): unknown effects cannot be L0"
+6. git commit -m "feat(t64): persist why-replay across restart"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
