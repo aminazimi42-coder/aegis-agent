@@ -66,7 +66,7 @@ class TestT84LocalCli(unittest.TestCase):
 
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
-            rc = main([tenant])
+            rc = main(["status", tenant])
 
         out = buf.getvalue()
         self.assertEqual(rc, 0)
@@ -87,7 +87,7 @@ class TestT84LocalCli(unittest.TestCase):
 
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
-            rc = main([tenant])
+            rc = main(["status", tenant])
 
         out = buf.getvalue()
         self.assertEqual(rc, 0)
