@@ -230,6 +230,29 @@ def forget_all(tenant_id: str) -> dict[str, Any]:
     }
 
 
+def purge_tenant(tenant_id: str, confirm: str) -> dict[str, Any]:
+    """Idempotently purge all twin stores for *tenant_id* with a typed confirm.
+
+    *confirm* must equal ``"PURGE " + tenant_id`` exactly (case-sensitive).
+    Any other value raises ``ValueError("typed confirm required")``.
+
+    Delegates to :func:`forget_all` for the actual clearing — removes the
+    forgotten-field rows, ``memory.md``, and all ``twin_actions`` rows for
+    this tenant, then writes a ``deletion_receipt.md``.
+
+    Calling ``purge_tenant`` a second time with the same confirm is safe and
+    idempotent: it re-runs the clear (which is already empty) and still
+    returns ``cleared: True`` without raising.  Neighbour tenants are never
+    touched.
+
+    Returns ``{tenant_id, receipt_path, cleared: True}`` — the same shape as
+    :func:`forget_all`.
+    """
+    if confirm != f"PURGE {tenant_id}":
+        raise ValueError("typed confirm required")
+    return forget_all(tenant_id)
+
+
 def forget(tenant_id: str, field: str) -> dict[str, Any]:
     """Drop *field* from the memory listing for *tenant_id*.
 

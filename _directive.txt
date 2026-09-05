@@ -1,23 +1,23 @@
-T61 — Forget all active stores and write a deletion receipt. Do ONLY this directive. Do not start T62. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 4d548a0. Do not rewrite LICENSE or README. Do not weaken T56–T60. English only.
+T62 — Tenant purge is idempotent and neighbor-safe. Do ONLY this directive. Do not start T63. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 2675441. Do not rewrite LICENSE or README. Do not weaken T56–T61. English only.
 
-Baseline on main: T01–T60. HEAD 4d548a0. pytest was 458 green after T60.
+Baseline on main: T01–T61. HEAD 2675441. pytest was 461 green after T61.
 
-GOAL: one tenant call clears that tenant's active twin stores and leaves a local receipt. Neighbor tenants stay intact.
+GOAL: a typed confirm purge for one tenant can run twice with the same result. A second tenant is untouched.
 
 Implement:
 
 1) core/twin_memory_control.py
-- Add forget_all(tenant_id: str) -> dict
-- Clear forgotten+visible memory listing for that tenant
-- Delete or empty that tenant's twin_actions rows
-- Do not delete another tenant's rows
-- Write work_products/{tenant_id}/deletion_receipt.md with tenant_id and UTC time
-- Return {tenant_id, receipt_path, cleared: True}
+- Add purge_tenant(tenant_id: str, confirm: str) -> dict
+- confirm must equal "PURGE " + tenant_id exactly, else raise ValueError("typed confirm required")
+- Call the T61 forget_all path or the same clears
+- Second call with the same confirm still returns cleared True and does not raise
+- Do not delete another tenant's actions or receipt
 
-2) tests/test_t61_forget_all.py
+2) tests/test_t62_tenant_purge.py
 - AEGIS_DATA_DIR temp, two tenants
-- test_forget_all_clears_actions_and_writes_receipt
-- test_neighbor_tenant_survives
+- test_wrong_confirm_is_rejected
+- test_purge_twice_is_idempotent
+- test_neighbor_survives_purge
 - No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -25,12 +25,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_memory_control import forget_all; print(callable(forget_all))"
+   ./.venv/bin/python -c "from core.twin_memory_control import purge_tenant; print(callable(purge_tenant))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 458
+   Required: 0 failed, count > 461
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t61): forget all tenant stores with deletion receipt"
+6. git commit -m "feat(t62): idempotent typed tenant purge"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
