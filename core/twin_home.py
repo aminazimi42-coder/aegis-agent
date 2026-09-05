@@ -38,7 +38,11 @@ def _pending_actions(tenant_id: str) -> list[dict[str, Any]]:
 
 
 def _approved_not_executed(tenant_id: str) -> list[dict[str, Any]]:
-    """Return twin_actions rows for *tenant_id* that are approved but not yet executed."""
+    """Return twin_actions rows for *tenant_id* that are approved but not yet executed.
+
+    Rows whose status is ``executed`` are never included — an executed row is
+    not waiting even if it retains an ``approved_*`` payload binding.
+    """
     return [a for a in list_actions(tenant_id) if a.get("status") == "approved"]
 
 
@@ -79,7 +83,7 @@ def _render_markdown(
         lines.append("(none)")
     lines.append("")
 
-    lines.append("## Approved — not yet executed")
+    lines.append("## Approved — waiting execute")
     lines.append("")
     if approved:
         for item in approved:
