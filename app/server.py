@@ -391,7 +391,13 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="Aegis Agent Platform",
         version="1.0.0-rc1",
-        description="Production web API for the multi-agent SaaS platform.",
+        description=(
+            "Local-first FastAPI cognitive-twin platform with six specialist "
+            "agents (Alina, Kian, Bita, Aylin, Ahmad, Amin), EchoProvider as "
+            "the default offline LLM, hash-bound human approval, and local "
+            "markdown work products. No hosted multi-tenant SaaS; no card "
+            "charging."
+        ),
         openapi_tags=[
             {
                 "name": "health",
@@ -403,7 +409,7 @@ def create_app() -> FastAPI:
             },
             {
                 "name": "agents",
-                "description": "Multi-agent registry and specialist catalog endpoints.",
+                "description": "Six specialist agents: Alina, Kian, Bita, Aylin, Ahmad, Amin.",
             },
             {
                 "name": "tasks",
@@ -411,7 +417,7 @@ def create_app() -> FastAPI:
             },
             {
                 "name": "telemetry",
-                "description": "Telemetry, runtime health, and SaaS monitoring signals.",
+                "description": "Telemetry, runtime health, and local monitoring signals.",
             },
             {
                 "name": "diagnostics",

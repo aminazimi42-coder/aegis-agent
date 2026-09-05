@@ -1,22 +1,33 @@
-T69 — Local SQLite backup and restore. Do ONLY this directive. Do not start T70. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 79ec6e8. Do not rewrite LICENSE or README Author. Do not weaken T56–T68. English only.
+T70 — Truth surfaces match the proof. Do ONLY this directive. Do not start T71. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 2ce7162. Do not rewrite LICENSE. Do not change the README Author paragraph. English only.
 
-Baseline on main: T01–T68. HEAD 79ec6e8. pytest was 490 green after T68.
+Baseline on main: T01–T69. HEAD 2ce7162. pytest was 493 green after T69.
 
-GOAL: one tenant can snapshot profile, actions, jobs, and receipts to a local file and restore them. Neighbor tenants stay intact. No network.
+GOAL: README, STATUS.md, RELEASES.md, and the OpenAPI description say what the tree actually is. Six specialists. No production-SaaS claim.
 
 Implement:
 
-1) core/twin_backup.py
-- backup_tenant(tenant_id: str, dest: Path) -> Path
-- restore_tenant(tenant_id: str, src: Path) -> dict
-- Snapshot includes profile rows, twin_actions rows, jobs rows, and receipt files under work_products/{tenant_id}/receipts when present
-- Restore overwrites only that tenant
-- dest is a .sqlite or .zip under AEGIS_DATA_DIR; pick one and keep it local
+1) STATUS.md
+- Title lock as of T70
+- Shipped list must include: six agents Bita Kian Alina Aylin Ahmad Amin, Echo default, hash-bound approve, tenant bind, home queue from twin_actions, execute after receipt, forget_all, typed purge, L0 allow-list, why-replay, feedback rows, labeled complete_safe, quarantined scaffolds, UTC scheduler, local backup
+- Do not claim hosted multi-tenant SaaS billing
 
-2) tests/test_t69_backup_restore.py
-- AEGIS_DATA_DIR temp, two tenants
-- test_backup_then_restore_roundtrip
-- test_neighbor_untouched
+2) RELEASES.md
+- Remove "production-ready multi-agent SaaS framework"
+- Agent layer lists all six names
+- Describe local-first operator twin, not card charging
+
+3) README.md
+- If the body still implies a live paid LLM or four-agent-only product, fix that sentence
+- Keep the existing Author paragraph byte-for-byte
+
+4) OpenAPI / FastAPI description in app/server.py
+- Must not say production SaaS
+- May mention six specialists and local Echo default
+
+5) tests/test_t70_truth_surfaces.py
+- README Author paragraph still contains both brand strings
+- README, STATUS.md, RELEASES.md do not contain "production-ready multi-agent SaaS"
+- Each of Bita, Kian, Alina, Aylin, Ahmad, Amin appears in STATUS.md or RELEASES.md
 - No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -24,12 +35,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_backup import backup_tenant, restore_tenant; print(callable(backup_tenant) and callable(restore_tenant))"
+   ./.venv/bin/python -c "from pathlib import Path; t=Path('RELEASES.md').read_text(); print('SaaS framework' not in t and 'Amin' in t)"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 490
+   Required: 0 failed, count > 493
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t69): local tenant sqlite backup restore"
+6. git commit -m "docs(t70): align README STATUS RELEASES with proof"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
