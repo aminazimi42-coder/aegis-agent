@@ -1,21 +1,22 @@
-T77 — Local data root is an absolute disk path. Do ONLY this directive. Do not start T78. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 7632641. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe or a license server. Do not un-quarantine desktop_engine.py. Do not weaken T56–T76. English only.
+T78 — Offline flag forces Echo. Do ONLY this directive. Do not start T79. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 5789064. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe or a license server. Do not un-quarantine desktop_engine.py. Do not weaken T56–T77. English only.
 
-Baseline on main: T01–T76. HEAD 7632641. pytest was 520 green after T76.
+Baseline on main: T01–T77. HEAD 5789064. pytest was 523 green after T77.
 
-GOAL: the desktop view can ask for one absolute data root on the operator disk.
+GOAL: AEGIS_OFFLINE=1 means the local view reports offline and get_provider stays Echo.
 
 Implement:
 
 1) core/twin_local_view.py
-- data_root() -> Path
-- Resolve AEGIS_DATA_DIR or default data/ to an absolute path
-- mkdir parents exist_ok
-- Return that Path
+- offline_mode() -> bool
+- True when AEGIS_OFFLINE is 1, true, or yes (case-insensitive)
 
-2) tests/test_t77_data_root.py
+2) core/llm_provider.py
+- If offline_mode() is True, get_provider() returns EchoProvider even when AEGIS_LLM_PROVIDER=http
+
+3) tests/test_t78_offline_flag.py
 - AEGIS_DATA_DIR temp
-- test_data_root_is_absolute
-- test_data_root_creates_dir
+- test_offline_mode_reads_env
+- test_offline_forces_echo_provider
 - No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -23,12 +24,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_local_view import data_root; print(data_root().is_absolute())"
+   ./.venv/bin/python -c "from core.twin_local_view import offline_mode; print(callable(offline_mode))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 520
+   Required: 0 failed, count > 523
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t77): local absolute data root"
+6. git commit -m "feat(t78): offline flag forces echo"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

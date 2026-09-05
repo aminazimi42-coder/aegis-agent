@@ -24,6 +24,15 @@ from core.twin_actions import list_actions
 from core.twin_home import _work_products_dir, render_home
 
 
+def offline_mode() -> bool:
+    """Return True when ``AEGIS_OFFLINE`` is enabled.
+
+    Accepts ``1``, ``true``, or ``yes`` (case-insensitive). Any other
+    value — including unset — returns ``False``.
+    """
+    return os.getenv("AEGIS_OFFLINE", "").strip().lower() in {"1", "true", "yes"}
+
+
 def data_root() -> Path:
     """Return the absolute on-disk data root for the local view.
 

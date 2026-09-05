@@ -121,7 +121,16 @@ class HttpProvider:
 
 
 def get_provider() -> LLMProvider:
-    """Return the configured LLM provider. Defaults to EchoProvider."""
+    """Return the configured LLM provider. Defaults to EchoProvider.
+
+    When :func:`core.twin_local_view.offline_mode` is True the Echo
+    provider is always returned, even when ``AEGIS_LLM_PROVIDER`` is
+    ``http``.
+    """
+    from core.twin_local_view import offline_mode
+
+    if offline_mode():
+        return EchoProvider()
     kind = os.getenv("AEGIS_LLM_PROVIDER", "echo").lower()
     if kind == "http":
         base_url = os.getenv("AEGIS_LLM_BASE_URL")
