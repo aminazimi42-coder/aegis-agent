@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 from core.twin_persist import init_schema
 
@@ -50,9 +51,45 @@ def _has_consented_profile(tenant_id: str) -> bool:
         return False
 
 
-# ---------------------------------------------------------------------------
+# --------------------------------------------------------------------------- #
+# normalize_due_at
+# --------------------------------------------------------------------------- #
+
+def normalize_due_at(due_at: str, timezone_: str = "UTC") -> str:
+    """Normalize a possibly-naive local datetime string to a UTC ISO-8601 string.
+
+    Accepts either a naive local string (treated in *timezone_*) or a
+    timezone-aware string.  Returns a string ending with ``Z`` or
+    ``+00:00``.  Raises ``ValueError`` on unparseable input.
+    """
+    if not isinstance(due_at, str) or not due_at.strip():
+        raise ValueError("invalid due_at")
+    s = due_at.strip()
+    # First, try parsing as a timezone-aware ISO string (covers
+    # offsets like +00:00, -05:00, and the Z suffix).
+    dt: datetime | None = None
+    # Try `fromisoformat` after replacing trailing 'Z' which
+    # Python <3.11 does not handle.
+    iso_candidate = s.replace("Z", "+00:00") if s.endswith("Z") else s
+    try:
+        dt = datetime.fromisoformat(iso_candidate)
+    except ValueError:
+        dt = None
+    if dt is None:
+        try:
+            dt = datetime.fromisoformat(s)
+        except ValueError as exc:
+            raise ValueError("invalid due_at") from exc
+    if dt.tzinfo is None:
+        tz = ZoneInfo(timezone_) if timezone_ else ZoneInfo("UTC")
+        dt = dt.replace(tzinfo=tz)
+    utc_dt = dt.astimezone(timezone.utc)
+    return utc_dt.isoformat()
+
+
+# --------------------------------------------------------------------------- #
 # schedule
-# ---------------------------------------------------------------------------
+# --------------------------------------------------------------------------- #
 
 def schedule(
     tenant_id: str,
@@ -68,6 +105,7 @@ def schedule(
     if not _has_consented_profile(tenant_id):
         raise ValueError("no consented profile")
     _ensure_schema()
+    normalized = normalize_due_at(due_at, timezone_)
     job_id = f"job-{uuid4().hex[:12]}"
     now = datetime.now(timezone.utc).isoformat()
     conn = _connect()
@@ -77,14 +115,14 @@ def schedule(
             INSERT INTO jobs (id, tenant_id, title, due_at, timezone, status, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            (job_id, tenant_id, title, due_at, timezone_, "scheduled", now),
+            (job_id, tenant_id, title, normalized, timezone_, "scheduled", now),
         )
         conn.commit()
         return {
             "id": job_id,
             "tenant_id": tenant_id,
             "title": title,
-            "due_at": due_at,
+            "due_at": normalized,
             "timezone": timezone_,
             "status": "scheduled",
             "created_at": now,
