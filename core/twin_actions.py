@@ -543,8 +543,9 @@ def execute(action_id: str, tenant_id: str | None = None) -> dict[str, Any]:
     ``PermissionError("approval required")`` if the action is not in the
     ``approved`` status.  Raises ``ValueError`` if the action_id is unknown.
 
-    A second execute of an already-executed id raises ``ValueError`` instead
-    of rewriting a second receipt as success.
+    A second execute of an already-executed id returns the existing row
+    without rewriting the receipt or changing status.  The first successful
+    execute remains the only truth.
     """
     _ensure_schema()
     with _action_lock:
@@ -554,7 +555,7 @@ def execute(action_id: str, tenant_id: str | None = None) -> dict[str, Any]:
         if tenant_id is not None and action["tenant_id"] != tenant_id:
             raise ValueError("tenant mismatch")
         if action["status"] == "executed":
-            raise ValueError("action already executed")
+            return action
         if action["status"] != "approved":
             raise PermissionError("approval required")
         # T56 — recompute the current envelope digest and compare to the

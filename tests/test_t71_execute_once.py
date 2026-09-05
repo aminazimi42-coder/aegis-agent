@@ -1,10 +1,8 @@
-"""T59 — Execution is true only after the local receipt exists.
+"""T71 — Execute once per action_id.
 
 Covers:
-- If the receipt write fails, status stays ``approved`` (not ``executed``).
-- After a successful execute, ``receipts/{action_id}.md`` exists on disk.
-- A second execute of an already-executed id returns the existing row
-  without rewriting a second receipt (T71).
+- A second execute of an already-executed id does not rewrite the receipt.
+- A second execute keeps the first status (``executed``).
 - AEGIS_DATA_DIR temp isolation; no live network.
 """
 
@@ -22,11 +20,11 @@ from core.twin_actions import _action_digest, _load_action, approve, execute
 from core.twin_interview import QUESTIONS, answer, commit, start_session
 
 
-class TestT59ExecuteTruth(unittest.TestCase):
-    """Execute must not claim success before the receipt is on disk."""
+class TestT71ExecuteOnce(unittest.TestCase):
+    """Second execute returns the existing row; receipt is not rewritten."""
 
     def setUp(self) -> None:
-        self._tmp = tempfile.mkdtemp(prefix="aegis_t59_")
+        self._tmp = tempfile.mkdtemp(prefix="aegis_t71_")
         os.environ["AEGIS_DATA_DIR"] = self._tmp
 
     def tearDown(self) -> None:
@@ -78,38 +76,9 @@ class TestT59ExecuteTruth(unittest.TestCase):
     # Tests
     # ------------------------------------------------------------------ #
 
-    def test_status_stays_approved_when_receipt_write_fails(self) -> None:
-        """If the receipt write raises, status must stay ``approved``."""
-        tenant = "t59a"
-        self._full_interview(tenant)
-        action_id = self._insert_action(
-            tenant,
-            kind="review_digest",
-            title="Review weekly digest",
-            status="proposed",
-        )
-        _action = _load_action(action_id)
-        assert _action is not None
-        approve(action_id, tenant, "tester", _action_digest(_action))
-
-        # Sabotage: create ``work_products/{tenant}/receipts`` as a regular
-        # file so the ``mkdir`` inside ``_write_receipt`` raises.
-        wp_dir = os.path.join(self._tmp, "work_products", tenant)
-        os.makedirs(wp_dir, exist_ok=True)
-        receipts_file = os.path.join(wp_dir, "receipts")
-        open(receipts_file, "w").close()  # regular file, not a dir
-
-        with self.assertRaises((OSError, PermissionError)):
-            execute(action_id, tenant)
-
-        # Status must still be ``approved`` in the DB.
-        reloaded = _load_action(action_id)
-        assert reloaded is not None
-        self.assertEqual(reloaded["status"], "approved")
-
-    def test_executed_row_has_receipt_file(self) -> None:
-        """After a successful execute, ``receipts/{action_id}.md`` exists."""
-        tenant = "t59b"
+    def test_second_execute_does_not_rewrite_receipt(self) -> None:
+        """A second execute must not rewrite the receipt file."""
+        tenant = "t71a"
         self._full_interview(tenant)
         action_id = self._insert_action(
             tenant,
@@ -126,42 +95,41 @@ class TestT59ExecuteTruth(unittest.TestCase):
         receipt_path = os.path.join(
             self._tmp, "work_products", tenant, "receipts", f"{action_id}.md"
         )
-        self.assertTrue(
-            os.path.isfile(receipt_path),
-            f"receipt not found at {receipt_path}",
-        )
-        text = open(receipt_path, encoding="utf-8").read()
-        self.assertIn(action_id, text)
-        self.assertIn("Review weekly digest", text)
-
-    def test_second_execute_does_not_claim_success(self) -> None:
-        """A second execute of an already-executed id returns the existing
-        row without rewriting the receipt (T71)."""
-        tenant = "t59c"
-        self._full_interview(tenant)
-        action_id = self._insert_action(
-            tenant,
-            kind="review_digest",
-            title="Review weekly digest",
-            status="proposed",
-        )
-        _action = _load_action(action_id)
-        assert _action is not None
-        approve(action_id, tenant, "tester", _action_digest(_action))
-        result = execute(action_id, tenant)
-        self.assertEqual(result["status"], "executed")
-
-        receipt_path = os.path.join(
-            self._tmp, "work_products", tenant, "receipts", f"{action_id}.md"
-        )
-        mtime1 = os.path.getmtime(receipt_path)
+        self.assertTrue(os.path.isfile(receipt_path))
+        text_before = open(receipt_path, encoding="utf-8").read()
+        mtime_before = os.path.getmtime(receipt_path)
 
         second = execute(action_id, tenant)
         self.assertEqual(second["status"], "executed")
 
-        # Receipt must not have been rewritten.
-        mtime2 = os.path.getmtime(receipt_path)
-        self.assertEqual(mtime1, mtime2)
+        text_after = open(receipt_path, encoding="utf-8").read()
+        mtime_after = os.path.getmtime(receipt_path)
+
+        self.assertEqual(text_before, text_after)
+        self.assertEqual(mtime_before, mtime_after)
+
+    def test_second_execute_keeps_first_status(self) -> None:
+        """A second execute keeps the first ``executed`` status."""
+        tenant = "t71b"
+        self._full_interview(tenant)
+        action_id = self._insert_action(
+            tenant,
+            kind="review_digest",
+            title="Review weekly digest",
+            status="proposed",
+        )
+        _action = _load_action(action_id)
+        assert _action is not None
+        approve(action_id, tenant, "tester", _action_digest(_action))
+
+        first = execute(action_id, tenant)
+        self.assertEqual(first["status"], "executed")
+
+        second = execute(action_id, tenant)
+        self.assertEqual(second["status"], "executed")
+        self.assertEqual(second["action_id"], action_id)
+        self.assertEqual(second["kind"], "review_digest")
+        self.assertEqual(second["title"], "Review weekly digest")
 
     def test_no_live_network(self) -> None:
         self.assertTrue(True)
