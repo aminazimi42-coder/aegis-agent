@@ -1,34 +1,38 @@
-T65 — Persist approve and reject feedback. Do ONLY this directive. Do not start T66. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 882523a. Do not rewrite LICENSE or README. Do not weaken T56–T64. English only.
+T66 — One complete_safe gateway; Echo default; HTTP labeled. Do ONLY this directive. Do not start T67. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 7ccca01. Do not rewrite LICENSE or README. Do not weaken T56–T65. English only.
 
-Baseline on main: T01–T64. HEAD 882523a. pytest was 473 green after T64.
+Baseline on main: T01–T65. HEAD 7ccca01. pytest was 476 green after T65.
 
-GOAL: each approve or reject appends one durable feedback row the twin can later use for style and risk. No model training in this slice.
+GOAL: every model call goes through complete_safe. Default provider is Echo. If HTTP is selected, the result is labeled so callers cannot mistake it for Echo.
 
 Implement:
 
-1) core/twin_actions.py
-- Additive table twin_feedback(action_id, tenant_id, decision, why_text, created_at)
-- approve and reject insert one row after the status write
-- list_feedback(tenant_id) returns that tenant's rows only
+1) core/llm_safety.py complete_safe
+- Always call get_provider()
+- Result dict must include provider_kind: "echo" or "http"
+- If provider_kind is http, also set fallback_label to "http-fallback"
+- Do not add a second completion entry point
 
-2) tests/test_t65_feedback.py
+2) core/llm_provider.py
+- Keep Echo as get_provider() default
+- HTTP path stays opt-in via existing env/config only
+
+3) tests/test_t66_complete_safe_gateway.py
 - AEGIS_DATA_DIR temp
-- test_approve_writes_feedback_row
-- test_reject_writes_feedback_row
-- test_list_feedback_is_tenant_scoped
-- No live network
+- test_default_provider_kind_is_echo
+- test_http_result_is_labeled
+- No live network (mock HTTP if needed)
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_actions import list_feedback; print(callable(list_feedback))"
+   ./.venv/bin/python -c "from core.llm_safety import complete_safe; r=complete_safe('ping', tenant_id='t66'); print(r.get('provider_kind')=='echo')"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 473
+   Required: 0 failed, count > 476
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t65): persist approve reject feedback rows"
+6. git commit -m "feat(t66): label complete_safe provider kind"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

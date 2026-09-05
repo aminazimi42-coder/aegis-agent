@@ -13,7 +13,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from core.llm_provider import get_provider
+from core.llm_provider import HttpProvider, get_provider
 
 ALLOWED_TOOLS: tuple[str, ...] = (
     "weekly_digest",
@@ -125,11 +125,13 @@ def complete_safe(
             "total_tokens": 0,
             "tool": "",
             "ok": False,
+            "provider_kind": "echo",
         }
         _ledger_best_effort(tenant_id, result)
         return result
 
     provider = get_provider()
+    provider_kind = "http" if isinstance(provider, HttpProvider) else "echo"
     raw = provider.complete(safe_prompt, model=model, max_tokens=max_tokens)
 
     # Persist token spend so a restart keeps the burn.
@@ -162,7 +164,10 @@ def complete_safe(
         "total_tokens": raw.get("total_tokens", 0),
         "tool": tool,
         "ok": ok,
+        "provider_kind": provider_kind,
     }
+    if provider_kind == "http":
+        result["fallback_label"] = "http-fallback"
 
     _ledger_best_effort(tenant_id, result)
     return result
