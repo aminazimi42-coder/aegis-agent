@@ -80,6 +80,34 @@ def set_quota(
     return {"remaining": int(remaining), "period_end": str(period_end)}
 
 
+def quota_allows_http(tenant_id: str) -> bool:
+    """Return True when the tenant's quota permits an HTTP provider call.
+
+    Returns False when ``remaining`` is zero or negative.  Returns False
+    when ``period_end`` is a valid UTC instant in the past.  An empty
+    ``period_end`` counts as *not* expired, so a row with remaining units
+    and no period end still allows HTTP.  Unparseable ``period_end``
+    values are treated as not expired.
+    """
+    quota = get_quota(tenant_id)
+    if int(quota["remaining"]) <= 0:
+        return False
+    period_end = str(quota.get("period_end", "")).strip()
+    if not period_end:
+        return True
+    try:
+        from datetime import datetime, timezone
+
+        dt = datetime.fromisoformat(period_end.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        if dt < datetime.now(timezone.utc):
+            return False
+    except (ValueError, TypeError):
+        pass
+    return True
+
+
 def consume_quota(tenant_id: str, n: int = 1) -> int:
     """Decrement *tenant_id*'s remaining quota by *n* and return the new value.
 

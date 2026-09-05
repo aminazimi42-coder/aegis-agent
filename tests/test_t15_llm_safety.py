@@ -53,6 +53,9 @@ class TestT15LLMSafety(unittest.TestCase):
 
     def test_rejected_tool_not_allowed(self):
         """complete_safe after monkeypatch returning TOOL:wire_transfer -> ok False."""
+        from core.twin_quota import set_quota
+
+        set_quota("t15", remaining=10, period_end="2099-12-31")
         fake = FakeProvider("TOOL:wire_transfer\nPAY")
         with mock.patch.object(llm_safety, "get_provider", return_value=fake):
             result = complete_safe("transfer funds", tenant_id="t15")

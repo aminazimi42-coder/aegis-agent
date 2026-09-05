@@ -43,7 +43,9 @@ class TestT66CompleteSafeGateway(unittest.TestCase):
     def test_http_result_is_labeled(self):
         """complete_safe when get_provider returns HttpProvider: labeled 'http'."""
         from core.llm_provider import HttpProvider
+        from core.twin_quota import set_quota
 
+        set_quota("t66-http", remaining=10, period_end="2099-12-31")
         fake_http = HttpProvider("http://localhost:0", "test-key-12345678")
         with mock.patch.object(llm_safety, "get_provider", return_value=fake_http):
             with mock.patch.object(

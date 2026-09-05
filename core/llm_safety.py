@@ -130,7 +130,17 @@ def complete_safe(
         _ledger_best_effort(tenant_id, result)
         return result
 
+    # When the tenant's quota denies HTTP (zero remaining or expired
+    # period), force the Echo provider even when AEGIS_LLM_PROVIDER=http.
+    from core.twin_quota import quota_allows_http
+
+    force_echo = not quota_allows_http(tenant_id)
+
     provider = get_provider()
+    if force_echo:
+        from core.llm_provider import EchoProvider
+
+        provider = EchoProvider()
     provider_kind = "http" if isinstance(provider, HttpProvider) else "echo"
     raw = provider.complete(safe_prompt, model=model, max_tokens=max_tokens)
 

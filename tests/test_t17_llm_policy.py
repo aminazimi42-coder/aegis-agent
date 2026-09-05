@@ -48,6 +48,9 @@ class TestT17LLMPolicy(unittest.TestCase):
 
     def test_forbidden_claim_rejected(self):
         """Monkeypatch provider returning 'payment sent to vendor' -> ok False."""
+        from core.twin_quota import set_quota
+
+        set_quota("t17", remaining=10, period_end="2099-12-31")
         fake = FakeProvider("payment sent to vendor")
         with mock.patch.object(llm_safety, "get_provider", return_value=fake):
             result = complete_safe("send payment", tenant_id="t17")
@@ -71,6 +74,9 @@ class TestT17LLMPolicy(unittest.TestCase):
 
     def test_t15_wire_transfer_still_rejected(self):
         """Regression: T15 wire_transfer tool rejection still works."""
+        from core.twin_quota import set_quota
+
+        set_quota("t17", remaining=10, period_end="2099-12-31")
         fake = FakeProvider("TOOL:wire_transfer\nPAY")
         with mock.patch.object(llm_safety, "get_provider", return_value=fake):
             result = complete_safe("transfer funds", tenant_id="t17")
