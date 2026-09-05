@@ -1,4 +1,8 @@
-"""Local home viewer — read home.md and queue from disk/SQLite (T75, T76).
+"""Local home viewer — read home.md and queue from disk/SQLite (T75, T76, T77).
+
+``data_root()`` resolves ``AEGIS_DATA_DIR`` (or ``data/`` by default) to an
+absolute :class:`~pathlib.Path`, creating the directory if needed, and
+returns that path.  No network libraries are used.
 
 ``read_home(tenant_id)`` returns the text of
 ``work_products/{tenant_id}/home.md`` directly from the local filesystem.
@@ -12,11 +16,28 @@ SQLite database — no HTTP, no ``urllib``, no ``requests``, no sockets.
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 
 from core.twin_actions import list_actions
 from core.twin_home import _work_products_dir, render_home
+
+
+def data_root() -> Path:
+    """Return the absolute on-disk data root for the local view.
+
+    Resolves ``AEGIS_DATA_DIR`` (or ``data/`` by default) to an absolute
+    :class:`~pathlib.Path`, creating the directory with ``parents=True,
+    exist_ok=True`` when it does not yet exist, and returns that path.
+
+    No network libraries are used.
+    """
+    root = Path(os.getenv("AEGIS_DATA_DIR", "data"))
+    if not root.is_absolute():
+        root = Path.cwd() / root
+    root.mkdir(parents=True, exist_ok=True)
+    return root
 
 
 def read_home(tenant_id: str) -> str:
