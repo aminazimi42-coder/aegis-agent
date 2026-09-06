@@ -26,9 +26,11 @@ def main(argv: list[str] | None = None) -> int:
     * ``approve ACTION_ID TENANT_ID ACTOR_ID DIGEST`` — approve a proposed
       action after binding it to the exact envelope digest.
     * ``execute ACTION_ID TENANT_ID`` — execute an approved action.
-    * ``interview TENANT_ID ROLE GOAL CONSENT`` — record a consented
-      local profile under the data root.  ``CONSENT`` must be ``yes``;
-      otherwise nothing is written and the command exits ``2``.
+    * ``interview [TENANT_ID ROLE GOAL CONSENT]`` — record a consented
+      local profile under the data root.  With four args, ``CONSENT``
+      must be ``yes``; with no args, the four values are prompted on
+      stdin (T89).  In either case, if consent is not ``yes``, nothing
+      is written and the command exits ``2``.
 
     The default command is ``status`` with the ``AEGIS_TENANT`` env var (or
     ``"default"``) as the tenant id.
@@ -156,12 +158,20 @@ def _execute_cmd(rest: list[str]) -> int:
 
 
 def _interview_cmd(rest: list[str]) -> int:
-    """Record a consented local profile: ``interview TENANT_ID ROLE GOAL CONSENT``.
+    """Record a consented local profile.
 
-    Writes ``role``, ``goal``, and ``consented=true`` as JSON keys under
-    ``{data_root}/{tenant_id}/profile.json``.  ``CONSENT`` must be
-    ``"yes"`` (case-insensitive); otherwise nothing is written and the
-    command exits ``2``.
+    Two forms:
+
+    * **Batch** — ``interview TENANT_ID ROLE GOAL CONSENT`` (T88).
+    * **Interactive** — ``interview`` with no extra args prompts on
+      *stdin* for ``tenant``, ``role``, ``goal``, and ``consent``
+      (T89).  Each value is read as a single line from ``stdin``.
+
+    In both forms ``CONSENT`` must be ``"yes"`` (case-insensitive);
+    otherwise nothing is written and the command exits ``2``.
+
+    Writes ``role``, ``goal``, and ``consented=true`` as JSON keys
+    under ``{data_root}/{tenant_id}/profile.json``.
 
     No secrets, card fields, or network calls.
     """
@@ -169,15 +179,21 @@ def _interview_cmd(rest: list[str]) -> int:
 
     from core.twin_local_view import data_root
 
-    if len(rest) != 4:
+    if len(rest) == 4:
+        tenant_id, role, goal, consent = rest
+    elif len(rest) == 0:
+        tenant_id = input("tenant: ").strip()
+        role = input("role: ").strip()
+        goal = input("goal: ").strip()
+        consent = input("consent: ").strip()
+    else:
         print(
-            "usage: interview TENANT_ID ROLE GOAL CONSENT",
+            "usage: interview [TENANT_ID ROLE GOAL CONSENT]",
             file=sys.stderr,
         )
         return 2
 
-    tenant_id, role, goal, consent = rest
-    if consent.strip().lower() != "yes":
+    if consent.lower() != "yes":
         return 2
 
     root = data_root()
