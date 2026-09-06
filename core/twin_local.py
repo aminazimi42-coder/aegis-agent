@@ -31,6 +31,11 @@ def main(argv: list[str] | None = None) -> int:
       must be ``yes``; with no args, the four values are prompted on
       stdin (T89).  In either case, if consent is not ``yes``, nothing
       is written and the command exits ``2``.
+    * ``propose TENANT_ID`` — insert one proposed ``twin_action`` whose
+      payload includes ``role`` and ``goal`` read from the local
+      consented ``profile.json`` (T90).  Writes nothing and exits ``2``
+      when the profile is missing or ``consented`` is not ``true``.
+      Does not approve or execute; no network, no card fields.
 
     The default command is ``status`` with the ``AEGIS_TENANT`` env var (or
     ``"default"``) as the tenant id.
@@ -53,6 +58,8 @@ def main(argv: list[str] | None = None) -> int:
         return _execute_cmd(rest)
     if command == "interview":
         return _interview_cmd(rest)
+    if command == "propose":
+        return _propose_cmd(rest)
 
     print(f"unknown command: {command}", file=sys.stderr)
     return 2
@@ -208,6 +215,54 @@ def _interview_cmd(rest: list[str]) -> int:
         encoding="utf-8",
     )
     print(f"profile: {profile_path}")
+    return 0
+
+
+def _propose_cmd(rest: list[str]) -> int:
+    """Insert one proposed twin_action from the local consented profile (T90).
+
+    Usage: ``propose TENANT_ID``.  Reads ``{data_root}/{tenant_id}/profile.json``
+    and — when it exists and ``consented`` is ``true`` — inserts exactly one
+    proposed action whose payload includes ``role`` and ``goal``.  The action
+    is inserted via :func:`core.twin_actions.insert_specialist_proposal`
+    so the canonical envelope digest and ``payload_sha256`` are computed
+    consistently with T56/T60.
+
+    Writes nothing and exits ``2`` when ``profile.json`` is missing, cannot
+    be parsed, or ``consented`` is not ``true``.  Does **not** approve or
+    execute.  No network, no card fields.
+    """
+    import json
+
+    from core.twin_actions import insert_specialist_proposal
+    from core.twin_local_view import data_root
+
+    if len(rest) != 1:
+        print("usage: propose TENANT_ID", file=sys.stderr)
+        return 2
+
+    tenant_id = rest[0]
+    root = data_root()
+    profile_path = root / tenant_id / "profile.json"
+    if not profile_path.is_file():
+        return 2
+    try:
+        data = json.loads(profile_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return 2
+    if data.get("consented") is not True:
+        return 2
+
+    role = data.get("role", "")
+    goal = data.get("goal", "")
+    title = f"Propose from profile — role: {role}, goal: {goal}"
+    result = insert_specialist_proposal(
+        tenant_id=tenant_id,
+        agent_name="twin_local",
+        title=title,
+        payload={"role": role, "goal": goal},
+    )
+    print(json.dumps(result, default=str))
     return 0
 
 

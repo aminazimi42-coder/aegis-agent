@@ -1,23 +1,22 @@
-T89 — Interactive interview asks questions on stdin. Do ONLY this directive. Do not start T90. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 7379603. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe or a license server. Do not un-quarantine desktop_engine.py. Do not add Electron. Do not weaken T56–T88. English only.
+T90 — Propose one queued action from the consented profile. Do ONLY this directive. Do not start T91. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend e0e2ea8. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe or a license server. Do not un-quarantine desktop_engine.py. Do not add Electron. Do not weaken T56–T89. English only.
 
-Baseline on main: T01–T88. HEAD 7379603. pytest was 569 green after T88.
+Baseline on main: T01–T89. HEAD e0e2ea8. pytest was 573 green after T89.
 
-GOAL: `aegis interview` with no extra args prompts on stdin. Batch four-arg form still works.
+GOAL: `aegis propose TENANT_ID` inserts one proposed twin_action from profile.json. It does not approve or execute.
 
 Implement:
 
-1) core/twin_local.py interview
-- No extra args: prompt tenant, role, goal, consent
-- CONSENT still must be yes or write nothing and exit 2
-- Four-arg form from T88 stays
-- Same profile.json shape
-- No network, no secrets, no card fields
+1) core/twin_local.py
+- propose TENANT_ID
+- If profile.json missing or consented is not true, write nothing and exit 2
+- Insert one proposed action for that tenant whose payload includes role and goal
+- Do not call execute
+- No network, no card fields
 
-2) tests/test_t89_interactive_interview.py
+2) tests/test_t90_propose_from_profile.py
 - AEGIS_DATA_DIR temp
-- test_interactive_yes_writes_profile
-- test_interactive_no_writes_nothing
-- Feed answers through stdin, not a real keyboard
+- test_propose_without_profile_exits_2
+- test_propose_with_consent_increments_pending
 - No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -28,9 +27,9 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
    ./.venv/bin/python -c "from core.twin_local import main; print(callable(main))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 569
+   Required: 0 failed, count > 573
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t89): interactive day-zero interview on stdin"
+6. git commit -m "feat(t90): propose queued action from consented profile"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
