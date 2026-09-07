@@ -1,37 +1,37 @@
-T106 — Approve and digest in the desktop window. Do ONLY this directive. Do not start T107. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 9fc5605. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe or a license server. Do not add Electron. Do not bind 0.0.0.0. Do not weaken T56–T105. English only.
+T107 — Serve the operator page from loopback. Do ONLY this directive. Do not start T108. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 37f36948. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe or a license server. Do not add Electron. Do not bind 0.0.0.0. Do not weaken T56–T106. English only.
 
-Baseline on main: T01–T105. HEAD 9fc5605. pytest was 640 green after T105.
+Baseline on main: T01–T106. HEAD 37f36948. pytest was 643 green after T106.
 
-GOAL: the operator page can approve a pending item by sending tenant + actor + digest. Execute stays digest-bound.
+GOAL: opening the app shows http://127.0.0.1:8741/ not file://. Same origin as /health.
 
 Implement:
 
-1) app.html
-- each pending row shows action_id and payload digest
-- Approve button posts to the existing approve path on 127.0.0.1
-- no approve without the digest field
-- L2/L3 still needs CONFIRM if that CLI rule exists
+1) GET / on the local FastAPI app
+- returns the operator app.html
+- content-type text/html
+- loopback only
 
-2) smallest JSON approve route on loopback if the HTML cannot reuse an existing one
-- mutated digest must fail
-- no cloud
+2) launcher
+- start uvicorn on 127.0.0.1:8741 if not already up
+- open http://127.0.0.1:8741/ with the default opener
+- do not open Contents/Resources/app.html as a file URL
 
-3) tests/test_t106_desktop_approve.py
-- test_app_html_has_approve_and_digest
-- test_approve_rejects_bad_digest
-- No live network
+3) tests/test_t107_serve_operator_page.py
+- test_root_returns_html
+- test_launcher_opens_http_loopback
+- No live network except TestClient
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; t=Path('desktop/macos/Aegis.app/Contents/Resources/app.html').read_text(); print(('approve' in t.lower()) and ('digest' in t.lower()))"
+   ./.venv/bin/python -c "from pathlib import Path; print('8741' in Path('desktop/macos/Aegis.app/Contents/MacOS/Aegis').read_text())"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 640
+   Required: 0 failed, count > 643
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t106): desktop approve with visible digest"
+6. git commit -m "feat(t107): serve operator page on loopback"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

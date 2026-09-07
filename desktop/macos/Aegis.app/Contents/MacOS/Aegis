@@ -36,14 +36,10 @@ HOST="127.0.0.1"
 SERVER_PID=$!
 
 # Give the server a moment to bind, then open the operator page.
-STUB_HTML="$SCRIPT_DIR/../Resources/app.html"
+# The operator app.html is now served by the local server at / on
+# http://127.0.0.1:8741/ — same origin as /health — not as a file:// URL.
 sleep 1
-
-if [ -f "$STUB_HTML" ]; then
-    open "$STUB_HTML"
-else
-    open "http://${HOST}:${PORT}/health"
-fi
+open "http://${HOST}:${PORT}/"
 
 # Keep the launcher alive so the server keeps running.
 wait "$SERVER_PID"

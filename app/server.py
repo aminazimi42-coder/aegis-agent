@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import json
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from core.ai_core import AICore
@@ -1257,6 +1258,32 @@ def create_app() -> FastAPI:
         Reads from the local SQLite store only — no network calls.
         """
         return twin_list_queue(tenant_id)
+
+    # --- Serve the operator page on loopback (T107) --- #
+
+    @app.get("/", tags=["twin"])
+    def operator_page() -> Any:
+        """Serve the local operator ``app.html`` at the root.
+
+        Same origin as ``/health`` — ``http://127.0.0.1:8741/`` — so the
+        desktop app opens ``http://`` instead of ``file://``.
+        """
+        from fastapi.responses import HTMLResponse
+
+        _repo_root = Path(__file__).resolve().parent.parent
+        html_path = (
+            _repo_root
+            / "desktop"
+            / "macos"
+            / "Aegis.app"
+            / "Contents"
+            / "Resources"
+            / "app.html"
+        )
+        return HTMLResponse(
+            content=html_path.read_text(encoding="utf-8"),
+            media_type="text/html",
+        )
 
     return app
 
