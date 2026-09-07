@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 import sys
+from datetime import datetime, timezone
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -72,6 +73,37 @@ def main(argv: list[str] | None = None) -> int:
     return 2
 
 
+def _age_from_created(created_at: str) -> str:
+    """Return a short human-readable age string from an ISO timestamp.
+
+    Examples: ``"3h12m"``, ``"2d5h"``, ``"45m"``.  Returns an empty
+    string when *created_at* is empty.  Raises ``ValueError`` from
+    :func:`datetime.fromisoformat` when the timestamp is malformed.
+    """
+    if not created_at:
+        return ""
+    dt = datetime.fromisoformat(created_at)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    delta = datetime.now(timezone.utc) - dt
+    total_seconds = int(delta.total_seconds())
+    if total_seconds < 0:
+        total_seconds = 0
+    days, rem = divmod(total_seconds, 86400)
+    hours, rem = divmod(rem, 3600)
+    minutes, _ = divmod(rem, 60)
+    parts: list[str] = []
+    if days:
+        parts.append(f"{days}d")
+    if hours:
+        parts.append(f"{hours}h")
+    if minutes and not days:
+        parts.append(f"{minutes}m")
+    if not parts:
+        return "0m"
+    return "".join(parts)
+
+
 def _status_cmd(rest: list[str]) -> int:
     """Print HOME, QUEUE, PROVIDER, and data root for *rest*."""
     import json
@@ -120,10 +152,28 @@ def _status_cmd(rest: list[str]) -> int:
     print(f"approved_waiting: {len(approved)}")
 
     # T94 — show payload_sha256 for each pending item when present.
+    # T98 — also show action_id, title, age, digest, and specialist on a
+    # readable line; keep the ``pending_digest:`` line for compatibility.
     for item in pending:
+        action_id = item.get("action_id", "")
+        title = item.get("title", "")
         digest = item.get("payload_sha256") or ""
         if digest:
-            print(f"pending_digest: {item.get('action_id', '')} {digest}")
+            print(f"pending_digest: {action_id} {digest}")
+        created = item.get("created_at", "")
+        age = ""
+        if created:
+            try:
+                age = _age_from_created(created)
+            except (ValueError, TypeError):
+                age = ""
+        specialist = item.get("kind", "")
+        if specialist and ":" in specialist:
+            specialist = specialist.rsplit(":", 1)[0]
+        print(
+            f"pending: {action_id} {title!r} age={age} "
+            f"digest={digest} specialist={specialist}"
+        )
 
     # --- PROVIDER -------------------------------------------------------
     status = provider_status()
@@ -229,6 +279,9 @@ def _execute_cmd(rest: list[str]) -> int:
 
     result = execute(action_id, tenant_id)
     append_audit(tenant_id, "execute", action_id)
+    # T98 — print a receipt line: action_id + digest + executed.
+    digest = result.get("payload_sha256") or result.get("approved_payload_sha256") or ""
+    print(f"receipt: {action_id} digest={digest} executed")
     print(result["status"])
     return 0
 

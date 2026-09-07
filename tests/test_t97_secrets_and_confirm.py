@@ -160,7 +160,9 @@ class TestT97SecretsAndConfirm(unittest.TestCase):
             "execute", action_id, tenant, "CONFIRM", env=self._env,
         )
         self.assertEqual(code, 0, f"expected exit 0, got {code}: {stderr!r}")
-        self.assertEqual(stdout, "executed")
+        # T98 — execute now prints a receipt line before the status line.
+        self.assertIn("executed", stdout)
+        self.assertIn("receipt:", stdout)
 
         # Status must be ``executed``.
         reloaded = _load_action(action_id)

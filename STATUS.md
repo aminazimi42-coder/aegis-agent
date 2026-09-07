@@ -74,6 +74,11 @@ Honest lock of what is actually shipped in this tree as of T70.
 
 ## Not shipped
 
+- **desktop_engine.py and .market are quarantined leftovers, not product** —
+  `core/desktop_engine.py` and the `core/marketplace_sync.py` market directory
+  (`.market`) are non-core scaffolds that remain in the tree for quarantine
+  tests only; they are not wired into the product and do not call any external
+  service.
 - **Hosted multi-tenant SaaS** — there is no hosted multi-tenant billing,
   card-charging, or tenant-provisioning logic in this tree.
 - **Installable desktop app** — there is no packaged desktop binary or

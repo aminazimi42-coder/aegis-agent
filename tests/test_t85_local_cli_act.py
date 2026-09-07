@@ -90,7 +90,9 @@ class TestT85LocalCliAct(unittest.TestCase):
             rc2 = main(["execute", action_id, tenant])
         out2 = buf2.getvalue().strip()
         self.assertEqual(rc2, 0)
-        self.assertEqual(out2, "executed")
+        # T98 — execute now prints a receipt line before the status line.
+        self.assertIn("executed", out2)
+        self.assertIn("receipt:", out2)
 
         # Verify the action row is indeed executed.
         row = _load_action(action_id)

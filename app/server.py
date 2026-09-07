@@ -562,6 +562,7 @@ def create_app() -> FastAPI:
     @app.get("/health", tags=["health"])
     def health() -> dict[str, Any]:
         payload = health_snapshot()
+        payload["ok"] = True
         payload["timestamp"] = datetime.now(timezone.utc).isoformat()
         return payload
 
