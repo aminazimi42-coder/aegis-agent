@@ -216,6 +216,17 @@ def _status_cmd(rest: list[str]) -> int:
     print(f"kind: {status['kind']}")
     print(f"offline: {status['offline']}")
 
+    # --- DEAD-MAN (T102) ------------------------------------------------
+    try:
+        from core.t102_local_guards import dead_man_warning
+
+        warning = dead_man_warning(tenant_id)
+        if warning:
+            print()
+            print(f"WARNING: {warning}")
+    except Exception:  # pragma: no cover — never break status on guard error
+        pass
+
     # --- DATA ROOT ------------------------------------------------------
     root = data_root()
     print()
