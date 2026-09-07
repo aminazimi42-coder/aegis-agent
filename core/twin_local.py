@@ -139,6 +139,7 @@ def _approve_cmd(rest: list[str]) -> int:
 
     action_id, tenant_id, actor_id, digest = rest
     from core.twin_actions import approve
+    from core.twin_audit import append_audit
 
     result = approve(
         action_id,
@@ -146,6 +147,7 @@ def _approve_cmd(rest: list[str]) -> int:
         actor_id,
         expected_payload_sha256=digest,
     )
+    append_audit(tenant_id, "approve", action_id)
     print(result["status"])
     return 0
 
@@ -158,8 +160,10 @@ def _execute_cmd(rest: list[str]) -> int:
 
     action_id, tenant_id = rest
     from core.twin_actions import execute
+    from core.twin_audit import append_audit
 
     result = execute(action_id, tenant_id)
+    append_audit(tenant_id, "execute", action_id)
     print(result["status"])
     return 0
 
@@ -235,6 +239,7 @@ def _propose_cmd(rest: list[str]) -> int:
     import json
 
     from core.twin_actions import insert_specialist_proposal
+    from core.twin_audit import append_audit
     from core.twin_local_view import data_root
 
     if len(rest) != 1:
@@ -262,6 +267,7 @@ def _propose_cmd(rest: list[str]) -> int:
         title=title,
         payload={"role": role, "goal": goal},
     )
+    append_audit(tenant_id, "propose", result["action_id"])
     print(json.dumps(result, default=str))
     return 0
 
