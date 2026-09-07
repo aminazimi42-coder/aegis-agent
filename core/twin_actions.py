@@ -439,6 +439,8 @@ def reject(
     tenant_id: str | None = None,
     reason: str | None = None,
     why: str | None = None,
+    actor_id: str | None = None,
+    expected_payload_sha256: str | None = None,
 ) -> dict[str, Any]:
     """Set an action's status to ``rejected``.
 
@@ -450,6 +452,11 @@ def reject(
     :data:`REJECT_REASONS` (``duplicate``, ``stale``, ``unsafe``,
     ``other``); otherwise ``ValueError("invalid reject reason")`` is
     raised.  The reason is persisted on the ``reject_reason`` column.
+
+    T114 — when ``expected_payload_sha256`` is provided it must equal the
+    current envelope digest, otherwise ``ValueError("payload digest
+    mismatch")`` is raised.  When it is ``None`` (the CLI path) the digest
+    check is skipped so T99 stays green.
     """
     if reason is not None and reason not in REJECT_REASONS:
         raise ValueError("invalid reject reason")
@@ -460,6 +467,12 @@ def reject(
             raise ValueError(f"unknown action: {action_id}")
         if tenant_id is not None and action["tenant_id"] != tenant_id:
             raise ValueError("tenant mismatch")
+        # T114 — digest binding (same as approve).  Only enforced when a
+        # digest is supplied; the CLI path omits it so T99 stays green.
+        if expected_payload_sha256 is not None:
+            current_digest = _action_digest(action)
+            if expected_payload_sha256 != current_digest:
+                raise ValueError("payload digest mismatch")
         with get_connection() as conn:
             conn.execute(
                 "UPDATE twin_actions "

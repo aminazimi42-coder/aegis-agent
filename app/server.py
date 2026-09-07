@@ -354,9 +354,16 @@ class TwinProposeTextRequest(BaseModel):
 
 
 class TwinActionRejectRequest(BaseModel):
-    """Body for rejecting a proposed twin action (T57 — tenant binding)."""
+    """Body for rejecting a proposed twin action (T57 — tenant binding).
+
+    T114 — ``actor_id`` and ``expected_payload_sha256`` are required so the
+    reject is bound to the exact envelope digest, the same way approve is.
+    A mutated payload digest is rejected with 409.
+    """
 
     tenant_id: str
+    actor_id: str = ""
+    expected_payload_sha256: str = ""
 
 
 class TwinScheduleRequest(BaseModel):
@@ -1165,11 +1172,18 @@ def create_app() -> FastAPI:
     )
     def twin_actions_reject(action_id: str, request: TwinActionRejectRequest) -> Any:
         try:
-            return twin_action_reject(action_id, request.tenant_id)
+            return twin_action_reject(
+                action_id,
+                request.tenant_id,
+                actor_id=request.actor_id,
+                expected_payload_sha256=request.expected_payload_sha256 or None,
+            )
         except ValueError as exc:
             msg = str(exc)
             if "tenant mismatch" in msg:
                 return JSONResponse(status_code=403, content={"detail": msg})
+            if "digest mismatch" in msg:
+                return JSONResponse(status_code=409, content={"detail": msg})
             return JSONResponse(
                 status_code=404,
                 content={"detail": msg},

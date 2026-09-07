@@ -64,6 +64,8 @@
     cursor: pointer;
   }
   button:hover { opacity: 0.88; }
+  .btn-reject { background: #ff3b30; margin-left: 0.5rem; }
+  .btn-reject:hover { opacity: 0.88; }
   pre {
     background: #f0f0f3;
     border: 1px solid var(--border);
@@ -237,6 +239,10 @@
       var inp = document.createElement("input");
       inp.type = "text";
       inp.id = "q-" + f.id;
+      // T114 — prefill from the loaded profile when available.
+      if (profilePrefill && profilePrefill[f.id]) {
+        inp.value = profilePrefill[f.id];
+      }
       row.appendChild(lbl);
       row.appendChild(inp);
       div.appendChild(row);
@@ -333,10 +339,12 @@
           + '<div class="queue-meta">' + esc(specialistName) + ' · proposed · ' + esc(a.kind || "") + ' · ' + esc(a.action_id || "") + '</div>'
           + '<div class="queue-meta">digest: <code>' + esc(digest) + '</code></div>';
         if (digest) {
-          html += '<div class="row"><button onclick="approveAction(\'' + esc(a.action_id) + '\',\'' + esc(digest) + '\')">Approve</button>'
+          html += '<div class="row">'
+            + '<button onclick="approveAction(\'' + esc(a.action_id) + '\',\'' + esc(digest) + '\')">Approve</button>'
+            + '<button class="btn-reject" onclick="rejectAction(\'' + esc(a.action_id) + '\',\'' + esc(digest) + '\')">Reject</button>'
             + '<span class="muted" id="approve-label-' + esc(a.action_id) + '"></span></div>';
         } else {
-          html += '<div class="muted err">No digest — cannot approve</div>';
+          html += '<div class="muted err">No digest — cannot approve or reject</div>';
         }
         html += '</div>';
       });
@@ -376,6 +384,32 @@
     });
   };
 
+  // ── Reject a pending action (T114) ──
+  // Posts tenant + actor + digest to the reject route on 127.0.0.1.
+  // A mutated digest is rejected with 409 by the server.
+  window.rejectAction = function (actionId, digest) {
+    if (!digest) {
+      var lb = el("approve-label-" + actionId);
+      if (lb) { lb.textContent = "Cannot reject without digest"; }
+      return;
+    }
+    var t = el("tenant").value || "local";
+    var body = {
+      tenant_id: t,
+      actor_id: "operator",
+      expected_payload_sha256: digest,
+    };
+    post("/api/v1/twin/actions/" + encodeURIComponent(actionId) + "/reject", body, function (err, data, status) {
+      var label = el("approve-label-" + actionId);
+      if (err || status !== 200) {
+        if (label) { label.textContent = "Reject failed"; }
+        return;
+      }
+      if (label) { label.textContent = "Rejected"; }
+      loadQueue();
+    });
+  };
+
   // ── Propose a task (T111) ──
   // Posts tenant_id + text to /api/v1/twin/propose.  Six specialists
   // each insert one proposed row; the queue refreshes afterward.
@@ -411,9 +445,28 @@
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
+  // ── Profile prefill (T114) ──
+  // On load, GET /api/v1/twin/profile/local and stash the four
+  // operator-page fields so renderQuestions() can prefill them.
+  // Does NOT auto-Start Session — the operator clicks the button.
+  var profilePrefill = null;
+  function loadProfile() {
+    get("/api/v1/twin/profile/local", function (err, data, status) {
+      if (err || !data || status !== 200) { return; }
+      if (!data.profile_id) { return; }
+      profilePrefill = {
+        name: data.repositories || "",
+        role: data.role || "",
+        goals: data.decision_style || "",
+        timezone: data.tools || "",
+      };
+    });
+  }
+
   // ── Init ──
   checkHealth();
   loadQueue();
+  loadProfile();
 })();
 </script>
 </body>
