@@ -36,6 +36,9 @@ _VALID_STATUSES: frozenset[str] = frozenset(
     {"proposed", "approved", "rejected", "executed"}
 )
 
+# T99 — allowed reject reason codes.
+REJECT_REASONS: tuple[str, ...] = ("duplicate", "stale", "unsafe", "other")
+
 _action_lock = threading.Lock()
 
 _POLICY_VERSION = "t56"
@@ -169,6 +172,12 @@ def _ensure_schema() -> None:
             ON twin_feedback (tenant_id)
             """
         )
+        # T99 — reject reason + conflict flag columns.
+        for col in ("reject_reason TEXT", "conflict INTEGER DEFAULT 0"):
+            try:
+                conn.execute(f"ALTER TABLE twin_actions ADD COLUMN {col}")
+            except sqlite3.OperationalError:
+                pass
 
 
 # ---------------------------------------------------------------------------#
@@ -204,6 +213,11 @@ def _row_to_dict(row: sqlite3.Row | dict[str, Any]) -> dict[str, Any]:
         result["approved_at"] = row["approved_at"]
     if "why_text" in keys:
         result["why_text"] = row["why_text"]
+    # T99 — reject reason + conflict flag.
+    if "reject_reason" in keys:
+        result["reject_reason"] = row["reject_reason"]
+    if "conflict" in keys:
+        result["conflict"] = bool(row["conflict"])
     return result
 
 
@@ -224,7 +238,7 @@ def _load_action(action_id: str) -> dict[str, Any] | None:
         row = conn.execute(
             "SELECT action_id, tenant_id, kind, title, status, created_at, "
             "payload, payload_sha256, approved_payload_sha256, approved_by, approved_at, "
-            "why_text "
+            "why_text, reject_reason, conflict "
             "FROM twin_actions WHERE action_id = ?",
             (action_id,),
         ).fetchone()
@@ -423,6 +437,7 @@ def approve(
 def reject(
     action_id: str,
     tenant_id: str | None = None,
+    reason: str | None = None,
     why: str | None = None,
 ) -> dict[str, Any]:
     """Set an action's status to ``rejected``.
@@ -430,7 +445,14 @@ def reject(
     If ``tenant_id`` is provided, the action's ``tenant_id`` must match or
     ``ValueError("tenant mismatch")`` is raised.  Raises ``ValueError`` if
     the action_id is unknown.
+
+    T99 — when ``reason`` is provided it must be one of the codes in
+    :data:`REJECT_REASONS` (``duplicate``, ``stale``, ``unsafe``,
+    ``other``); otherwise ``ValueError("invalid reject reason")`` is
+    raised.  The reason is persisted on the ``reject_reason`` column.
     """
+    if reason is not None and reason not in REJECT_REASONS:
+        raise ValueError("invalid reject reason")
     _ensure_schema()
     with _action_lock:
         action = _load_action(action_id)
@@ -441,9 +463,9 @@ def reject(
         with get_connection() as conn:
             conn.execute(
                 "UPDATE twin_actions "
-                "SET status = 'rejected', why_text = ? "
+                "SET status = 'rejected', why_text = ?, reject_reason = ? "
                 "WHERE action_id = ?",
-                (why or "", action_id),
+                (why or "", reason, action_id),
             )
             # T65 — durable feedback row.
             conn.execute(
@@ -454,6 +476,7 @@ def reject(
             )
         action["status"] = "rejected"
         action["why_text"] = why or ""
+        action["reject_reason"] = reason
         return action
 
 
@@ -641,7 +664,8 @@ def list_actions(tenant_id: str) -> list[dict[str, Any]]:
     with get_connection() as conn:
         rows = conn.execute(
             "SELECT action_id, tenant_id, kind, title, status, created_at, "
-            "payload, payload_sha256, approved_payload_sha256, approved_by, approved_at "
+            "payload, payload_sha256, approved_payload_sha256, approved_by, approved_at, "
+            "reject_reason, conflict "
             "FROM twin_actions WHERE tenant_id = ? "
             "ORDER BY created_at ASC",
             (tenant_id,),
@@ -652,6 +676,46 @@ def list_actions(tenant_id: str) -> list[dict[str, Any]]:
 # ---------------------------------------------------------------------------#
 # Specialist proposals (T60)
 # ---------------------------------------------------------------------------#
+
+def _utc_today() -> str:
+    """Return the current UTC date as ``YYYY-MM-DD``."""
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
+def _budget_for_specialist(tenant_id: str, agent_name: str) -> int:
+    """Return the number of proposed actions for *agent_name* on the current UTC day."""
+    today = _utc_today()
+    kind_prefix = f"{agent_name}:propose"
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) AS cnt FROM twin_actions "
+            "WHERE tenant_id = ? AND kind = ? "
+            "  AND substr(created_at, 1, 10) = ?",
+            (tenant_id, kind_prefix, today),
+        ).fetchone()
+    return int(row["cnt"]) if row else 0
+
+
+def _has_pending_conflict(tenant_id: str, title: str, payload: Any) -> bool:
+    """Return True if a pending action shares the same title or payload JSON."""
+    payload_json = (
+        json.dumps(payload, ensure_ascii=False) if payload is not None else None
+    )
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT title, payload FROM twin_actions "
+            "WHERE tenant_id = ? AND status = 'proposed'",
+            (tenant_id,),
+        ).fetchall()
+    for r in rows:
+        if r["title"] == title:
+            return True
+        r_payload = r["payload"]
+        if r_payload is not None and payload_json is not None:
+            if r_payload == payload_json:
+                return True
+    return False
+
 
 def insert_specialist_proposal(
     tenant_id: str,
@@ -664,9 +728,23 @@ def insert_specialist_proposal(
     Called **only** by :meth:`BaseAgent.propose`.  The ``kind`` is
     prefixed with the agent's name (``f"{agent_name}:propose"``).
     Human approve/execute remains the only path to ``executed``.
+
+    T99 — per-specialist daily budget.  When the number of proposals
+    from *agent_name* on the current UTC day reaches
+    ``AEGIS_PROPOSE_BUDGET_PER_SPECIALIST`` (default 20), further
+    proposals exit early with ``ValueError("budget exceeded")`` and
+    **write nothing** to the database.
+
+    T99 — conflict flag.  When a new propose shares the same title or
+    payload JSON with a pending action for the same tenant, the row's
+    ``conflict`` column is set to ``1`` (``conflict=True``).  The
+    propose is **still inserted** — it is never auto-dropped.
     """
     _ensure_schema()
     kind = f"{agent_name}:propose"
+    budget = int(os.getenv("AEGIS_PROPOSE_BUDGET_PER_SPECIALIST", "20"))
+    if budget > 0 and _budget_for_specialist(tenant_id, agent_name) >= budget:
+        raise ValueError("budget exceeded")
     action_id = f"act-{uuid4().hex[:12]}"
     now = _now()
     payload_json = (
@@ -675,6 +753,7 @@ def insert_specialist_proposal(
         else None
     )
     risk_level = classify(title)
+    conflict = 1 if _has_pending_conflict(tenant_id, title, payload) else 0
     envelope = _canonical_envelope(
         action_id=action_id,
         tenant_id=tenant_id,
@@ -690,8 +769,8 @@ def insert_specialist_proposal(
             conn.execute(
                 "INSERT INTO twin_actions "
                 "(action_id, tenant_id, kind, title, status, "
-                "created_at, payload, payload_sha256) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                "created_at, payload, payload_sha256, conflict) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     action_id,
                     tenant_id,
@@ -701,6 +780,7 @@ def insert_specialist_proposal(
                     now,
                     payload_json,
                     digest,
+                    conflict,
                 ),
             )
     return {
@@ -712,4 +792,5 @@ def insert_specialist_proposal(
         "created_at": now,
         "payload": payload,
         "payload_sha256": digest,
+        "conflict": bool(conflict),
     }

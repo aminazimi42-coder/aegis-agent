@@ -37,6 +37,12 @@ def main(argv: list[str] | None = None) -> int:
       consented ``profile.json`` (T90).  Writes nothing and exits ``2``
       when the profile is missing or ``consented`` is not ``true``.
       Does not approve or execute; no network, no card fields.
+    * ``reject ACTION_ID TENANT_ID REASON`` — mark a proposed action as
+      rejected with a short reason code from a small allow-list
+      (``duplicate``, ``stale``, ``unsafe``, ``other``) (T99).  The
+      reason is persisted on the action; the action is not executed.
+      Exits ``2`` on an unknown action, tenant mismatch, or invalid
+      reason.
     * ``verify TENANT_ID`` — recompute the payload digest for every
       pending action and print mismatch lines.  Exits ``1`` if any
       mismatch, else ``0`` (T96).
@@ -66,6 +72,8 @@ def main(argv: list[str] | None = None) -> int:
         return _interview_cmd(rest)
     if command == "propose":
         return _propose_cmd(rest)
+    if command == "reject":
+        return _reject_cmd(rest)
     if command == "verify":
         return _verify_cmd(rest)
 
@@ -409,12 +417,16 @@ def _propose_cmd(rest: list[str]) -> int:
     role = data.get("role", "")
     goal = data.get("goal", "")
     title = f"Propose from profile — role: {role}, goal: {goal}"
-    result = insert_specialist_proposal(
-        tenant_id=tenant_id,
-        agent_name="twin_local",
-        title=title,
-        payload={"role": role, "goal": goal},
-    )
+    try:
+        result = insert_specialist_proposal(
+            tenant_id=tenant_id,
+            agent_name="twin_local",
+            title=title,
+            payload={"role": role, "goal": goal},
+        )
+    except ValueError as exc:
+        print(f"propose error: {exc}", file=sys.stderr)
+        return 2
     append_audit(tenant_id, "propose", result["action_id"])
     # T94 — print payload_sha256 on its own line so ``aegis approve``
     # can read it without parsing JSON.
@@ -422,6 +434,36 @@ def _propose_cmd(rest: list[str]) -> int:
     if digest:
         print(f"payload_sha256: {digest}")
     print(json.dumps(result, default=str))
+    return 0
+
+
+def _reject_cmd(rest: list[str]) -> int:
+    """Reject an action: ``reject ACTION_ID TENANT_ID REASON`` (T99).
+
+    ``REASON`` must be one of the allow-list codes (``duplicate``,
+    ``stale``, ``unsafe``, ``other``).  The reason is persisted on the
+    action row and the status is set to ``rejected``.  The action is
+    **not** executed.
+
+    Exits ``2`` on a usage error, unknown action, tenant mismatch, or
+    invalid reason.
+    """
+    if len(rest) != 3:
+        print("usage: reject ACTION_ID TENANT_ID REASON", file=sys.stderr)
+        return 2
+
+    action_id, tenant_id, reason = rest
+    from core.twin_actions import reject
+    from core.twin_audit import append_audit
+
+    try:
+        result = reject(action_id, tenant_id, reason=reason)
+    except ValueError as exc:
+        print(f"reject error: {exc}", file=sys.stderr)
+        return 2
+
+    append_audit(tenant_id, "reject", action_id)
+    print(result["status"])
     return 0
 
 

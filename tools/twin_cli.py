@@ -90,6 +90,12 @@ def _cmd_actions_execute(args: argparse.Namespace) -> dict[str, Any]:
     return execute(args.action_id, args.tenant)
 
 
+def _cmd_actions_reject(args: argparse.Namespace) -> dict[str, Any]:
+    from core.twin_actions import reject
+
+    return reject(args.action_id, args.tenant, reason=args.reason)
+
+
 def _cmd_render(args: argparse.Namespace) -> dict[str, Any]:
     from core.twin_work_products import render
 
@@ -293,6 +299,19 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--action-id", required=True)
     p.add_argument("--tenant", required=True)
 
+    # actions-reject (T99)
+    p = sub.add_parser(
+        "actions-reject",
+        help="Reject a proposed action with a reason code.",
+    )
+    p.add_argument("--action-id", required=True)
+    p.add_argument("--tenant", required=True)
+    p.add_argument(
+        "--reason",
+        required=True,
+        choices=["duplicate", "stale", "unsafe", "other"],
+    )
+
     # render
     p = sub.add_parser("render", help="Render local work-product files.")
     p.add_argument("--tenant", required=True)
@@ -432,6 +451,7 @@ def main(argv: list[str] | None = None) -> int:
         "actions-propose": _cmd_actions_propose,
         "actions-approve": _cmd_actions_approve,
         "actions-execute": _cmd_actions_execute,
+        "actions-reject": _cmd_actions_reject,
         "render": _cmd_render,
         "calendar-ics": _cmd_calendar_ics,
         "brief-morning": _cmd_brief_morning,
