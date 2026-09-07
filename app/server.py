@@ -841,17 +841,17 @@ def create_app() -> FastAPI:
     )
     def twin_session_commit(
         session_id: str, request: TwinCommitRequest
-    ) -> dict[str, Any]:
-        return twin_commit(session_id, request.consent)
+    ) -> Any:
+        try:
+            return twin_commit(session_id, request.consent)
+        except (ValueError, PermissionError) as exc:
+            return twin_value_error_response(exc)
 
     @app.get("/api/v1/twin/profile/{tenant_id}", tags=["twin"])
     def twin_profile_get(tenant_id: str) -> Any:
         profile = twin_get_latest(tenant_id)
         if profile is None:
-            return JSONResponse(
-                status_code=404,
-                content={"detail": "no committed profile for this tenant"},
-            )
+            return {"tenant_id": tenant_id, "profile_id": None, "version": 0}
         return profile
 
     # --- Twin evolution (T04) ---

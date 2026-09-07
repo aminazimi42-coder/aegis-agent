@@ -231,10 +231,61 @@
 
   window.commitInterview = function () {
     if (!session) { el("commit-label").textContent = "Start a session first"; return; }
-    post("/api/v1/twin/session/" + session + "/commit", { consent: true }, function (err, data) {
-      if (err) { el("commit-label").textContent = "Error"; return; }
-      el("commit-label").textContent = "Committed";
-    });
+    // Map the four operator-page fields onto the store's question IDs.
+    var name = (el("q-name") && el("q-name").value) || "";
+    var role = (el("q-role") && el("q-role").value) || "";
+    var goals = (el("q-goals") && el("q-goals").value) || "";
+    var tz = (el("q-timezone") && el("q-timezone").value) || "";
+    // q_role ← role, q_repos ← name, q_decision_style ← goals, q_tools ← timezone
+    var mapping = [
+      { qid: "q_role", text: role },
+      { qid: "q_decision_style", text: goals },
+      { qid: "q_tools", text: tz },
+      { qid: "q_risk", text: "" },
+      { qid: "q_ethics", text: "" },
+      { qid: "q_repos", text: name }
+    ];
+    var label = el("commit-label");
+    label.textContent = "";
+    var i = 0;
+    function postNext() {
+      if (i >= mapping.length) {
+        doCommit();
+        return;
+      }
+      var m = mapping[i++];
+      post("/api/v1/twin/session/" + session + "/answer",
+        { question_id: m.qid, text: m.text },
+        function (err, data, status) {
+          if (err || status !== 200) {
+            var detail = "";
+            if (data && data.detail) { detail = data.detail; }
+            else if (data && data.code) { detail = data.code; }
+            else { detail = "answer rejected"; }
+            label.textContent = detail;
+            label.className = "muted err";
+            return;
+          }
+          postNext();
+        }
+      );
+    }
+    function doCommit() {
+      post("/api/v1/twin/session/" + session + "/commit", { consent: true }, function (err, data, status) {
+        if (err || status !== 200) {
+          var detail = "";
+          if (data && data.detail) { detail = data.detail; }
+          else if (data && data.code) { detail = data.code; }
+          else { detail = "commit rejected"; }
+          label.textContent = detail;
+          label.className = "muted err";
+          return;
+        }
+        label.textContent = "Committed";
+        label.className = "muted";
+      });
+    }
+    postNext();
   };
 
   // ── Pending queue ──

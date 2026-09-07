@@ -1,38 +1,37 @@
-T108 — macOS app icon from local cover file. Do ONLY this directive. Do not start T109. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 26af939. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe or a license server. Do not add Electron. Do not bind 0.0.0.0. Do not weaken T56–T107. English only.
+T109 — Wire operator interview fields into commit. Do ONLY this directive. Do not start T110. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 7e351d4. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe or a license server. Do not add Electron. Do not bind 0.0.0.0. Do not weaken T56–T108. English only.
 
-Baseline on main: T01–T107. HEAD 26af939. pytest was 646 green after T107.
+Baseline on main: T01–T108. HEAD 7e351d4. pytest was 649 green after T108.
 
-GOAL: Aegis.app shows a real icon, not the generic document tile.
+GOAL: Commit Profile on the operator page persists name/role/goals/timezone and returns 200. No generic "Error". No 500 for a complete four-field form.
 
 Implement:
 
-1) Icon source
-- if $HOME/Downloads/aegis-cover.png exists, copy it to desktop/macos/Aegis.app/Contents/Resources/AppIcon.png
-- else write a 1024x1024 navy/gold PNG to that same path (Pillow or stdlib is fine)
-- do not download from the internet
+1) Operator page posts answers then commit
+- POST answers for at least name, role, goals, timezone into the existing twin interview store for that session
+- then POST commit
+- show the server error text if commit fails
+- do not invent extra required questions in the HTML unless the store already requires them; if the store requires more keys, map the four fields onto those keys so a filled form can commit
 
-2) Info.plist
-- CFBundleIconFile = AppIcon
-- keep existing bundle id
+2) GET /api/v1/twin/profile/{tenant_id}
+- if missing, return 200 with an empty profile object, not 404
 
-3) If iconutil exists, build AppIcon.icns next to the png. If not, png-only is acceptable.
-
-4) tests/test_t108_app_icon.py
-- test_appicon_png_exists
-- test_plist_names_appicon
-- No live network
+3) tests/test_t109_operator_interview_commit.py
+- test_commit_four_fields_ok
+- test_missing_profile_is_empty_not_404
+- test_error_text_not_generic_only
+- No live network except TestClient
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; print(Path('desktop/macos/Aegis.app/Contents/Resources/AppIcon.png').is_file())"
+   ./.venv/bin/python -c "from pathlib import Path; t=Path('desktop/macos/Aegis.app/Contents/Resources/app.html').read_text(); print('commit' in t.lower())"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 646
+   Required: 0 failed, count > 649
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t108): macOS app icon"
+6. git commit -m "feat(t109): operator interview commit"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

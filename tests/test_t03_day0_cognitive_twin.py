@@ -127,11 +127,14 @@ class TestT03CognitiveTwin(unittest.TestCase):
         self.assertEqual(profile["role"], "ans-q_role")
         self.assertTrue(profile["fingerprint"])
 
-    def test_get_profile_404_when_no_profile(self) -> None:
+    def test_get_profile_empty_when_no_profile(self) -> None:
         app = create_app()
         client = TestClient(app)
         r = client.get("/api/v1/twin/profile/nonexistent")
-        self.assertEqual(r.status_code, 404)
+        self.assertEqual(r.status_code, 200)
+        body = r.json()
+        self.assertIsInstance(body, dict)
+        self.assertIsNone(body.get("profile_id"))
 
 
 if __name__ == "__main__":
