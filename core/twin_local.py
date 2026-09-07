@@ -95,6 +95,13 @@ def main(argv: list[str] | None = None) -> int:
     if command == "import":
         return _import_cmd(rest)
 
+    if command == "evidence":
+        return _evidence_cmd(rest)
+    if command == "resume-diff":
+        return _resume_diff_cmd(rest)
+    if command == "memo-diff":
+        return _memo_diff_cmd(rest)
+
     print(f"unknown command: {command}", file=sys.stderr)
     return 2
 
@@ -564,6 +571,64 @@ def _import_cmd(rest: list[str]) -> int:
         print(f"import error: {exc}", file=sys.stderr)
         return 2
     print(result["data_root"])
+    return 0
+
+
+def _evidence_cmd(rest: list[str]) -> int:
+    """Write the evidence pack: ``evidence TENANT_ID`` (T101).
+
+    Records the local git-observe range if a repo path is configured,
+    else records "no git repo".
+    """
+    if len(rest) != 1:
+        print("usage: evidence TENANT_ID", file=sys.stderr)
+        return 2
+
+    tenant_id = rest[0]
+    from core.twin_work_history import evidence_pack
+
+    try:
+        result = evidence_pack(tenant_id)
+    except ValueError as exc:
+        print(f"evidence error: {exc}", file=sys.stderr)
+        return 2
+    print(result["path"])
+    return 0
+
+
+def _resume_diff_cmd(rest: list[str]) -> int:
+    """Print a unified diff of the last two hashed resume copies (T101).
+
+    If fewer than two hashed copies exist, prints nothing and exits 0.
+    """
+    if len(rest) != 1:
+        print("usage: resume-diff TENANT_ID", file=sys.stderr)
+        return 2
+
+    tenant_id = rest[0]
+    from core.twin_work_history import resume_diff
+
+    diff = resume_diff(tenant_id)
+    if diff:
+        print(diff, end="")
+    return 0
+
+
+def _memo_diff_cmd(rest: list[str]) -> int:
+    """Print a unified diff of the last two hashed board-memo copies (T101).
+
+    If fewer than two hashed copies exist, prints nothing and exits 0.
+    """
+    if len(rest) != 1:
+        print("usage: memo-diff TENANT_ID", file=sys.stderr)
+        return 2
+
+    tenant_id = rest[0]
+    from core.twin_work_history import memo_diff
+
+    diff = memo_diff(tenant_id)
+    if diff:
+        print(diff, end="")
     return 0
 
 

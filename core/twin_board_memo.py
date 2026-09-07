@@ -235,6 +235,13 @@ def render_memo(tenant_id: str) -> dict[str, Any]:
     out_path = out_dir / "board_memo.md"
     out_path.write_text(content, encoding="utf-8")
 
+    # T101 — save a hashed copy so memo_diff can diff the last two renders.
+    try:
+        from core.twin_work_history import save_hashed_copy
+        save_hashed_copy(tenant_id, "board_memo", content)
+    except Exception:  # pragma: no cover — never let hashing break the memo
+        pass
+
     return {
         "tenant_id": tenant_id,
         "path": out_path.as_posix(),

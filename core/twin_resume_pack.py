@@ -131,6 +131,13 @@ def render_resume(tenant_id: str) -> dict[str, Any]:
     out_path = out_dir / "resume.md"
     out_path.write_text(content, encoding="utf-8")
 
+    # T101 — save a hashed copy so resume_diff can diff the last two renders.
+    try:
+        from core.twin_work_history import save_hashed_copy
+        save_hashed_copy(tenant_id, "resume", content)
+    except Exception:  # pragma: no cover — never let hashing break the render
+        pass
+
     return {
         "tenant_id": tenant_id,
         "path": out_path.as_posix(),

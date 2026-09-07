@@ -1,31 +1,30 @@
-T100 — Local search, replay file, export and import. Do ONLY this directive. Do not start T101. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 4ff2755. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe or a license server. Do not un-quarantine desktop_engine.py. Do not add Electron. Do not weaken T56–T99. English only.
+T101 — Evidence pack, resume diff, memo diff, cite open decisions. Do ONLY this directive. Do not start T102. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend f8f0940. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe or a license server. Do not un-quarantine desktop_engine.py. Do not add Electron. Do not weaken T56–T100. English only.
 
-Baseline on main: T01–T99. HEAD 4ff2755. pytest was 605 green after T99.
+Baseline on main: T01–T100. HEAD f8f0940. pytest was 609 green after T100.
 
-GOAL: recall and move local state. No sync server. No vector DB.
+GOAL: local work-product history. No GitHub PAT required. No vector DB.
 
-Implement:
+Implement under the tenant data root / work_products:
 
-1) aegis search TENANT_ID TERM
-- grep-style scan under the tenant data root markdown/json
-- print matching paths
-- read-only
+1) aegis evidence TENANT_ID
+- write one markdown pack that records local git-observe range if a repo path is configured, else records “no git repo”
+- local git only
 
-2) aegis replay ACTION_ID TENANT_ID
-- write one markdown file under the tenant data root that lists propose → approve → execute if present
-- do not re-execute
+2) aegis resume-diff TENANT_ID
+- if two resume renders exist, print a unified diff of the last two hashed copies
+- if fewer than two, print none and exit 0
 
-3) aegis export TENANT_ID OUT_PATH
-- pack that tenant’s data_root folder to a local archive file
-- aegis import ARCHIVE_PATH
-- restore into AEGIS_DATA_DIR
-- never touch another tenant
+3) aegis memo-diff TENANT_ID
+- same for the last two board-memo files if present
 
-4) tests/test_t100_search_replay_export.py
+4) next brief render cites open decision-record ids when those files exist
+- render-time join only, no new execute path
+
+5) tests/test_t101_work_history.py
 - AEGIS_DATA_DIR temp
-- test_search_finds_term
-- test_replay_writes_markdown
-- test_export_import_roundtrip
+- test_evidence_writes_pack
+- test_resume_diff_two_versions
+- test_memo_diff_or_none
 - No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -33,12 +32,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; print(Path('tests/test_t100_search_replay_export.py').is_file())"
+   ./.venv/bin/python -c "from pathlib import Path; print(Path('tests/test_t101_work_history.py').is_file())"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 605
+   Required: 0 failed, count > 609
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t100): local search replay export import"
+6. git commit -m "feat(t101): evidence pack resume and memo diffs"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

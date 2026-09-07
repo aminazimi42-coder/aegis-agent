@@ -87,11 +87,32 @@ def _collect_pending_actions(tenant_id: str) -> list[dict[str, Any]]:
     return pending
 
 
+def _collect_open_decision_ids(tenant_id: str) -> list[str]:
+    """Collect decision-record ids for *tenant_id* (render-time join only).
+
+    Returns up to ``_MAX_ITEMS`` ids from ``twin_decisions`` when the
+    decision-log file exists.  No new execute path — read-only join.
+    """
+    decision_log = _brief_path(tenant_id).parent / "decision_log.md"
+    if not decision_log.is_file():
+        return []
+    try:
+        from core.twin_decisions import list_decisions
+    except ImportError:  # pragma: no cover — decisions module should exist
+        return []
+    try:
+        decisions = list_decisions(tenant_id)
+    except Exception:  # pragma: no cover — never let decisions break the brief
+        return []
+    return [d["id"] for d in decisions[:_MAX_ITEMS] if d.get("id")]
+
+
 def _render_markdown(
     tenant_id: str,
     meetings: list[dict[str, str]],
     repos: list[str],
     pending_actions: list[dict[str, Any]],
+    open_decision_ids: list[str] | None = None,
 ) -> str:
     """Render the morning brief markdown content."""
     lines: list[str] = [
@@ -136,6 +157,14 @@ def _render_markdown(
         lines.append("_No pending actions._")
     lines.append("")
 
+    # --- Open decisions (T101 — render-time join) ---
+    if open_decision_ids:
+        lines.append("## Open decisions")
+        lines.append("")
+        for did in open_decision_ids:
+            lines.append(f"- {did}")
+        lines.append("")
+
     return "\n".join(lines)
 
 
@@ -167,8 +196,11 @@ def render_brief(tenant_id: str) -> dict[str, Any]:
     meetings = _collect_meetings(tenant_id)
     repos = _collect_repos(tenant_id, behavior)
     pending_actions = _collect_pending_actions(tenant_id)
+    open_decision_ids = _collect_open_decision_ids(tenant_id)
 
-    content = _render_markdown(tenant_id, meetings, repos, pending_actions)
+    content = _render_markdown(
+        tenant_id, meetings, repos, pending_actions, open_decision_ids
+    )
     content = apply_style(tenant_id, content)
 
     brief_path = _brief_path(tenant_id)
