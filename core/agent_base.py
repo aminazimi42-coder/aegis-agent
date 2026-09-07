@@ -15,12 +15,17 @@ class BaseAgent(ABC):
     capabilities: list[str] = []
     metadata: dict = {}
 
-    def propose(self, tenant_id: str) -> dict[str, Any]:
+    def propose(self, tenant_id: str, text: str = "") -> dict[str, Any]:
         """Propose one twin_action row with status ``proposed``.
 
         Inserts an action whose ``kind`` is prefixed with the agent's
         name (``f"{self.name}:propose"``) via
         :func:`core.twin_actions.insert_specialist_proposal`.
+
+        When *text* is non-empty (T111 — operator page propose), it is
+        included in the action title and payload so the operator's task
+        text is visible in the queue.  When *text* is empty the
+        pre-T111 behaviour is preserved.
 
         Specialists must never call ``twin_actions.execute``; the only
         path to ``executed`` is human approval followed by execution.
@@ -28,7 +33,11 @@ class BaseAgent(ABC):
         from core.twin_actions import insert_specialist_proposal
 
         title = f"{self.name} proposal for {tenant_id}"
-        return insert_specialist_proposal(tenant_id, self.name, title, {})
+        payload: dict[str, Any] = {}
+        if text:
+            title = f"{self.name} proposal: {text}"
+            payload = {"text": text}
+        return insert_specialist_proposal(tenant_id, self.name, title, payload)
 
     def profile(self) -> dict:
         """Return the canonical metadata for the agent."""

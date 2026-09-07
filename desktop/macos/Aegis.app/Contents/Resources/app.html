@@ -119,6 +119,19 @@
     </div>
   </div>
 
+  <!-- ── Propose a task (T111) ───────────────────────────────────── -->
+  <h2>Propose a Task</h2>
+  <div class="card">
+    <div class="row">
+      <label for="propose-text">Task</label>
+      <textarea id="propose-text" rows="3" style="flex:1;padding:0.4rem 0.6rem;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;font-family:inherit;" placeholder="Describe one operator task…"></textarea>
+    </div>
+    <div class="row">
+      <button id="btn-propose" onclick="proposeTask()">Propose</button>
+      <span class="muted" id="propose-label"></span>
+    </div>
+  </div>
+
   <!-- ── Home / Status ───────────────────────────────────────────── -->
   <h2>Home / Status</h2>
   <div class="card">
@@ -351,6 +364,36 @@
         return;
       }
       if (label) { label.textContent = "Approved"; }
+      loadQueue();
+    });
+  };
+
+  // ── Propose a task (T111) ──
+  // Posts tenant_id + text to /api/v1/twin/propose.  Six specialists
+  // each insert one proposed row; the queue refreshes afterward.
+  // Empty text is rejected client-side and server-side.
+  window.proposeTask = function () {
+    var t = el("tenant").value || "local";
+    var text = (el("propose-text") && el("propose-text").value) || "";
+    var label = el("propose-label");
+    if (label) { label.textContent = ""; label.className = "muted"; }
+    if (!text.trim()) {
+      if (label) { label.textContent = "Task text required"; label.className = "muted err"; }
+      return;
+    }
+    post("/api/v1/twin/propose", { tenant_id: t, text: text.trim() }, function (err, data, status) {
+      if (err || status !== 200) {
+        var detail = "Propose failed";
+        if (data && data.detail) { detail = data.detail; }
+        if (label) { label.textContent = detail; label.className = "muted err"; }
+        return;
+      }
+      if (label) {
+        var cnt = (data && data.count) || 0;
+        label.textContent = "Proposed: " + cnt + " row" + (cnt === 1 ? "" : "s");
+        label.className = "muted";
+      }
+      if (el("propose-text")) { el("propose-text").value = ""; }
       loadQueue();
     });
   };

@@ -1,24 +1,27 @@
-T110 — Non-empty answers for every required interview key. Do ONLY this directive. Do not start T111. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 00d5597. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe or a license server. Do not bind 0.0.0.0. Do not weaken T56–T109. English only.
+T111 — Propose from the operator page into the local queue. Do ONLY this directive. Do not start T112. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 7e7fc66. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, or a license server. Do not bind 0.0.0.0. Do not let any specialist execute. Do not weaken T56–T110. English only.
 
-Baseline on main: T01–T109. HEAD 00d5597. pytest was 653 green after T109.
+Baseline on main: T01–T110. HEAD 7e7fc66. pytest was 656 green after T110.
 
-BUG: Commit Profile returns "Task input must be a non-empty string" then "answer rejected" because q_risk / q_ethics (or other required keys) are posted empty.
-
-GOAL: a filled four-field operator form commits with HTTP 200. Every required interview key gets a non-empty string.
+GOAL: Operator page can send one operator task text. Six specialists propose only. Items appear in Pending Queue with action_id and payload_sha256. Approve still requires the digest. Empty text is rejected.
 
 Implement:
 
-1) When posting answers from app.html
-- map name, role, goals, timezone onto the real required keys
-- for any remaining required key send a short honest default:
-  repos: "local git only"
-  risk: "human approve required"
-  ethics: "local first no outbound send"
-- never post "" 
+1) Smallest POST /api/v1/twin/propose
+- tenant_id from caller
+- text required non-empty
+- call existing six propose() into the one queue
+- no execute
+- loopback only
 
-2) tests/test_t110_interview_nonempty.py
-- test_commit_does_not_post_empty_answers
-- test_four_field_commit_200
+2) app.html
+- task textarea + Propose button
+- refresh queue after propose
+- keep existing approve + digest fields
+
+3) tests/test_t111_operator_propose.py
+- test_propose_empty_rejected
+- test_propose_lands_in_queue
+- test_approve_still_needs_digest
 - No live network except TestClient
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -26,12 +29,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; t=Path('desktop/macos/Aegis.app/Contents/Resources/app.html').read_text(); print('local git only' in t or 'human approve' in t)"
+   ./.venv/bin/python -c "from pathlib import Path; t=Path('desktop/macos/Aegis.app/Contents/Resources/app.html').read_text(); print('propose' in t.lower())"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 653
+   Required: 0 failed, count > 656
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t110): nonempty interview answers"
+6. git commit -m "feat(t111): operator propose to queue"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

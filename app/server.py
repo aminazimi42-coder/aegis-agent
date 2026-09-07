@@ -341,6 +341,18 @@ class TwinActionExecuteRequest(BaseModel):
     tenant_id: str
 
 
+class TwinProposeTextRequest(BaseModel):
+    """Body for the operator page to propose one task text (T111).
+
+    ``tenant_id`` identifies the caller; ``text`` is required and must be
+    non-empty.  The six specialists each call their ``propose()`` so all
+    six rows land in the single shared queue.  No execution.
+    """
+
+    tenant_id: str
+    text: str
+
+
 class TwinActionRejectRequest(BaseModel):
     """Body for rejecting a proposed twin action (T57 — tenant binding)."""
 
@@ -1258,6 +1270,56 @@ def create_app() -> FastAPI:
         Reads from the local SQLite store only — no network calls.
         """
         return twin_list_queue(tenant_id)
+
+    # --- Operator page propose to queue (T111) --- #
+
+    @app.post("/api/v1/twin/propose", tags=["twin"], status_code=200)
+    def twin_operator_propose(request: TwinProposeTextRequest) -> Any:
+        """Propose one operator task text via the six specialists.
+
+        ``tenant_id`` identifies the caller; ``text`` is required and
+        must be non-empty.  Each of the six specialists
+        (Alina, Kian, Bita, Aylin, Ahmad, Amin) calls its own
+        :meth:`~core.agent_base.BaseAgent.propose` so all six rows
+        land in the single shared ``twin_actions`` queue with
+        ``status = "proposed"``, ``action_id`` and
+        ``payload_sha256``.  No execution.
+        """
+        text = (request.text or "").strip()
+        if not text:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "text required"},
+            )
+        from agents.ahmad.agent import AhmadAgent
+        from agents.alina.agent import AlinaAgent
+        from agents.amin.agent import AminAgent
+        from agents.aylin.agent import AylinAgent
+        from agents.bita.agent import BitaAgent
+        from agents.kian.agent import KianAgent
+
+        specialists = [
+            AlinaAgent(),
+            KianAgent(),
+            BitaAgent(),
+            AylinAgent(),
+            AhmadAgent(),
+            AminAgent(),
+        ]
+        proposals: list[dict[str, Any]] = []
+        for agent in specialists:
+            row = agent.propose(request.tenant_id, text)
+            proposals.append(
+                {
+                    "action_id": row["action_id"],
+                    "agent": agent.name,
+                    "kind": row["kind"],
+                    "title": row["title"],
+                    "payload_sha256": row.get("payload_sha256", ""),
+                    "status": row["status"],
+                }
+            )
+        return {"tenant_id": request.tenant_id, "proposals": proposals, "count": len(proposals)}
 
     # --- Serve the operator page on loopback (T107) --- #
 
