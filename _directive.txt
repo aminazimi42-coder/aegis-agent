@@ -1,37 +1,38 @@
-T107 — Serve the operator page from loopback. Do ONLY this directive. Do not start T108. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 37f36948. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe or a license server. Do not add Electron. Do not bind 0.0.0.0. Do not weaken T56–T106. English only.
+T108 — macOS app icon from local cover file. Do ONLY this directive. Do not start T109. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 26af939. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe or a license server. Do not add Electron. Do not bind 0.0.0.0. Do not weaken T56–T107. English only.
 
-Baseline on main: T01–T106. HEAD 37f36948. pytest was 643 green after T106.
+Baseline on main: T01–T107. HEAD 26af939. pytest was 646 green after T107.
 
-GOAL: opening the app shows http://127.0.0.1:8741/ not file://. Same origin as /health.
+GOAL: Aegis.app shows a real icon, not the generic document tile.
 
 Implement:
 
-1) GET / on the local FastAPI app
-- returns the operator app.html
-- content-type text/html
-- loopback only
+1) Icon source
+- if $HOME/Downloads/aegis-cover.png exists, copy it to desktop/macos/Aegis.app/Contents/Resources/AppIcon.png
+- else write a 1024x1024 navy/gold PNG to that same path (Pillow or stdlib is fine)
+- do not download from the internet
 
-2) launcher
-- start uvicorn on 127.0.0.1:8741 if not already up
-- open http://127.0.0.1:8741/ with the default opener
-- do not open Contents/Resources/app.html as a file URL
+2) Info.plist
+- CFBundleIconFile = AppIcon
+- keep existing bundle id
 
-3) tests/test_t107_serve_operator_page.py
-- test_root_returns_html
-- test_launcher_opens_http_loopback
-- No live network except TestClient
+3) If iconutil exists, build AppIcon.icns next to the png. If not, png-only is acceptable.
+
+4) tests/test_t108_app_icon.py
+- test_appicon_png_exists
+- test_plist_names_appicon
+- No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; print('8741' in Path('desktop/macos/Aegis.app/Contents/MacOS/Aegis').read_text())"
+   ./.venv/bin/python -c "from pathlib import Path; print(Path('desktop/macos/Aegis.app/Contents/Resources/AppIcon.png').is_file())"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 643
+   Required: 0 failed, count > 646
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t107): serve operator page on loopback"
+6. git commit -m "feat(t108): macOS app icon"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
