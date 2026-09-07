@@ -237,13 +237,14 @@
     var goals = (el("q-goals") && el("q-goals").value) || "";
     var tz = (el("q-timezone") && el("q-timezone").value) || "";
     // q_role ← role, q_repos ← name, q_decision_style ← goals, q_tools ← timezone
+    // Remaining required keys get short honest defaults; never post "".
     var mapping = [
-      { qid: "q_role", text: role },
-      { qid: "q_decision_style", text: goals },
-      { qid: "q_tools", text: tz },
-      { qid: "q_risk", text: "" },
-      { qid: "q_ethics", text: "" },
-      { qid: "q_repos", text: name }
+      { qid: "q_role", text: role || "operator" },
+      { qid: "q_decision_style", text: goals || "goal-driven" },
+      { qid: "q_tools", text: tz || "UTC" },
+      { qid: "q_risk", text: "human approve required" },
+      { qid: "q_ethics", text: "local first no outbound send" },
+      { qid: "q_repos", text: name || "local git only" }
     ];
     var label = el("commit-label");
     label.textContent = "";
