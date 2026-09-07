@@ -15,6 +15,15 @@ class BaseAgent(ABC):
     capabilities: list[str] = []
     metadata: dict = {}
 
+    def _propose_body(self, text: str) -> str:
+        """Return the role-shaped proposal body for *text*.
+
+        Default behaviour (T112 — echo): the body is the operator text
+        unchanged.  Specialists override this to produce a distinct,
+        deterministic, role-shaped body that still includes the text.
+        """
+        return text
+
     def propose(self, tenant_id: str, text: str = "") -> dict[str, Any]:
         """Propose one twin_action row with status ``proposed``.
 
@@ -24,8 +33,10 @@ class BaseAgent(ABC):
 
         When *text* is non-empty (T111 — operator page propose), it is
         included in the action title and payload so the operator's task
-        text is visible in the queue.  When *text* is empty the
-        pre-T111 behaviour is preserved.
+        text is visible in the queue.  The payload also carries a
+        ``body`` field (T112) produced by :meth:`_propose_body` so each
+        specialist's row is distinguishable.  When *text* is empty the
+        pre-T111 behaviour is preserved (empty payload).
 
         Specialists must never call ``twin_actions.execute``; the only
         path to ``executed`` is human approval followed by execution.
@@ -36,7 +47,7 @@ class BaseAgent(ABC):
         payload: dict[str, Any] = {}
         if text:
             title = f"{self.name} proposal: {text}"
-            payload = {"text": text}
+            payload = {"text": text, "body": self._propose_body(text)}
         return insert_specialist_proposal(tenant_id, self.name, title, payload)
 
     def profile(self) -> dict:

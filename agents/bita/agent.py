@@ -11,6 +11,9 @@ class BitaAgent(BaseAgent):
     description = "Evaluates context and turns it into high-quality decision insight."
     capabilities = ["analysis", "synthesis", "risk", "reporting"]
 
+    def _propose_body(self, text: str) -> str:
+        return f"Insight: what does the ask mean — {text}"
+
     def handle(self, task: str) -> str:
         return (
             f"{self.name} analysis and synthesis: evaluate the context, "

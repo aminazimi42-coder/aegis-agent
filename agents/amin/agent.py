@@ -28,6 +28,9 @@ class AminAgent(BaseAgent):
         },
     }
 
+    def _propose_body(self, text: str) -> str:
+        return f"Finance: cost or quota caution — {text}"
+
     def handle(self, task: str) -> str:
         return (
             f"{self.name} review: confirm the oversight checkpoint, audit "

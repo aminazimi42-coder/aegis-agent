@@ -28,6 +28,9 @@ class AhmadAgent(BaseAgent):
         },
     }
 
+    def _propose_body(self, text: str) -> str:
+        return f"Security: what must not happen — {text}"
+
     def handle(self, task: str) -> str:
         return (
             f"{self.name} governance: maintain the strategic oversight view, "

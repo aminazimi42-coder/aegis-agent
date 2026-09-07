@@ -11,6 +11,9 @@ class KianAgent(BaseAgent):
     description = "Runs operational workflows and monitors delivery stability."
     capabilities = ["execution", "monitoring", "optimization", "delivery"]
 
+    def _propose_body(self, text: str) -> str:
+        return f"Execution: steps to carry out (unexecuted) — {text}"
+
     def handle(self, task: str) -> str:
         return (
             f"{self.name} operational execution: run the delivery path, "

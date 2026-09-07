@@ -11,6 +11,9 @@ class AylinAgent(BaseAgent):
     description = "Validates quality, audits outcomes, and enforces final assurance."
     capabilities = ["validation", "quality", "audit", "assurance"]
 
+    def _propose_body(self, text: str) -> str:
+        return f"Quality: what would make the output fail review — {text}"
+
     def handle(self, task: str) -> str:
         return (
             f"{self.name} validation and quality review: check compliance, "

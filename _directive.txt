@@ -1,27 +1,27 @@
-T111 — Propose from the operator page into the local queue. Do ONLY this directive. Do not start T112. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 7e7fc66. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, or a license server. Do not bind 0.0.0.0. Do not let any specialist execute. Do not weaken T56–T110. English only.
+T112 — Distinct specialist proposals, still propose-only. Do ONLY this directive. Do not start T113. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 4ceddbe. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, or a live LLM. Do not bind 0.0.0.0. Do not let any specialist execute. Do not weaken T56–T111. English only.
 
-Baseline on main: T01–T110. HEAD 7e7fc66. pytest was 656 green after T110.
+Baseline on main: T01–T111. HEAD 4ceddbe. pytest was 660 green after T111.
 
-GOAL: Operator page can send one operator task text. Six specialists propose only. Items appear in Pending Queue with action_id and payload_sha256. Approve still requires the digest. Empty text is rejected.
+BUG: all six queue rows repeat the operator task text. A CTO cannot tell specialists apart.
+
+GOAL: each specialist propose() returns a distinct, deterministic, role-shaped proposal that still includes the operator text. No network. No execute.
 
 Implement:
 
-1) Smallest POST /api/v1/twin/propose
-- tenant_id from caller
-- text required non-empty
-- call existing six propose() into the one queue
-- no execute
-- loopback only
+1) Distinct proposal bodies
+- Bita: insight / what the ask means
+- Kian: execution steps that remain unexecuted
+- Alina: strategy / priority order
+- Aylin: quality / what would make the output fail review
+- Ahmad: security / what must not happen
+- Amin: finance / cost or quota caution
+- keep payload_sha256 over the canonical envelope
+- Echo default unchanged
 
-2) app.html
-- task textarea + Propose button
-- refresh queue after propose
-- keep existing approve + digest fields
-
-3) tests/test_t111_operator_propose.py
-- test_propose_empty_rejected
-- test_propose_lands_in_queue
-- test_approve_still_needs_digest
+2) tests/test_t112_distinct_proposals.py
+- test_six_bodies_not_identical
+- test_each_name_in_own_row
+- test_still_propose_only
 - No live network except TestClient
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -29,12 +29,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; t=Path('desktop/macos/Aegis.app/Contents/Resources/app.html').read_text(); print('propose' in t.lower())"
+   ./.venv/bin/python -c "from pathlib import Path; p=Path('core'); print(p.exists())"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 656
+   Required: 0 failed, count > 660
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t111): operator propose to queue"
+6. git commit -m "feat(t112): distinct specialist proposals"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
