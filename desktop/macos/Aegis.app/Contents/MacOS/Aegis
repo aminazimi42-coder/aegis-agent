@@ -35,8 +35,8 @@ HOST="127.0.0.1"
 "$PY" -m uvicorn app.server:create_app --factory --host "$HOST" --port "$PORT" &
 SERVER_PID=$!
 
-# Give the server a moment to bind, then open the stub page.
-STUB_HTML="$SCRIPT_DIR/../Resources/stub.html"
+# Give the server a moment to bind, then open the operator page.
+STUB_HTML="$SCRIPT_DIR/../Resources/app.html"
 sleep 1
 
 if [ -f "$STUB_HTML" ]; then

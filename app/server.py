@@ -79,6 +79,7 @@ from core.twin_interview import (
 from core.twin_interview import (
     start_session as twin_start,
 )
+from core.twin_local_view import list_queue as twin_list_queue
 from core.twin_meeting_brief import render_meetings as twin_render_meetings
 from core.twin_memory_control import forget as twin_memory_forget
 from core.twin_memory_control import show as twin_memory_show
@@ -1246,6 +1247,16 @@ def create_app() -> FastAPI:
             return twin_render_home(request.tenant_id)
         except ValueError as exc:
             return twin_value_error_response(exc)
+
+    # --- Local queue read for desktop operator (T105) --- #
+
+    @app.get("/api/v1/twin/queue/{tenant_id}", tags=["twin"])
+    def twin_queue_get(tenant_id: str) -> Any:
+        """Return pending and approved-waiting actions for *tenant_id*.
+
+        Reads from the local SQLite store only — no network calls.
+        """
+        return twin_list_queue(tenant_id)
 
     return app
 

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aegis — Local Twin Operator</title>
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --fg: #1d1d1f;
+    --muted: #6e6e73;
+    --accent: #007aff;
+    --card: #ffffff;
+    --border: #d2d2d7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    max-width: 720px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+    color: var(--fg);
+    background: var(--bg);
+    line-height: 1.6;
+  }
+  h1 { font-size: 1.8rem; margin: 0 0 0.25rem; }
+  h2 { font-size: 1.2rem; margin: 1.5rem 0 0.5rem; }
+  .badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 6px;
+    padding: 0.2rem 0.55rem;
+    margin-bottom: 1rem;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .muted { color: var(--muted); }
+  .row { display: flex; gap: 0.5rem; align-items: center; margin: 0.35rem 0; }
+  label { font-weight: 600; min-width: 110px; }
+  input[type="text"], input[type="password"] {
+    flex: 1;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.9rem;
+  }
+  button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  button:hover { opacity: 0.88; }
+  pre {
+    background: #f0f0f3;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.75rem;
+    overflow-x: auto;
+    font-size: 0.8rem;
+    white-space: pre-wrap;
+  }
+  .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 0.4rem;
+  }
+  .dot-ok { background: #34c759; }
+  .dot-err { background: #ff3b30; }
+  .queue-item {
+    border-bottom: 1px solid var(--border);
+    padding: 0.5rem 0;
+  }
+  .queue-item:last-child { border-bottom: none; }
+  .queue-title { font-weight: 600; }
+  .queue-meta { font-size: 0.8rem; color: var(--muted); }
+  .err { color: #ff3b30; }
+</style>
+</head>
+<body>
+  <span class="badge">Local Twin</span>
+  <h1>Aegis Operator</h1>
+  <p class="muted">
+    Operator page for interview, status, and the pending queue.
+    All requests go to the local twin at <code>http://127.0.0.1:8741</code> only —
+    no third-party CDN, no cloud calls.
+  </p>
+
+  <!-- ── Interview fields ────────────────────────────────────────── -->
+  <h2>Interview</h2>
+  <div class="card">
+    <div class="row">
+      <label for="tenant">Tenant ID</label>
+      <input type="text" id="tenant" value="local">
+    </div>
+    <div class="row">
+      <button id="btn-start" onclick="startInterview()">Start Session</button>
+      <span class="muted" id="session-label"></span>
+    </div>
+    <div id="questions" style="margin-top:0.75rem"></div>
+    <div class="row" style="margin-top:0.75rem">
+      <button id="btn-commit" onclick="commitInterview()">Commit Profile</button>
+      <span class="muted" id="commit-label"></span>
+    </div>
+  </div>
+
+  <!-- ── Home / Status ───────────────────────────────────────────── -->
+  <h2>Home / Status</h2>
+  <div class="card">
+    <div class="row">
+      <span class="status-dot" id="health-dot"></span>
+      <span id="health-text" class="muted">Checking health…</span>
+    </div>
+    <pre id="health-json"></pre>
+  </div>
+
+  <!-- ── Pending queue ────────────────────────────────────────────── -->
+  <h2>Pending Queue</h2>
+  <div class="card">
+    <div id="queue-items"><span class="muted">Loading…</span></div>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+  var BASE = "http://127.0.0.1:8741";
+  var session = null;
+
+  function el(id) { return document.getElementById(id); }
+
+  function get(path, cb) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", BASE + path, true);
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4) {
+        try {
+          cb(null, JSON.parse(xhr.responseText), xhr.status);
+        } catch (e) {
+          cb(e, null, xhr.status);
+        }
+      }
+    };
+    xhr.send();
+  }
+
+  function post(path, body, cb) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", BASE + path, true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4) {
+        try {
+          cb(null, JSON.parse(xhr.responseText), xhr.status);
+        } catch (e) {
+          cb(e, null, xhr.status);
+        }
+      }
+    };
+    xhr.send(JSON.stringify(body));
+  }
+
+  // ── Health / status ──
+  function checkHealth() {
+    get("/health", function (err, data, status) {
+      var dot = el("health-dot");
+      var text = el("health-text");
+      var box = el("health-json");
+      if (err || status !== 200) {
+        dot.className = "status-dot dot-err";
+        text.textContent = "Local twin unreachable on 127.0.0.1:8741";
+        box.textContent = "";
+        return;
+      }
+      dot.className = "status-dot dot-ok";
+      text.textContent = "Local twin healthy";
+      box.textContent = JSON.stringify(data, null, 2);
+    });
+  }
+
+  // ── Interview ──
+  window.startInterview = function () {
+    var t = el("tenant").value || "local";
+    post("/api/v1/twin/session/start", { tenant_id: t }, function (err, data) {
+      if (err) { el("session-label").textContent = "Error"; return; }
+      session = data.session_id;
+      el("session-label").textContent = "Session: " + session;
+      renderQuestions();
+    });
+  };
+
+  function renderQuestions() {
+    var div = el("questions");
+    div.innerHTML = "";
+    if (!session) return;
+    get("/api/v1/twin/profile/" + encodeURIComponent(el("tenant").value), function () {});
+    // Render static interview field placeholders from the session payload.
+    var fields = [
+      { id: "name", label: "Name" },
+      { id: "role", label: "Role" },
+      { id: "goals", label: "Goals" },
+      { id: "timezone", label: "Timezone" }
+    ];
+    fields.forEach(function (f) {
+      var row = document.createElement("div");
+      row.className = "row";
+      var lbl = document.createElement("label");
+      lbl.textContent = f.label;
+      var inp = document.createElement("input");
+      inp.type = "text";
+      inp.id = "q-" + f.id;
+      row.appendChild(lbl);
+      row.appendChild(inp);
+      div.appendChild(row);
+    });
+  }
+
+  window.commitInterview = function () {
+    if (!session) { el("commit-label").textContent = "Start a session first"; return; }
+    post("/api/v1/twin/session/" + session + "/commit", { consent: true }, function (err, data) {
+      if (err) { el("commit-label").textContent = "Error"; return; }
+      el("commit-label").textContent = "Committed";
+    });
+  };
+
+  // ── Pending queue ──
+  function loadQueue() {
+    var t = el("tenant").value || "local";
+    get("/api/v1/twin/queue/" + encodeURIComponent(t), function (err, data) {
+      var box = el("queue-items");
+      if (err || !data) {
+        box.innerHTML = '<span class="muted">No queue data.</span>';
+        return;
+      }
+      var pending = data.pending || [];
+      var approved = data.approved_waiting || [];
+      if (pending.length === 0 && approved.length === 0) {
+        box.innerHTML = '<span class="muted">Queue is empty.</span>';
+        return;
+      }
+      var html = "";
+      pending.forEach(function (a) {
+        html += '<div class="queue-item">'
+          + '<div class="queue-title">' + esc(a.title || a.action_id) + '</div>'
+          + '<div class="queue-meta">proposed · ' + esc(a.kind || "") + ' · ' + esc(a.action_id || "") + '</div>'
+          + '</div>';
+      });
+      approved.forEach(function (a) {
+        html += '<div class="queue-item">'
+          + '<div class="queue-title">' + esc(a.title || a.action_id) + '</div>'
+          + '<div class="queue-meta">approved · ' + esc(a.kind || "") + ' · ' + esc(a.action_id || "") + '</div>'
+          + '</div>';
+      });
+      box.innerHTML = html;
+    });
+  }
+
+  function esc(s) {
+    if (!s) return "";
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // ── Init ──
+  checkHealth();
+  loadQueue();
+})();
+</script>
+</body>
+</html>
