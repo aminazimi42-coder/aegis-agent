@@ -254,10 +254,18 @@
       }
       var html = "";
       pending.forEach(function (a) {
+        var digest = a.payload_sha256 || "";
         html += '<div class="queue-item">'
           + '<div class="queue-title">' + esc(a.title || a.action_id) + '</div>'
           + '<div class="queue-meta">proposed · ' + esc(a.kind || "") + ' · ' + esc(a.action_id || "") + '</div>'
-          + '</div>';
+          + '<div class="queue-meta">digest: <code>' + esc(digest) + '</code></div>';
+        if (digest) {
+          html += '<div class="row"><button onclick="approveAction(\'' + esc(a.action_id) + '\',\'' + esc(digest) + '\')">Approve</button>'
+            + '<span class="muted" id="approve-label-' + esc(a.action_id) + '"></span></div>';
+        } else {
+          html += '<div class="muted err">No digest — cannot approve</div>';
+        }
+        html += '</div>';
       });
       approved.forEach(function (a) {
         html += '<div class="queue-item">'
@@ -268,6 +276,32 @@
       box.innerHTML = html;
     });
   }
+
+  // ── Approve a pending action (T106) ──
+  // Posts tenant + actor + digest to the existing approve route on
+  // 127.0.0.1.  No approve is sent without the digest field.
+  window.approveAction = function (actionId, digest) {
+    if (!digest) {
+      var lb = el("approve-label-" + actionId);
+      if (lb) { lb.textContent = "Cannot approve without digest"; }
+      return;
+    }
+    var t = el("tenant").value || "local";
+    var body = {
+      tenant_id: t,
+      actor_id: "operator",
+      expected_payload_sha256: digest,
+    };
+    post("/api/v1/twin/actions/" + encodeURIComponent(actionId) + "/approve", body, function (err, data, status) {
+      var label = el("approve-label-" + actionId);
+      if (err || status !== 200) {
+        if (label) { label.textContent = "Approve failed"; }
+        return;
+      }
+      if (label) { label.textContent = "Approved"; }
+      loadQueue();
+    });
+  };
 
   function esc(s) {
     if (!s) return "";
