@@ -166,37 +166,61 @@ def _approve_cmd(rest: list[str]) -> int:
 
 
 def _execute_cmd(rest: list[str]) -> int:
-    """Execute an action: ``execute ACTION_ID TENANT_ID``.
+    """Execute an action: ``execute [--dry-run] ACTION_ID TENANT_ID [CONFIRM]``.
 
-    With ``--dry-run`` (T96): ``execute --dry-run ACTION_ID TENANT_ID``.
-    Prints what would run and writes nothing; the action is not marked
-    executed and no audit line is appended.
+    With ``--dry-run`` (T96): prints what would run and writes nothing;
+    the action is not marked executed and no audit line is appended.
+
+    **T97 — typed confirm for L2/L3:**  When the action's risk level is
+    ``L2`` or ``L3``, an extra ``CONFIRM`` CLI argument is required and
+    must equal the literal string ``"CONFIRM"``.  If it is missing or
+    wrong, nothing is written and the command exits ``2``.  ``L0`` and
+    ``L1`` actions are unchanged — no ``CONFIRM`` argument is needed.
+    The digest lock in :func:`core.twin_actions.execute` stays in force.
     """
     dry_run = False
     if rest and rest[0] == "--dry-run":
         dry_run = True
         rest = rest[1:]
 
-    if len(rest) != 2:
-        print("usage: execute [--dry-run] ACTION_ID TENANT_ID", file=sys.stderr)
+    if len(rest) < 2:
+        print("usage: execute [--dry-run] ACTION_ID TENANT_ID [CONFIRM]", file=sys.stderr)
         return 2
 
-    action_id, tenant_id = rest
+    action_id, tenant_id = rest[:2]
+    extra = rest[2:]
+
+    # Load the action to determine its risk level.
+    from core.twin_actions import _load_action
+    from core.twin_risk import attach_risk
+
+    action = _load_action(action_id)
+    if action is None:
+        print(f"unknown action: {action_id}", file=sys.stderr)
+        return 1
+    if action["tenant_id"] != tenant_id:
+        print("tenant mismatch", file=sys.stderr)
+        return 1
+
+    risked = attach_risk(action)
+    risk_level = risked.get("risk_level", "L0")
+
+    # T97 — L2/L3 require a typed CONFIRM argument equal to "CONFIRM".
+    if risk_level in ("L2", "L3"):
+        confirm = extra[0] if extra else ""
+        if confirm != "CONFIRM":
+            print(
+                f"confirm required for {risk_level} action: execute [...] CONFIRM",
+                file=sys.stderr,
+            )
+            return 2
 
     if dry_run:
-        from core.twin_actions import _load_action
-
-        action = _load_action(action_id)
-        if action is None:
-            print(f"unknown action: {action_id}", file=sys.stderr)
-            return 1
-        if action["tenant_id"] != tenant_id:
-            print("tenant mismatch", file=sys.stderr)
-            return 1
         print(f"would execute: {action_id}")
         print(f"  kind: {action.get('kind', '')}")
         print(f"  title: {action.get('title', '')}")
         print(f"  status: {action.get('status', '')}")
+        print(f"  risk: {risk_level}")
         print("  writes: nothing")
         return 0
 

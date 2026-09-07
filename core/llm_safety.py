@@ -11,6 +11,7 @@ ledger row when the ledger is available.
 from __future__ import annotations
 
 import os
+import re
 from typing import Any
 
 from core.llm_provider import HttpProvider, get_provider
@@ -33,6 +34,27 @@ SECRET_ENV_KEYS: tuple[str, ...] = (
     "AEGIS_GITHUB_TOKEN",
 )
 
+# ---------------------------------------------------------------------------
+# Shape-based secret patterns (T97)
+# ---------------------------------------------------------------------------
+# These patterns detect secret-shaped substrings *by shape*, independent of
+# any env var.  They are local regexes — no network DLP, no external calls.
+
+# AWS access-key IDs: 20 chars of [A-Z0-9], commonly start with ``AKIA``.
+_AWS_KEY_RE = re.compile(r"AKIA[0-9A-Z]{16}")
+
+# JWT tokens: three base64url segments joined by dots, first segment starts
+# with ``eyJ`` (the base64 of ``{"``).
+_JWT_RE = re.compile(
+    r"eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}"
+)
+
+# Bearer tokens and ``sk``-prefixed API keys (e.g. ``Bearer sk...``,
+# ``sk...``, ``sk_live_...``).
+_BEARER_RE = re.compile(r"(?:Bearer\s+)?sk[-_:][A-Za-z0-9_-]{8,}", re.IGNORECASE)
+
+_SECRET_SHAPES: tuple[re.Pattern[str], ...] = (_AWS_KEY_RE, _JWT_RE, _BEARER_RE)
+
 
 def redact_secrets(text: str) -> str:
     """Replace every occurrence of a set secret env value (len >= 8) with ``***``.
@@ -40,11 +62,19 @@ def redact_secrets(text: str) -> str:
     Only values that are currently set in ``os.environ`` and are at least
     8 characters long are redacted, so short or unset placeholders are
     left untouched.
+
+    **T97 — shape-based redaction:**  In addition to the named env-var
+    values, substrings that *look like* secrets are also redacted:
+    AWS-style access-key IDs (``AKIA...``), JWT-shaped tokens
+    (``eyJ....``), and ``Bearer``/``sk``-prefixed tokens.  This is
+    purely local pattern matching — no network DLP calls.
     """
     for key in SECRET_ENV_KEYS:
         val = os.environ.get(key)
         if val and len(val) >= 8:
             text = text.replace(val, "***")
+    for pattern in _SECRET_SHAPES:
+        text = pattern.sub("***", text)
     return text
 
 
