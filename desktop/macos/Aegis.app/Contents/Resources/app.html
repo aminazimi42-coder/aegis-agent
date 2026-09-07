@@ -88,6 +88,7 @@
   }
   .queue-item:last-child { border-bottom: none; }
   .queue-title { font-weight: 600; }
+  .queue-body { font-size: 0.85rem; color: var(--fg); margin: 0.3rem 0; white-space: pre-wrap; }
   .queue-meta { font-size: 0.8rem; color: var(--muted); }
   .err { color: #ff3b30; }
 </style>
@@ -320,9 +321,16 @@
       var html = "";
       pending.forEach(function (a) {
         var digest = a.payload_sha256 || "";
+        // Specialist name is the prefix of kind before ":" (e.g. "Bita:propose").
+        var kindStr = a.kind || "";
+        var specialistName = kindStr.split(":")[0];
+        // Body lives inside payload.body (T112); fall back to the title if missing.
+        var p = a.payload || {};
+        var bodyText = (p && typeof p.body === "string") ? p.body : (a.title || "");
         html += '<div class="queue-item">'
           + '<div class="queue-title">' + esc(a.title || a.action_id) + '</div>'
-          + '<div class="queue-meta">proposed · ' + esc(a.kind || "") + ' · ' + esc(a.action_id || "") + '</div>'
+          + '<div class="queue-body">' + esc(bodyText) + '</div>'
+          + '<div class="queue-meta">' + esc(specialistName) + ' · proposed · ' + esc(a.kind || "") + ' · ' + esc(a.action_id || "") + '</div>'
           + '<div class="queue-meta">digest: <code>' + esc(digest) + '</code></div>';
         if (digest) {
           html += '<div class="row"><button onclick="approveAction(\'' + esc(a.action_id) + '\',\'' + esc(digest) + '\')">Approve</button>'

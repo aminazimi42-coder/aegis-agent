@@ -1,27 +1,20 @@
-T112 — Distinct specialist proposals, still propose-only. Do ONLY this directive. Do not start T113. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 4ceddbe. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, or a live LLM. Do not bind 0.0.0.0. Do not let any specialist execute. Do not weaken T56–T111. English only.
+T113 — Show specialist body on the operator queue card. Do ONLY this directive. Do not start T114. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 6eb2ffe. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, or a live LLM. Do not bind 0.0.0.0. Do not let any specialist execute. Do not weaken T56–T112. English only.
 
-Baseline on main: T01–T111. HEAD 4ceddbe. pytest was 660 green after T111.
+Baseline on main: T01–T112. HEAD 6eb2ffe. pytest was 663 green after T112.
 
-BUG: all six queue rows repeat the operator task text. A CTO cannot tell specialists apart.
+BUG: queue cards still print only the shared operator title. Distinct payload.body from T112 is invisible, so six rows look identical.
 
-GOAL: each specialist propose() returns a distinct, deterministic, role-shaped proposal that still includes the operator text. No network. No execute.
+GOAL: each Pending Queue card shows specialist name, action_id, digest, and the role-shaped body text.
 
 Implement:
 
-1) Distinct proposal bodies
-- Bita: insight / what the ask means
-- Kian: execution steps that remain unexecuted
-- Alina: strategy / priority order
-- Aylin: quality / what would make the output fail review
-- Ahmad: security / what must not happen
-- Amin: finance / cost or quota caution
-- keep payload_sha256 over the canonical envelope
-- Echo default unchanged
+1) app.html queue renderer
+- render payload.body (fallback to title if body missing)
+- do not hide digest or Approve
 
-2) tests/test_t112_distinct_proposals.py
-- test_six_bodies_not_identical
-- test_each_name_in_own_row
-- test_still_propose_only
+2) tests/test_t113_queue_shows_body.py
+- test_app_html_reads_body
+- test_card_not_title_only
 - No live network except TestClient
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -29,12 +22,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; p=Path('core'); print(p.exists())"
+   ./.venv/bin/python -c "from pathlib import Path; t=Path('desktop/macos/Aegis.app/Contents/Resources/app.html').read_text(); print('body' in t.lower())"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 660
+   Required: 0 failed, count > 663
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t112): distinct specialist proposals"
+6. git commit -m "feat(t113): show proposal body on queue card"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
