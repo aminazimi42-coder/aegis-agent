@@ -36,6 +36,11 @@ def main(argv: list[str] | None = None) -> int:
       consented ``profile.json`` (T90).  Writes nothing and exits ``2``
       when the profile is missing or ``consented`` is not ``true``.
       Does not approve or execute; no network, no card fields.
+    * ``verify TENANT_ID`` — recompute the payload digest for every
+      pending action and print mismatch lines.  Exits ``1`` if any
+      mismatch, else ``0`` (T96).
+    * ``execute --dry-run ACTION_ID TENANT_ID`` — print what would run
+      and write nothing; the action is not marked executed (T96).
 
     The default command is ``status`` with the ``AEGIS_TENANT`` env var (or
     ``"default"``) as the tenant id.
@@ -60,6 +65,8 @@ def main(argv: list[str] | None = None) -> int:
         return _interview_cmd(rest)
     if command == "propose":
         return _propose_cmd(rest)
+    if command == "verify":
+        return _verify_cmd(rest)
 
     print(f"unknown command: {command}", file=sys.stderr)
     return 2
@@ -159,18 +166,76 @@ def _approve_cmd(rest: list[str]) -> int:
 
 
 def _execute_cmd(rest: list[str]) -> int:
-    """Execute an action: ``execute ACTION_ID TENANT_ID``."""
+    """Execute an action: ``execute ACTION_ID TENANT_ID``.
+
+    With ``--dry-run`` (T96): ``execute --dry-run ACTION_ID TENANT_ID``.
+    Prints what would run and writes nothing; the action is not marked
+    executed and no audit line is appended.
+    """
+    dry_run = False
+    if rest and rest[0] == "--dry-run":
+        dry_run = True
+        rest = rest[1:]
+
     if len(rest) != 2:
-        print("usage: execute ACTION_ID TENANT_ID", file=sys.stderr)
+        print("usage: execute [--dry-run] ACTION_ID TENANT_ID", file=sys.stderr)
         return 2
 
     action_id, tenant_id = rest
+
+    if dry_run:
+        from core.twin_actions import _load_action
+
+        action = _load_action(action_id)
+        if action is None:
+            print(f"unknown action: {action_id}", file=sys.stderr)
+            return 1
+        if action["tenant_id"] != tenant_id:
+            print("tenant mismatch", file=sys.stderr)
+            return 1
+        print(f"would execute: {action_id}")
+        print(f"  kind: {action.get('kind', '')}")
+        print(f"  title: {action.get('title', '')}")
+        print(f"  status: {action.get('status', '')}")
+        print("  writes: nothing")
+        return 0
+
     from core.twin_actions import execute
     from core.twin_audit import append_audit
 
     result = execute(action_id, tenant_id)
     append_audit(tenant_id, "execute", action_id)
     print(result["status"])
+    return 0
+
+
+def _verify_cmd(rest: list[str]) -> int:
+    """Verify pending action digests: ``verify TENANT_ID`` (T96).
+
+    Recompute the payload digest for every pending action and print one
+    mismatch line per row whose stored ``payload_sha256`` differs from the
+    freshly recomputed digest.  Exits ``1`` if any mismatch, else ``0``.
+    """
+    if len(rest) != 1:
+        print("usage: verify TENANT_ID", file=sys.stderr)
+        return 2
+
+    tenant_id = rest[0]
+    from core.twin_actions import _action_digest, list_actions
+
+    actions = list_actions(tenant_id)
+    pending = [a for a in actions if a.get("status") == "proposed"]
+    mismatches = 0
+    for a in pending:
+        stored = a.get("payload_sha256") or ""
+        recomputed = _action_digest(a)
+        if stored != recomputed:
+            print(f"mismatch: {a['action_id']} stored={stored} recomputed={recomputed}")
+            mismatches += 1
+    if mismatches:
+        print(f"verify: {mismatches} mismatch(es) for tenant {tenant_id}")
+        return 1
+    print(f"verify: ok ({len(pending)} pending for tenant {tenant_id})")
     return 0
 
 

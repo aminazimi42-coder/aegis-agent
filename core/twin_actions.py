@@ -571,6 +571,25 @@ def execute(action_id: str, tenant_id: str | None = None) -> dict[str, Any]:
         if approved_digest is None or current_digest != approved_digest:
             raise ValueError("payload changed after approval")
 
+        # T96 — approve TTL.  An approve older than ``AEGIS_APPROVE_TTL_HOURS``
+        # (default 24) may not be executed; the receipt write does not happen.
+        # The digest lock (above) stays in force regardless of age.
+        approved_at_str = action.get("approved_at")
+        if approved_at_str:
+            ttl_hours = int(os.getenv("AEGIS_APPROVE_TTL_HOURS", "24"))
+            try:
+                approved_dt = datetime.fromisoformat(approved_at_str)
+            except ValueError:
+                approved_dt = None
+            if approved_dt is not None:
+                age_hours = (
+                    datetime.now(timezone.utc) - approved_dt
+                ).total_seconds() / 3600.0
+                if age_hours > ttl_hours:
+                    raise PermissionError(
+                        f"approve expired: {age_hours:.1f}h > {ttl_hours}h TTL"
+                    )
+
         # T63 — L0 allow-list guard.  An action whose kind/effect is not on
         # the explicit local allow-list may **not** be treated as L0
         # (observe-only).  If the title alone would classify as L0 but the
