@@ -104,13 +104,19 @@ def _status_cmd(rest: list[str]) -> int:
 
     # --- QUEUE ----------------------------------------------------------
     queue = list_queue(tenant_id)
-    pending = len(queue["pending"])
-    approved = len(queue["approved_waiting"])
+    pending = queue["pending"]
+    approved = queue["approved_waiting"]
 
     print()
     print("## QUEUE")
-    print(f"pending: {pending}")
-    print(f"approved_waiting: {approved}")
+    print(f"pending: {len(pending)}")
+    print(f"approved_waiting: {len(approved)}")
+
+    # T94 — show payload_sha256 for each pending item when present.
+    for item in pending:
+        digest = item.get("payload_sha256") or ""
+        if digest:
+            print(f"pending_digest: {item.get('action_id', '')} {digest}")
 
     # --- PROVIDER -------------------------------------------------------
     status = provider_status()
@@ -268,6 +274,11 @@ def _propose_cmd(rest: list[str]) -> int:
         payload={"role": role, "goal": goal},
     )
     append_audit(tenant_id, "propose", result["action_id"])
+    # T94 — print payload_sha256 on its own line so ``aegis approve``
+    # can read it without parsing JSON.
+    digest = result.get("payload_sha256") or ""
+    if digest:
+        print(f"payload_sha256: {digest}")
     print(json.dumps(result, default=str))
     return 0
 

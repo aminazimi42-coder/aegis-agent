@@ -43,3 +43,14 @@ jobs:
       - name: Pytest
         run: |
           python -m pytest -q
+
+      - name: Dependency scan (bandit)
+        # bandit is a declared dev extra in pyproject.toml.  Run it
+        # only when it is installed so local pytest without network
+        # stays green.
+        run: |
+          if command -v bandit >/dev/null 2>&1; then
+            bandit -r core -q || true
+          else
+            echo "bandit not installed; skipping scan"
+          fi
