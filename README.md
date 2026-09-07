@@ -1,64 +1,59 @@
-<div align="center">
+# Aegis Agent
 
-<img src="docs/assets/aegis-hero.svg" alt="Aegis Agent" width="100%"/>
+A local-first cognitive twin CLI — a single operator's profile, six proposing specialists, and a human approval gate.
 
-# AEGIS AGENT
+## Pipeline
 
-### FastAPI cognitive-twin platform with local work products and a human approve gate
-
-[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-API%20Ready-009688)](https://fastapi.tianglia.com/)
-[![License](https://img.shields.io/badge/License-Apache--2.0-blue)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-Passing-success)](https://github.com/)
-
-</div>
-
----
-
-## What This Is
-
-Aegis Agent is a **FastAPI** application that maintains a per-tenant
-**cognitive twin** — a local profile built from a Day-0 interview and evolved
-by ingesting work events. The twin proposes actions that a **human must approve**
-before anything executes. Work products (morning brief, meeting notes, resume,
-board memo, etc.) are rendered as local markdown files under `AEGIS_DATA_DIR`.
-
-The default LLM provider is **EchoProvider** — an offline echo that returns a
-deterministic stub response. No paid LLM is wired in this revision. If
-`AEGIS_LLM_PROVIDER` is not set, `get_provider()` returns `EchoProvider()`.
-
-Persistence is **SQLite** stored under the `AEGIS_DATA_DIR` directory
-(defaults to `data/`). On a free Render instance the service may cold-start
-and lose in-memory state; SQLite files persist across requests only if the
-volume is mounted.
-
-There is no desktop UI in this tree — all interaction is via the FastAPI
-server (`uvicorn`) or the `twin_cli.py` command-line tool.
-
----
-
-## Quick Start
-
-```bash
-# Create and activate a virtual environment
-python -m venv .venv
-source .venv/bin/activate
-
-# Install the platform
-pip install -e .
-
-# Run the test suite
-./.venv/bin/python -m pytest -q
-
-# Start the development server
-uvicorn app.server:app --reload
+```mermaid
+flowchart LR
+    A[interview] --> B[propose]
+    B --> C[digest & approve]
+    C --> D[execute]
+    D --> E[receipt]
+    C -.->|reject| R[reason code]
 ```
 
-Open interactive API docs at **http://127.0.0.1:8000/docs**.
+1. **Interview** — a Day-0 session builds the tenant profile (`core/twin_interview.py`).
+2. **Propose** — six specialists propose actions only; nothing executes on its own (`core/twin_actions.py`).
+3. **Digest & approve** — the operator reviews the proposed action and approves it, or rejects with a reason code (`duplicate`, `stale`, `unsafe`, `other`).
+4. **Execute** — an approved action runs and writes a local outbox file or a `receipts/{action_id}.md` file; nothing sends externally.
+5. **Receipt** — every execution produces a local markdown receipt under `AEGIS_DATA_DIR`.
 
 ---
 
-## Twin CLI Commands
+## Shipped vs Not shipped
+
+| Shipped | Not shipped |
+|---------|-------------|
+| Six specialists (Alina, Kian, Bita, Aylin, Ahmad, Amin) propose only | Hosted multi-tenant SaaS / billing / card-charging |
+| EchoProvider default LLM (offline echo) | Cloud LLM as default |
+| HTTP provider (optional, env-gated) | Payment or license logic inside Aegis |
+| Email send to local outbox only | Live SMTP send |
+| SQLite persistence under `AEGIS_DATA_DIR` | Packaged desktop app installer |
+| Local markdown work products (brief, memo, resume, …) | LangGraph orchestration |
+| Hash-bound approve + tenant bind | `desktop_engine.py` and `.market` (quarantined leftovers) |
+| Local guards: `complete_safe`, `redact_secrets`, `SecurityPolicy` | |
+
+> `desktop_engine.py` and the `.market` market directory remain in the tree for quarantine tests only — they are not wired into the product and call no external service.
+
+---
+
+## Specialists
+
+Six agents registered in the specialist catalog. Each **proposes only** — a human must approve before anything executes.
+
+| Agent | Role |
+|-------|------|
+| **Alina** | Strategic coordination |
+| **Kian** | Operational execution |
+| **Bita** | Analysis and synthesis |
+| **Aylin** | Quality and validation |
+| **Ahmad** | Security and oversight |
+| **Amin** | Finance and executive bridge |
+
+---
+
+## CLI commands
 
 All commands are in `tools/twin_cli.py`. Each prints a JSON object to stdout
 and exits 0 on success; `ValueError` / `PermissionError` prints
@@ -66,7 +61,11 @@ and exits 0 on success; `ValueError` / `PermissionError` prints
 
 ```bash
 python tools/twin_cli.py <command> [options]
+# alias:  alias aegis="python tools/twin_cli.py"
+# then:   aegis propose --tenant <ID>
 ```
+
+### Interview & profile
 
 | Command | Key flags | Description |
 |---------|-----------|-------------|
@@ -74,35 +73,58 @@ python tools/twin_cli.py <command> [options]
 | `interview-start` | `--tenant` | Start a Day-0 interview session |
 | `interview-answer` | `--session --question --text` | Submit one interview answer |
 | `interview-commit` | `--session --consent` | Commit the interview as a profile |
+| `style-lock` | `--tenant --dir` | Lock writing style from local text samples |
+
+### Propose / approve / execute
+
+| Command | Key flags | Description |
+|---------|-----------|-------------|
 | `actions-propose` | `--tenant` | Propose twin actions from profile + digest |
-| `actions-approve` | `--action-id` | Approve a proposed action (human gate) |
-| `actions-execute` | `--action-id` | Execute an approved action |
+| `actions-approve` | `--action-id --tenant --actor --expected-payload-sha256` | Approve a proposed action (human gate) |
+| `actions-reject` | `--action-id --tenant --reason` | Reject with a reason code (`duplicate`/`stale`/`unsafe`/`other`) |
+| `actions-execute` | `--action-id --tenant` | Execute an approved action |
 | `render` | `--tenant` | Render weekly plan + review notes |
+| `goal-plan` | `--tenant --text` | Turn goal text into an ordered proposed-action plan |
+
+### Calendar & schedule
+
+| Command | Key flags | Description |
+|---------|-----------|-------------|
 | `calendar-ics` | `--tenant --path` | Ingest a local `.ics` calendar file |
+| `schedule` | `--tenant --title --due [--timezone]` | Schedule a durable commitment job |
+| `schedule-tick` | `[--now]` | Tick the scheduler — mark due jobs |
+| `focus-block` | `--tenant --start [--duration] [--title]` | Create a focus-block hold |
+
+### Work products
+
+| Command | Key flags | Description |
+|---------|-----------|-------------|
 | `brief-morning` | `--tenant` | Render a one-page morning brief |
-| `email-triage` | `--tenant --dir` | Triage a folder of `.eml` files |
 | `brief-meetings` | `--tenant` | Render per-meeting briefs |
 | `followups` | `--tenant` | Render the follow-up list |
 | `delegate` | `--tenant` | Render the delegate pack |
-| `decision-record` | `--tenant --title --decision --reason` | Record a yes/no decision |
-| `decision-list` | `--tenant [--query]` | List recorded decisions |
-| `style-lock` | `--tenant --dir` | Lock writing style from local text samples |
-| `pr-review` | `--tenant --diff` | Turn a local diff into PR review notes |
-| `expenses` | `--tenant --dir` | Ingest receipt `.txt` files into expense notes |
-| `focus-block` | `--tenant --start [--duration] [--title]` | Create a focus-block hold |
-| `travel` | `--tenant [--dir]` | Render a one-page travel pack |
-| `team-inbox` | `--tenant --file` | Triage a team-chat export |
-| `transcript-task` | `--tenant --file` | Turn a transcript `.txt` into a proposed action (audio-task sidecar supported) |
 | `board-memo` | `--tenant` | Render a one-page board weekly memo |
 | `resume` | `--tenant` | Render a one-page principal resume |
-| `email-send` | `--tenant --action` | Send an approved email draft to local outbox |
+| `travel` | `--tenant [--dir]` | Render a one-page travel pack |
+| `decision-record` | `--tenant --title --decision --reason` | Record a yes/no decision |
+| `decision-list` | `--tenant [--query]` | List recorded decisions |
+| `pr-review` | `--tenant --diff` | Turn a local diff into PR review notes |
+| `expenses` | `--tenant --dir` | Ingest receipt `.txt` files into expense notes |
+| `team-inbox` | `--tenant --file` | Triage a team-chat export |
+| `transcript-task` | `--tenant --file` | Turn a transcript `.txt` into a proposed action (audio-task sidecar supported) |
+
+### Email
+
+| Command | Key flags | Description |
+|---------|-----------|-------------|
+| `email-triage` | `--tenant --dir` | Triage a folder of `.eml` files |
+| `email-send` | `--tenant --action` | Send an approved email draft to **local outbox only** |
 
 ---
 
-## Twin API Routes (POST)
+## Twin API routes
 
-Served by the FastAPI application in `app/server.py` under the `/api/v1/twin`
-prefix:
+Served by the FastAPI app in `app/server.py` under `/api/v1/twin`:
 
 | POST route | Description |
 |------------|-------------|
@@ -134,7 +156,7 @@ prefix:
 | `/api/v1/twin/email/send` | Send an approved email draft to local outbox |
 | `/api/v1/twin/actions/propose` | Propose twin actions |
 | `/api/v1/twin/actions/{action_id}/approve` | Approve a proposed action |
-| `/api/v1/twin/actions/{action_id}/reject` | Reject a proposed action |
+| `/api/v1/twin/actions/{action_id}/reject` | Reject a proposed action with a reason code |
 | `/api/v1/twin/actions/{action_id}/execute` | Execute an approved action |
 
 Additional GET routes: `/api/v1/twin/profile/{tenant_id}`,
@@ -144,72 +166,51 @@ and `/api/v1/platform/status`.
 
 ---
 
-## Testing
-
-See **STATUS.md** for the honest shipped-capability lock.
-
-```bash
-./.venv/bin/python -m pytest -q
-./.venv/bin/python -m ruff check .
-```
-
----
-
-## Safety
-
-The twin **proposes** actions; a human must **approve** before anything executes.
-LLM completions go through `core/llm_safety.py`:
-
-- **`complete_safe`** — calls the provider inside a tool allow-list cage
-  (`ALLOWED_TOOLS`) and rejects responses that claim forbidden external
-  actions ("payment sent", "email sent", etc.).
-- **`redact_secrets`** — strips `AEGIS_LLM_API_KEY` and `AEGIS_GITHUB_TOKEN`
-  values from the prompt before it reaches the provider.
-- **`SecurityPolicy`** (`core/security.py`) — agent-name allow-list and
-  `validate_task` SQL-injection guard used by the orchestrator.
-
-These are local guards; they do not call any external service.
-
 ## Errors
 
-Twin API routes return a unified 400 body on `ValueError`
-(`core/api_errors.py`):
+Twin API routes return a unified 400 body on `ValueError` (`core/api_errors.py`):
 
 ```json
 {"detail": "<message>", "code": "TWIN_NO_PROFILE", "request_id": "<uuid4 hex>"}
 ```
 
 `code` is a stable string from a known-message map (`TWIN_NO_PROFILE`,
-`TWIN_ACTION_MISSING`, `TWIN_NOT_APPROVED`, …) or the fallback
-`TWIN_ERROR`.  `detail` is `str(exc)` unchanged.
-
-## CI
-
-`.github/workflows/ci.yml` runs **ruff check** and **pytest -q** on
-Python 3.11 for every push and pull request to `main`.
-
-## Persistence Truth
-
-State is **SQLite** under `AEGIS_DATA_DIR` (defaults to `data/`).
-On a free Render instance the service may cold-start and lose in-memory
-state; SQLite files persist only if the volume is mounted.  Do not assume
-FinOps records or approval state survive a restart unless the volume is
-persistent.  The default LLM is **EchoProvider** (offline echo); no paid
-LLM and no live SMTP are wired in this revision.
+`TWIN_ACTION_MISSING`, `TWIN_NOT_APPROVED`, …) or the fallback `TWIN_ERROR`.
+`detail` is `str(exc)` unchanged.
 
 ---
 
-## Tech Stack
+## LLM provider
 
-| Component | Technology |
-|-----------|-----------|
-| Language | Python 3.11+ |
-| Framework | FastAPI |
-| Server | Uvicorn |
-| Testing | pytest |
-| Linting | ruff |
-| Persistence | SQLite (`AEGIS_DATA_DIR`) |
-| Default LLM | EchoProvider (offline, no paid LLM) |
+| Provider | When |
+|----------|------|
+| **EchoProvider** (default) | `AEGIS_LLM_PROVIDER` unset or not `http` — offline echo, no paid LLM |
+| **HttpProvider** (optional) | `AEGIS_LLM_PROVIDER=http` **and** both `AEGIS_LLM_BASE_URL` + `AEGIS_LLM_API_KEY` set |
+
+All LLM completions go through `core/llm_safety.py` → `complete_safe` (tool allow-list cage) and `redact_secrets` (strips `AEGIS_LLM_API_KEY` / `AEGIS_GITHUB_TOKEN`).  These are local guards; they call no external service.
+
+---
+
+## Data
+
+State is **SQLite** under `AEGIS_DATA_DIR` (defaults to `data/`).  Work products render as local markdown files under the same root.  On a free Render instance the service may cold-start and lose in-memory state; SQLite files persist only if the volume is mounted.
+
+```bash
+# local dev
+AEGIS_DATA_DIR=./data uvicorn app.server:app --reload
+
+# run the suite
+./.venv/bin/python -m pytest -q
+./.venv/bin/python -m ruff check .
+```
+
+Interactive API docs at **http://127.0.0.1:8000/docs** when the server is running.
+
+---
+
+## CI
+
+`.github/workflows/ci.yml` runs **ruff check** and **pytest -q** on Python 3.11 for every push and pull request to `main`.
 
 ---
 
