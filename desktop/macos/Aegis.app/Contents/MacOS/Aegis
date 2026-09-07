@@ -1,0 +1,49 @@
+#!/bin/sh
+# Aegis — local twin launcher (T104).
+#
+# Starts the existing local FastAPI app bound to 127.0.0.1 only
+# (never 0.0.0.0), then opens the stub page with the default
+# macOS opener.  Data stays under $HOME/.aegis unless
+# AEGIS_DATA_DIR is already set.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# The repo root is the directory above desktop/macos/Aegis.app/Contents
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+
+# --- resolve python -------------------------------------------------------
+PY="${AEGIS_PY:-$REPO_ROOT/.venv/bin/python}"
+if [ ! -x "$PY" ]; then
+    PY="$(command -v python3 || command -v python || true)"
+fi
+if [ -z "$PY" ]; then
+    echo "Aegis: python not found" >&2
+    exit 1
+fi
+
+# --- data dir: default to $HOME/.aegis, never the repo data/ -------------
+export AEGIS_DATA_DIR="${AEGIS_DATA_DIR:-$HOME/.aegis}"
+mkdir -p "$AEGIS_DATA_DIR"
+
+# --- start the local HTTP server on 127.0.0.1 only -----------------------
+PORT="${AEGIS_PORT:-8741}"
+HOST="127.0.0.1"
+
+# Background the server; it stays alive until the app is quit.
+"$PY" -m uvicorn app.server:create_app --factory --host "$HOST" --port "$PORT" &
+SERVER_PID=$!
+
+# Give the server a moment to bind, then open the stub page.
+STUB_HTML="$SCRIPT_DIR/../Resources/stub.html"
+sleep 1
+
+if [ -f "$STUB_HTML" ]; then
+    open "$STUB_HTML"
+else
+    open "http://${HOST}:${PORT}/health"
+fi
+
+# Keep the launcher alive so the server keeps running.
+wait "$SERVER_PID"

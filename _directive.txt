@@ -1,35 +1,45 @@
-T103 — Structured truthful README. Do ONLY this directive. Do not start T104. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 188c058. Do not rewrite LICENSE. Do not rewrite the README Author paragraph. Do not add Stripe or a license server. Do not un-quarantine desktop_engine.py. Do not add Electron. Do not weaken T56–T102. English only.
+T104 — First macOS app bundle and installer. Do ONLY this directive. Do not start T105. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 00ba7c4. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe or a license server. Do not revive the quarantined desktop_engine.py as the product. Do not add Electron. Do not weaken T56–T103. English only.
 
-Baseline on main: T01–T102. HEAD 188c058. pytest was 631 green after T102.
+Baseline on main: T01–T103. HEAD 00ba7c4. pytest was 631 green after T103.
 
-GOAL: README.md becomes the operator front door. Pretty structure, true claims only.
+GOAL: a real double-clickable macOS .app that launches the local twin. No window UI yet beyond a stub page. Data stays under ~/.aegis.
 
-Keep the existing Author block byte-for-byte.
+Implement:
 
-Required structure:
-- short title + one-line what it is: local-first cognitive twin CLI
-- mermaid of interview → propose → digest-approve → execute → receipt
-- table Shipped / Not shipped matching STATUS.md
-- table of real `aegis` commands that exist today
-- six specialists propose only
-- Echo default, HTTP optional, email outbox only
-- data lives under the user data root
-- desktop_engine.py and .market are quarantined leftovers
-- no production-SaaS claim, no fake coverage percent, no LangGraph
+1) desktop/macos/Aegis.app layout
+- Contents/Info.plist
+- Contents/MacOS/Aegis launcher script
+- Contents/Resources/stub.html that says Aegis local twin, not SaaS
 
-Use GitHub markdown: headings, tables, one mermaid block, fenced command examples. No GIF spam. No invented badges.
+2) launcher
+- starts the existing local HTTP app on 127.0.0.1 only
+- opens stub.html or the local URL with the default macOS opener
+- does not bind 0.0.0.0
+- does not read repo data_root as the live store; AEGIS_DATA_DIR defaults to $HOME/.aegis
+
+3) scripts/install_macos_app.sh
+- copies desktop/macos/Aegis.app to $HOME/Applications/Aegis.app
+- does not write into the git worktree as the installed app
+- prints the install path
+
+4) tests/test_t104_macos_app.py
+- test_bundle_has_plist_and_launcher
+- test_install_script_exists
+- test_stub_html_exists
+- skip live window
+- No live network
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; t=Path('README.md').read_text(); print(('mermaid' in t) and ('aegis propose' in t) and ('Author' in t))"
+   ./.venv/bin/python -c "from pathlib import Path; print((Path('desktop/macos/Aegis.app/Contents/Info.plist').is_file()) and Path('scripts/install_macos_app.sh').is_file())"
    Required: True
 4. ./.venv/bin/python -m pytest -q
    Required: 0 failed, count >= 631
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "docs(t103): structured truthful README"
+6. git commit -m "feat(t104): first macOS app bundle and installer"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
