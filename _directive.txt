@@ -1,35 +1,36 @@
-T90 — Propose one queued action from the consented profile. Do ONLY this directive. Do not start T91. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend e0e2ea8. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe or a license server. Do not un-quarantine desktop_engine.py. Do not add Electron. Do not weaken T56–T89. English only.
+T91 — Tell the truth about shipped capability. Do ONLY this directive. Do not start T92. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 57d3085. Do not rewrite LICENSE. Do not rewrite the README Author paragraph. Do not add Stripe or a license server. Do not un-quarantine desktop_engine.py. Do not add Electron. Do not weaken T56–T90. English only.
 
-Baseline on main: T01–T89. HEAD e0e2ea8. pytest was 573 green after T89.
+Baseline on main: T01–T90. HEAD 57d3085. pytest was 577 green after T90.
 
-GOAL: `aegis propose TENANT_ID` inserts one proposed twin_action from profile.json. It does not approve or execute.
+GOAL: README.md and STATUS.md match proof. No new product claims.
 
-Implement:
+Required statements, all true today:
+- Six named specialists propose into one queue. They do not execute.
+- Execute needs a human approve bound to tenant + actor + digest.
+- Default provider is Echo. HTTP is optional and labeled.
+- Email send is local outbox only. No SMTP in core.
+- Local data lives under the user data root, not the git tree.
+- Cloud Render is optional. Not a production SaaS claim.
 
-1) core/twin_local.py
-- propose TENANT_ID
-- If profile.json missing or consented is not true, write nothing and exit 2
-- Insert one proposed action for that tenant whose payload includes role and goal
-- Do not call execute
-- No network, no card fields
+Forbidden:
+- multi-agent negotiation / debate / LangGraph claims
+- coverage percent you did not measure
+- “enterprise-grade” or “production SaaS”
+- changing Author or LICENSE
 
-2) tests/test_t90_propose_from_profile.py
-- AEGIS_DATA_DIR temp
-- test_propose_without_profile_exits_2
-- test_propose_with_consent_increments_pending
-- No live network
+If a heading already says the opposite, replace that heading. Do not invent features.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from core.twin_local import main; print(callable(main))"
+   ./.venv/bin/python -c "from pathlib import Path; t=Path('README.md').read_text()+Path('STATUS.md').read_text(); print('Echo' in t and 'outbox' in t.lower())"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 573
+   Required: 0 failed, count >= 577
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t90): propose queued action from consented profile"
+6. git commit -m "docs(t91): truth surfaces match shipped twin"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 
