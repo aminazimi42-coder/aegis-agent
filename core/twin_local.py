@@ -48,6 +48,16 @@ def main(argv: list[str] | None = None) -> int:
       mismatch, else ``0`` (T96).
     * ``execute --dry-run ACTION_ID TENANT_ID`` — print what would run
       and write nothing; the action is not marked executed (T96).
+    * ``search TENANT_ID TERM`` — grep-style scan under the tenant
+      data root for ``.md``/``.json`` files matching *term*
+      (case-insensitive).  Read-only (T100).
+    * ``replay ACTION_ID TENANT_ID`` — write one markdown file under
+      the tenant work-products directory listing the propose → approve
+      → execute lifecycle if present.  Does not re-execute (T100).
+    * ``export TENANT_ID OUT_PATH`` — pack the tenant's data-root
+      folders into a local ``.tar.gz`` archive (T100).
+    * ``import ARCHIVE_PATH`` — restore an archive into
+      ``AEGIS_DATA_DIR``.  Never touches another tenant (T100).
 
     The default command is ``status`` with the ``AEGIS_TENANT`` env var (or
     ``"default"``) as the tenant id.
@@ -76,6 +86,14 @@ def main(argv: list[str] | None = None) -> int:
         return _reject_cmd(rest)
     if command == "verify":
         return _verify_cmd(rest)
+    if command == "search":
+        return _search_cmd(rest)
+    if command == "replay":
+        return _replay_cmd(rest)
+    if command == "export":
+        return _export_cmd(rest)
+    if command == "import":
+        return _import_cmd(rest)
 
     print(f"unknown command: {command}", file=sys.stderr)
     return 2
@@ -464,6 +482,88 @@ def _reject_cmd(rest: list[str]) -> int:
 
     append_audit(tenant_id, "reject", action_id)
     print(result["status"])
+    return 0
+
+
+def _search_cmd(rest: list[str]) -> int:
+    """Search tenant files: ``search TENANT_ID TERM`` (T100).
+
+    Greps ``.md`` and ``.json`` files under the tenant's data-root
+    directories for *term* (case-insensitive).  Prints each matching
+    path on its own line.  Read-only.
+    """
+    if len(rest) != 2:
+        print("usage: search TENANT_ID TERM", file=sys.stderr)
+        return 2
+
+    tenant_id, term = rest
+    from core.twin_local_recall import search
+
+    matches = search(tenant_id, term)
+    for m in matches:
+        print(m)
+    return 0
+
+
+def _replay_cmd(rest: list[str]) -> int:
+    """Replay an action lifecycle: ``replay ACTION_ID TENANT_ID`` (T100).
+
+    Writes one markdown file under the tenant work-products directory
+    listing the propose → approve → execute lifecycle if present.  Does
+    not re-execute.
+    """
+    if len(rest) != 2:
+        print("usage: replay ACTION_ID TENANT_ID", file=sys.stderr)
+        return 2
+
+    action_id, tenant_id = rest
+    from core.twin_local_recall import replay
+
+    try:
+        result = replay(action_id, tenant_id)
+    except ValueError as exc:
+        print(f"replay error: {exc}", file=sys.stderr)
+        return 2
+    print(result["path"])
+    return 0
+
+
+def _export_cmd(rest: list[str]) -> int:
+    """Export tenant data: ``export TENANT_ID OUT_PATH`` (T100).
+
+    Packs the tenant's data-root folders into a local ``.tar.gz`` archive.
+    """
+    if len(rest) != 2:
+        print("usage: export TENANT_ID OUT_PATH", file=sys.stderr)
+        return 2
+
+    tenant_id, out_path = rest
+    from core.twin_local_recall import export_tenant
+
+    result = export_tenant(tenant_id, out_path)
+    print(result["archive"])
+    return 0
+
+
+def _import_cmd(rest: list[str]) -> int:
+    """Import an archive: ``import ARCHIVE_PATH`` (T100).
+
+    Restores the archive into ``AEGIS_DATA_DIR``.  Never touches another
+    tenant.
+    """
+    if len(rest) != 1:
+        print("usage: import ARCHIVE_PATH", file=sys.stderr)
+        return 2
+
+    archive_path = rest[0]
+    from core.twin_local_recall import import_archive
+
+    try:
+        result = import_archive(archive_path)
+    except (ValueError, OSError) as exc:
+        print(f"import error: {exc}", file=sys.stderr)
+        return 2
+    print(result["data_root"])
     return 0
 
 

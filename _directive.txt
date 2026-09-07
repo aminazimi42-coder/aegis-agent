@@ -1,18 +1,45 @@
-T99 CONTINUE — Finish verification and push only. Do not start T100. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add features. English only.
+T100 — Local search, replay file, export and import. Do ONLY this directive. Do not start T101. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 4ff2755. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe or a license server. Do not un-quarantine desktop_engine.py. Do not add Electron. Do not weaken T56–T99. English only.
 
-The reject/budget/conflict code is already in the tree. One SELECT patch was applied so reject_reason loads. Do not redesign.
+Baseline on main: T01–T99. HEAD 4ff2755. pytest was 605 green after T99.
 
-Run exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
+GOAL: recall and move local state. No sync server. No vector DB.
+
+Implement:
+
+1) aegis search TENANT_ID TERM
+- grep-style scan under the tenant data root markdown/json
+- print matching paths
+- read-only
+
+2) aegis replay ACTION_ID TENANT_ID
+- write one markdown file under the tenant data root that lists propose → approve → execute if present
+- do not re-execute
+
+3) aegis export TENANT_ID OUT_PATH
+- pack that tenant’s data_root folder to a local archive file
+- aegis import ARCHIVE_PATH
+- restore into AEGIS_DATA_DIR
+- never touch another tenant
+
+4) tests/test_t100_search_replay_export.py
+- AEGIS_DATA_DIR temp
+- test_search_finds_term
+- test_replay_writes_markdown
+- test_export_import_roundtrip
+- No live network
+
+Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
-3. ./.venv/bin/python -m pytest -q tests/test_t99_reject_budget_conflict.py
-   Required: 0 failed
+3. Proof:
+   ./.venv/bin/python -c "from pathlib import Path; print(Path('tests/test_t100_search_replay_export.py').is_file())"
+   Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count > 600
+   Required: 0 failed, count > 605
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t99): reject reasons specialist budget conflict flag"
+6. git commit -m "feat(t100): local search replay export import"
 7. git push origin main
-8. Print new SHA, pytest count, T99 file-test result.
+8. Print new SHA, pytest count, proof output.
 
 Stop after push. Do nothing else.
