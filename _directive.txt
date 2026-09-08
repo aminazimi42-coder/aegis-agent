@@ -1,18 +1,37 @@
-T123 CONTINUE — Finish verification only. Do not start T124. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend HEAD. Do not rewrite LICENSE or the README Author paragraph. Do not add features. English only.
+T124 — Secret-shape redact and untrusted-source prefilter. Do ONLY this directive. Do not start T125. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 3265677. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, SMTP, Gmail, Slack, webhooks, Postgres, or a live paid LLM. Do not bind 0.0.0.0. Do not let any specialist execute. Do not weaken T56–T123. English only in repo files.
 
-The previous session added RISK_TTL_HOURS, digest_label RISK_L2/RISK_L3, risk_warn that never auto-executes, card digest_label, and tests/test_t123_digest_risk.py. L2 test was switched to insert_specialist_proposal. Work is uncommitted. Full pytest after that fix was not finished.
+Baseline on main: T01–T123. HEAD 326567765fa1badedb3d60d3f9f4852260c24d45. pytest was 713 passed, 1 skipped after T123.
 
-Do only this sequence. If a proof fails, fix only that failure and restart from 1.
+GOAL: Proposed card text and audit JSONL must not store raw secret-shaped strings. Untrusted pasted source is classified before it becomes a proposal body. No outbound scanner.
+
+Implement:
+
+1) core/redact.py (or extend an existing sanitizer)
+- Replace patterns that look like sk- / gh[pous]_ / AKIA / bearer tokens with [REDACTED]
+- Apply on propose persist and on audit_logger write
+- Digest still hashes the stored redacted payload, not the raw paste
+
+2) Untrusted prefilter
+- If the operator text contains those shapes, persist the redacted form
+- Do not call a remote DLP API
+
+3) tests/test_t124_redact.py
+- test_secret_shape_not_stored
+- test_audit_line_redacted
+- test_digest_uses_stored_payload
+- No live network except TestClient
+
+Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; t=Path('tests/test_t123_digest_risk.py').read_text().lower(); print('409' in t and 'l2' in t and 'ttl' in t)"
+   ./.venv/bin/python -c "from pathlib import Path; t=Path('tests/test_t124_redact.py').read_text().lower(); print('redact' in t and 'audit' in t)"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count >= 709
+   Required: 0 failed, count >= 713
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t123): digest property and risk ttl phrase"
+6. git commit -m "feat(t124): secret-shape redact and prefilter"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

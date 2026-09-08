@@ -19,6 +19,7 @@ from typing import Any
 from uuid import uuid4
 
 from core.persistence import get_connection
+from core.redact import redact, redact_payload
 from core.twin_interview import get_latest_profile
 from core.twin_risk import ALLOWED_L0_EFFECTS, attach_risk, classify
 
@@ -816,6 +817,10 @@ def insert_specialist_proposal(
         raise ValueError("budget exceeded")
     action_id = f"act-{uuid4().hex[:12]}"
     now = _now()
+    # T124 — redact secret-shaped substrings from the title and payload
+    # before they are persisted or enter the canonical envelope digest.
+    title = redact(title) if isinstance(title, str) else title
+    payload = redact_payload(payload)
     payload_json = (
         json.dumps(payload, ensure_ascii=False)
         if payload is not None

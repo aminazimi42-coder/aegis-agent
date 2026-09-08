@@ -72,7 +72,10 @@ def log_event(
         "correlation_id": correlation_id,
     }
     if extra:
-        event.update(extra)
+        # T124 — redact secret-shaped strings from audit extra values.
+        from core.redact import redact_payload
+
+        event.update(redact_payload(extra))
 
     path = _audit_path()
     path.parent.mkdir(parents=True, exist_ok=True)

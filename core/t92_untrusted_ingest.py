@@ -109,7 +109,11 @@ def ingest_untrusted(
     if hit is not None:
         raise ValueError(f"injection-shaped: {hit[:80]}")
 
-    body = (text or "")[:400]
+    # T124 — redact secret-shaped substrings from the untrusted body
+    # before it becomes a proposal body or twin-event payload.
+    from core.redact import redact
+
+    body = redact((text or "")[:400])
     pl: dict[str, Any] = {
         "provenance": UNTRUSTED,
         "text": body,
