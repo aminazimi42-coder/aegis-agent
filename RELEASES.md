@@ -65,7 +65,7 @@ entry points:
 The release was validated through the project test suite and local runtime
 checks. The latest verification result is:
 
-- 588 passed, 1 skipped
+- 725 passed, 1 skipped
 - 0 failures
 - health check returned HTTP 200
 - /docs served successfully
