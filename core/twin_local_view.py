@@ -109,7 +109,8 @@ def list_queue(tenant_id: str) -> dict[str, list[dict[str, Any]]]:
 
     The returned dict has two keys:
 
-    * ``pending`` — actions whose status is ``"proposed"``.
+    * ``pending`` — actions whose status is ``"proposed"``, sorted by
+      deterministic priority (T117).
     * ``approved_waiting`` — actions whose status is ``"approved"``
       (approved but not yet executed).
 
@@ -117,6 +118,8 @@ def list_queue(tenant_id: str) -> dict[str, list[dict[str, Any]]]:
     No network libraries are used — the data is read from the local
     SQLite database only.
     """
+    from core.priority import sort_actions
+
     actions = list_actions(tenant_id)
     pending: list[dict[str, Any]] = []
     approved_waiting: list[dict[str, Any]] = []
@@ -126,4 +129,5 @@ def list_queue(tenant_id: str) -> dict[str, list[dict[str, Any]]]:
             pending.append(a)
         elif status == "approved":
             approved_waiting.append(a)
+    pending = sort_actions(pending)
     return {"pending": pending, "approved_waiting": approved_waiting}

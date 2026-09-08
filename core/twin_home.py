@@ -33,8 +33,12 @@ def _work_products_dir(tenant_id: str) -> Path:
 
 
 def _pending_actions(tenant_id: str) -> list[dict[str, Any]]:
-    """Return twin_actions rows for *tenant_id* whose status is ``proposed``."""
-    return [a for a in list_actions(tenant_id) if a.get("status") == "proposed"]
+    """Return twin_actions rows for *tenant_id* whose status is ``proposed``,
+    sorted by deterministic priority (T117).
+    """
+    from core.priority import prioritize_pending
+
+    return prioritize_pending(tenant_id)
 
 
 def _approved_not_executed(tenant_id: str) -> list[dict[str, Any]]:

@@ -359,11 +359,17 @@ class TwinActionRejectRequest(BaseModel):
     T114 — ``actor_id`` and ``expected_payload_sha256`` are required so the
     reject is bound to the exact envelope digest, the same way approve is.
     A mutated payload digest is rejected with 409.
+
+    T117 — optional ``reason_enum`` carries a typed reject reason label
+    (``WRONG_TIMING``, ``WRONG_RECIPIENT``, ``LOW_CONFIDENCE``,
+    ``POLICY_VIOLATION``, ``DUPLICATE``, ``OTHER``).  Defaults to ``OTHER``
+    when omitted so old clients still work.
     """
 
     tenant_id: str
     actor_id: str = ""
     expected_payload_sha256: str = ""
+    reason_enum: str | None = None
 
 
 class TwinScheduleRequest(BaseModel):
@@ -1177,6 +1183,7 @@ def create_app() -> FastAPI:
                 request.tenant_id,
                 actor_id=request.actor_id,
                 expected_payload_sha256=request.expected_payload_sha256 or None,
+                reason_enum=request.reason_enum,
             )
         except ValueError as exc:
             msg = str(exc)

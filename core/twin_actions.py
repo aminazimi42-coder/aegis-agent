@@ -39,6 +39,19 @@ _VALID_STATUSES: frozenset[str] = frozenset(
 # T99 — allowed reject reason codes.
 REJECT_REASONS: tuple[str, ...] = ("duplicate", "stale", "unsafe", "other")
 
+# T117 — structured reject reason enum.  These are typed labels that
+# explain *why* a human rejected a proposed action.  ``OTHER`` is the
+# default so old clients that omit the reason still work.
+REJECT_REASON_ENUM: tuple[str, ...] = (
+    "WRONG_TIMING",
+    "WRONG_RECIPIENT",
+    "LOW_CONFIDENCE",
+    "POLICY_VIOLATION",
+    "DUPLICATE",
+    "OTHER",
+)
+_DEFAULT_REASON_ENUM = "OTHER"
+
 _action_lock = threading.Lock()
 
 _POLICY_VERSION = "t56"
@@ -178,6 +191,13 @@ def _ensure_schema() -> None:
                 conn.execute(f"ALTER TABLE twin_actions ADD COLUMN {col}")
             except sqlite3.OperationalError:
                 pass
+        # T117 — typed reject reason enum column.
+        try:
+            conn.execute(
+                "ALTER TABLE twin_actions ADD COLUMN reject_reason_enum TEXT"
+            )
+        except sqlite3.OperationalError:
+            pass
 
 
 # ---------------------------------------------------------------------------#
@@ -218,6 +238,9 @@ def _row_to_dict(row: sqlite3.Row | dict[str, Any]) -> dict[str, Any]:
         result["reject_reason"] = row["reject_reason"]
     if "conflict" in keys:
         result["conflict"] = bool(row["conflict"])
+    # T117 — typed reject reason enum.
+    if "reject_reason_enum" in keys:
+        result["reject_reason_enum"] = row["reject_reason_enum"]
     return result
 
 
@@ -238,7 +261,7 @@ def _load_action(action_id: str) -> dict[str, Any] | None:
         row = conn.execute(
             "SELECT action_id, tenant_id, kind, title, status, created_at, "
             "payload, payload_sha256, approved_payload_sha256, approved_by, approved_at, "
-            "why_text, reject_reason, conflict "
+            "why_text, reject_reason, reject_reason_enum, conflict "
             "FROM twin_actions WHERE action_id = ?",
             (action_id,),
         ).fetchone()
@@ -441,6 +464,7 @@ def reject(
     why: str | None = None,
     actor_id: str | None = None,
     expected_payload_sha256: str | None = None,
+    reason_enum: str | None = None,
 ) -> dict[str, Any]:
     """Set an action's status to ``rejected``.
 
@@ -453,6 +477,15 @@ def reject(
     ``other``); otherwise ``ValueError("invalid reject reason")`` is
     raised.  The reason is persisted on the ``reject_reason`` column.
 
+    T117 — when ``reason_enum`` is provided it must be one of the labels
+    in :data:`REJECT_REASON_ENUM` (``WRONG_TIMING``, ``WRONG_RECIPIENT``,
+    ``LOW_CONFIDENCE``, ``POLICY_VIOLATION``, ``DUPLICATE``, ``OTHER``);
+    otherwise ``ValueError("invalid reason enum")`` is raised.  When
+    omitted, ``reason_enum`` defaults to ``OTHER`` so old clients that do
+    not send a typed reason still work.  The enum is persisted on the
+    ``reject_reason`` column alongside (or in place of) the legacy
+    ``reason``.
+
     T114 — when ``expected_payload_sha256`` is provided it must equal the
     current envelope digest, otherwise ``ValueError("payload digest
     mismatch")`` is raised.  When it is ``None`` (the CLI path) the digest
@@ -460,6 +493,10 @@ def reject(
     """
     if reason is not None and reason not in REJECT_REASONS:
         raise ValueError("invalid reject reason")
+    if reason_enum is None:
+        reason_enum = _DEFAULT_REASON_ENUM
+    if reason_enum not in REJECT_REASON_ENUM:
+        raise ValueError("invalid reason enum")
     _ensure_schema()
     with _action_lock:
         action = _load_action(action_id)
@@ -476,9 +513,10 @@ def reject(
         with get_connection() as conn:
             conn.execute(
                 "UPDATE twin_actions "
-                "SET status = 'rejected', why_text = ?, reject_reason = ? "
+                "SET status = 'rejected', why_text = ?, "
+                "    reject_reason = ?, reject_reason_enum = ? "
                 "WHERE action_id = ?",
-                (why or "", reason, action_id),
+                (why or "", reason, reason_enum, action_id),
             )
             # T65 — durable feedback row.
             conn.execute(
@@ -490,6 +528,7 @@ def reject(
         action["status"] = "rejected"
         action["why_text"] = why or ""
         action["reject_reason"] = reason
+        action["reject_reason_enum"] = reason_enum
         return action
 
 
@@ -678,7 +717,7 @@ def list_actions(tenant_id: str) -> list[dict[str, Any]]:
         rows = conn.execute(
             "SELECT action_id, tenant_id, kind, title, status, created_at, "
             "payload, payload_sha256, approved_payload_sha256, approved_by, approved_at, "
-            "reject_reason, conflict "
+            "reject_reason, reject_reason_enum, conflict "
             "FROM twin_actions WHERE tenant_id = ? "
             "ORDER BY created_at ASC",
             (tenant_id,),
