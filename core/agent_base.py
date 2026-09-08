@@ -24,7 +24,9 @@ class BaseAgent(ABC):
         """
         return text
 
-    def propose(self, tenant_id: str, text: str = "") -> dict[str, Any]:
+    def propose(
+        self, tenant_id: str, text: str = "", batch_id: str | None = None
+    ) -> dict[str, Any]:
         """Propose one twin_action row with status ``proposed``.
 
         Inserts an action whose ``kind`` is prefixed with the agent's
@@ -38,6 +40,11 @@ class BaseAgent(ABC):
         specialist's row is distinguishable.  When *text* is empty the
         pre-T111 behaviour is preserved (empty payload).
 
+        T120 — *batch_id* tags all rows from one propose call so the
+        two-column home can split the newest batch (Latest) from older
+        batches (Archive).  When *batch_id* is ``None`` the row is
+        inserted with a ``NULL`` batch_id (treated as archive).
+
         Specialists must never call ``twin_actions.execute``; the only
         path to ``executed`` is human approval followed by execution.
         """
@@ -48,7 +55,9 @@ class BaseAgent(ABC):
         if text:
             title = f"{self.name} proposal: {text}"
             payload = {"text": text, "body": self._propose_body(text)}
-        return insert_specialist_proposal(tenant_id, self.name, title, payload)
+        return insert_specialist_proposal(
+            tenant_id, self.name, title, payload, batch_id=batch_id
+        )
 
     def profile(self) -> dict:
         """Return the canonical metadata for the agent."""

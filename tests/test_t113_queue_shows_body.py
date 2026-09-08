@@ -64,24 +64,24 @@ class TestT113QueueShowsBody(unittest.TestCase):
     def test_card_not_title_only(self) -> None:
         """The queue card shows body, digest, and Approve — not just the title."""
         html = _APP_HTML.read_text(encoding="utf-8")
-        # Extract the pending forEach block to inspect the card template.
+        # Inspect the renderCard function — the card template used by both
+        # the Archive and Latest columns (T120).
         match = re.search(
-            r"pending\.forEach\(function[^}]*\{.*?\}\);",
+            r"function\s+renderCard\s*\([^)]*\)\s*\{",
             html,
-            re.DOTALL,
         )
-        self.assertIsNotNone(match, "pending forEach block not found in app.html")
-        assert match is not None  # for type checkers
-        block = match.group(0)
+        self.assertIsNotNone(match, "renderCard function not found in app.html")
+        # Extract the script body after renderCard — the card template lives there.
+        script = html.split("function renderCard", 1)[-1]
 
         # Must render a body element (queue-body) — not title-only.
-        self.assertIn("queue-body", block, "card does not render a body element")
+        self.assertIn("queue-body", script, "card does not render a body element")
         # Must still show the digest.
-        self.assertIn("digest", block, "card does not show the digest")
+        self.assertIn("digest", script, "card does not show the digest")
         # Must still show the Approve button.
-        self.assertIn("Approve", block, "card does not show the Approve button")
+        self.assertIn("Approve", script, "card does not show the Approve button")
         # Must reference the specialist name from the kind prefix.
-        self.assertIn("specialistName", block, "card does not extract the specialist name")
+        self.assertIn("specialistName", script, "card does not extract the specialist name")
 
     # ------------------------------------------------------------------ #
     # End-to-end: proposing produces a queue with body in payload

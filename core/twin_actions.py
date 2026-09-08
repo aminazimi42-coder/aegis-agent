@@ -198,6 +198,13 @@ def _ensure_schema() -> None:
             )
         except sqlite3.OperationalError:
             pass
+        # T120 — batch_id column so the two-column home can split proposed
+        # rows by the newest propose batch.  Older rows without a batch_id
+        # are treated as archive.
+        try:
+            conn.execute("ALTER TABLE twin_actions ADD COLUMN batch_id TEXT")
+        except sqlite3.OperationalError:
+            pass
 
 
 # ---------------------------------------------------------------------------#
@@ -241,6 +248,9 @@ def _row_to_dict(row: sqlite3.Row | dict[str, Any]) -> dict[str, Any]:
     # T117 — typed reject reason enum.
     if "reject_reason_enum" in keys:
         result["reject_reason_enum"] = row["reject_reason_enum"]
+    # T120 — batch_id (may be NULL on older rows).
+    if "batch_id" in keys:
+        result["batch_id"] = row["batch_id"]
     return result
 
 
@@ -261,7 +271,7 @@ def _load_action(action_id: str) -> dict[str, Any] | None:
         row = conn.execute(
             "SELECT action_id, tenant_id, kind, title, status, created_at, "
             "payload, payload_sha256, approved_payload_sha256, approved_by, approved_at, "
-            "why_text, reject_reason, reject_reason_enum, conflict "
+            "why_text, reject_reason, reject_reason_enum, conflict, batch_id "
             "FROM twin_actions WHERE action_id = ?",
             (action_id,),
         ).fetchone()
@@ -717,7 +727,7 @@ def list_actions(tenant_id: str) -> list[dict[str, Any]]:
         rows = conn.execute(
             "SELECT action_id, tenant_id, kind, title, status, created_at, "
             "payload, payload_sha256, approved_payload_sha256, approved_by, approved_at, "
-            "reject_reason, reject_reason_enum, conflict "
+            "reject_reason, reject_reason_enum, conflict, batch_id "
             "FROM twin_actions WHERE tenant_id = ? "
             "ORDER BY created_at ASC",
             (tenant_id,),
@@ -774,12 +784,19 @@ def insert_specialist_proposal(
     agent_name: str,
     title: str,
     payload: Any,
+    batch_id: str | None = None,
 ) -> dict[str, Any]:
     """Insert one twin_action row with ``status = "proposed"``.
 
     Called **only** by :meth:`BaseAgent.propose`.  The ``kind`` is
     prefixed with the agent's name (``f"{agent_name}:propose"``).
     Human approve/execute remains the only path to ``executed``.
+
+    T120 — *batch_id* tags all rows from a single propose call so the
+    two-column home can split the newest batch (Latest) from older
+    batches (Archive).  When *batch_id* is ``None`` the row is inserted
+    with a ``NULL`` batch_id; older rows without a batch_id are treated
+    as archive by the home view.
 
     T99 — per-specialist daily budget.  When the number of proposals
     from *agent_name* on the current UTC day reaches
@@ -821,8 +838,8 @@ def insert_specialist_proposal(
             conn.execute(
                 "INSERT INTO twin_actions "
                 "(action_id, tenant_id, kind, title, status, "
-                "created_at, payload, payload_sha256, conflict) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "created_at, payload, payload_sha256, conflict, batch_id) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     action_id,
                     tenant_id,
@@ -833,6 +850,7 @@ def insert_specialist_proposal(
                     payload_json,
                     digest,
                     conflict,
+                    batch_id,
                 ),
             )
     return {
@@ -845,4 +863,5 @@ def insert_specialist_proposal(
         "payload": payload,
         "payload_sha256": digest,
         "conflict": bool(conflict),
+        "batch_id": batch_id,
     }

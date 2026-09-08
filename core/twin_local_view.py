@@ -107,16 +107,22 @@ def read_home(tenant_id: str) -> str:
 def list_queue(tenant_id: str) -> dict[str, list[dict[str, Any]]]:
     """Return the local action queue for *tenant_id* from ``twin_actions``.
 
-    The returned dict has two keys:
+    The returned dict has four keys:
 
     * ``pending`` — actions whose status is ``"proposed"``, sorted by
       deterministic priority (T117).
     * ``approved_waiting`` — actions whose status is ``"approved"``
       (approved but not yet executed).
+    * ``latest`` — proposed actions whose ``batch_id`` equals the
+      newest propose batch for *tenant_id* (T120).  When no batch_id
+      exists on any row, ``latest`` is empty.
+    * ``archive`` — proposed actions whose ``batch_id`` differs from
+      the newest batch, plus proposed rows whose ``batch_id`` is
+      ``None`` (older rows without a batch_id are treated as archive).
 
-    Actions with status ``"executed"`` or ``"rejected"`` are excluded.
-    No network libraries are used — the data is read from the local
-    SQLite database only.
+    Actions with status ``"executed"`` or ``"rejected"`` are excluded
+    from all four lists.  No network libraries are used — the data is
+    read from the local SQLite database only.
     """
     from core.priority import sort_actions
 
@@ -130,4 +136,41 @@ def list_queue(tenant_id: str) -> dict[str, list[dict[str, Any]]]:
         elif status == "approved":
             approved_waiting.append(a)
     pending = sort_actions(pending)
-    return {"pending": pending, "approved_waiting": approved_waiting}
+
+    # T120 — split proposed rows into latest vs archive by batch_id.
+    newest_batch = _newest_batch_id(pending)
+    latest: list[dict[str, Any]] = []
+    archive: list[dict[str, Any]] = []
+    for a in pending:
+        bid = a.get("batch_id")
+        if bid is not None and bid == newest_batch:
+            latest.append(a)
+        else:
+            archive.append(a)
+
+    return {
+        "pending": pending,
+        "approved_waiting": approved_waiting,
+        "latest": latest,
+        "archive": archive,
+    }
+
+
+def _newest_batch_id(pending: list[dict[str, Any]]) -> str | None:
+    """Return the batch_id of the newest propose batch among *pending*.
+
+    The newest batch is the batch_id of the most recently created
+    proposed row that has a non-null batch_id.  Returns ``None`` when no
+    pending row has a batch_id.
+    """
+    newest: str | None = None
+    newest_created: str = ""
+    for a in pending:
+        bid = a.get("batch_id")
+        if not bid:
+            continue
+        created = a.get("created_at", "")
+        if created >= newest_created:
+            newest = bid
+            newest_created = created
+    return newest

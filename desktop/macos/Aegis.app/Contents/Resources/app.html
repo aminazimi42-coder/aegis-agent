@@ -16,7 +16,7 @@
   * { box-sizing: border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-    max-width: 720px;
+    max-width: 960px;
     margin: 2rem auto;
     padding: 0 1.5rem;
     color: var(--fg);
@@ -25,6 +25,7 @@
   }
   h1 { font-size: 1.8rem; margin: 0 0 0.25rem; }
   h2 { font-size: 1.2rem; margin: 1.5rem 0 0.5rem; }
+  h3 { font-size: 1rem; margin: 0 0 0.75rem; }
   .badge {
     display: inline-block;
     font-size: 0.7rem;
@@ -84,6 +85,23 @@
   }
   .dot-ok { background: #34c759; }
   .dot-err { background: #ff3b30; }
+  /* T120 — two-column layout for Archive and Latest task */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+  .col-archive, .col-latest {
+    min-height: 4rem;
+  }
+  .col-header {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 2px solid var(--accent);
+  }
   .queue-item {
     border-bottom: 1px solid var(--border);
     padding: 0.5rem 0;
@@ -93,13 +111,16 @@
   .queue-body { font-size: 0.85rem; color: var(--fg); margin: 0.3rem 0; white-space: pre-wrap; }
   .queue-meta { font-size: 0.8rem; color: var(--muted); }
   .err { color: #ff3b30; }
+  @media (max-width: 700px) {
+    .two-col { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
   <span class="badge">Local Twin</span>
   <h1>Aegis Operator</h1>
   <p class="muted">
-    Operator page for interview, status, and the pending queue.
+    Operator page for interview, status, and the two-column home.
     All requests go to the local twin at <code>http://127.0.0.1:8741</code> only —
     no third-party CDN, no cloud calls.
   </p>
@@ -145,10 +166,19 @@
     <pre id="health-json"></pre>
   </div>
 
-  <!-- ── Pending queue ────────────────────────────────────────────── -->
-  <h2>Pending Queue</h2>
-  <div class="card">
-    <div id="queue-items"><span class="muted">Loading…</span></div>
+  <!-- ── Two-column home (T120): Archive + Latest task ─────────── -->
+  <h2>Home — Two Columns</h2>
+  <div class="two-col">
+    <!-- Left column: Archive — proposed rows not from the latest batch -->
+    <div class="col-archive card">
+      <div class="col-header">Archive</div>
+      <div id="archive-items"><span class="muted">Loading…</span></div>
+    </div>
+    <!-- Right column: Latest — proposed rows from the most recent batch -->
+    <div class="col-latest card">
+      <div class="col-header">Latest task</div>
+      <div id="latest-items"><span class="muted">Loading…</span></div>
+    </div>
   </div>
 
 <script>
@@ -309,58 +339,58 @@
     postNext();
   };
 
-  // ── Pending queue ──
+  // ── Two-column home (T120) ──
+  // Render a single proposed card with Approve and Reject.
+  function renderCard(a) {
+    var digest = a.payload_sha256 || "";
+    var kindStr = a.kind || "";
+    var specialistName = kindStr.split(":")[0];
+    var p = a.payload || {};
+    var bodyText = (p && typeof p.body === "string") ? p.body : (a.title || "");
+    var html = '<div class="queue-item">'
+      + '<div class="queue-title">' + esc(a.title || a.action_id) + '</div>'
+      + '<div class="queue-body">' + esc(bodyText) + '</div>'
+      + '<div class="queue-meta">' + esc(specialistName) + ' · proposed · ' + esc(kindStr) + ' · ' + esc(a.action_id || "") + '</div>'
+      + '<div class="queue-meta">digest: <code>' + esc(digest) + '</code></div>';
+    if (digest) {
+      html += '<div class="row">'
+        + '<button onclick="approveAction(\'' + esc(a.action_id) + '\',\'' + esc(digest) + '\')">Approve</button>'
+        + '<button class="btn-reject" onclick="rejectAction(\'' + esc(a.action_id) + '\',\'' + esc(digest) + '\')">Reject</button>'
+        + '<span class="muted" id="approve-label-' + esc(a.action_id) + '"></span></div>';
+    } else {
+      html += '<div class="muted err">No digest — cannot approve or reject</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
   function loadQueue() {
     var t = el("tenant").value || "local";
     get("/api/v1/twin/queue/" + encodeURIComponent(t), function (err, data) {
-      var box = el("queue-items");
+      var archiveBox = el("archive-items");
+      var latestBox = el("latest-items");
       if (err || !data) {
-        box.innerHTML = '<span class="muted">No queue data.</span>';
+        archiveBox.innerHTML = '<span class="muted">No archive data.</span>';
+        latestBox.innerHTML = '<span class="muted">No latest data.</span>';
         return;
       }
-      var pending = data.pending || [];
-      var approved = data.approved_waiting || [];
-      if (pending.length === 0 && approved.length === 0) {
-        box.innerHTML = '<span class="muted">Queue is empty.</span>';
-        return;
+      // T120 — split proposed rows into Archive and Latest by batch_id.
+      var latest = data.latest || [];
+      var archive = data.archive || [];
+      if (latest.length === 0) {
+        latestBox.innerHTML = '<span class="muted">No latest task — propose one above.</span>';
+      } else {
+        latestBox.innerHTML = latest.map(renderCard).join("");
       }
-      var html = "";
-      pending.forEach(function (a) {
-        var digest = a.payload_sha256 || "";
-        // Specialist name is the prefix of kind before ":" (e.g. "Bita:propose").
-        var kindStr = a.kind || "";
-        var specialistName = kindStr.split(":")[0];
-        // Body lives inside payload.body (T112); fall back to the title if missing.
-        var p = a.payload || {};
-        var bodyText = (p && typeof p.body === "string") ? p.body : (a.title || "");
-        html += '<div class="queue-item">'
-          + '<div class="queue-title">' + esc(a.title || a.action_id) + '</div>'
-          + '<div class="queue-body">' + esc(bodyText) + '</div>'
-          + '<div class="queue-meta">' + esc(specialistName) + ' · proposed · ' + esc(a.kind || "") + ' · ' + esc(a.action_id || "") + '</div>'
-          + '<div class="queue-meta">digest: <code>' + esc(digest) + '</code></div>';
-        if (digest) {
-          html += '<div class="row">'
-            + '<button onclick="approveAction(\'' + esc(a.action_id) + '\',\'' + esc(digest) + '\')">Approve</button>'
-            + '<button class="btn-reject" onclick="rejectAction(\'' + esc(a.action_id) + '\',\'' + esc(digest) + '\')">Reject</button>'
-            + '<span class="muted" id="approve-label-' + esc(a.action_id) + '"></span></div>';
-        } else {
-          html += '<div class="muted err">No digest — cannot approve or reject</div>';
-        }
-        html += '</div>';
-      });
-      approved.forEach(function (a) {
-        html += '<div class="queue-item">'
-          + '<div class="queue-title">' + esc(a.title || a.action_id) + '</div>'
-          + '<div class="queue-meta">approved · ' + esc(a.kind || "") + ' · ' + esc(a.action_id || "") + '</div>'
-          + '</div>';
-      });
-      box.innerHTML = html;
+      if (archive.length === 0) {
+        archiveBox.innerHTML = '<span class="muted">Archive is empty.</span>';
+      } else {
+        archiveBox.innerHTML = archive.map(renderCard).join("");
+      }
     });
   }
 
   // ── Approve a pending action (T106) ──
-  // Posts tenant + actor + digest to the existing approve route on
-  // 127.0.0.1.  No approve is sent without the digest field.
   window.approveAction = function (actionId, digest) {
     if (!digest) {
       var lb = el("approve-label-" + actionId);
@@ -385,8 +415,6 @@
   };
 
   // ── Reject a pending action (T114) ──
-  // Posts tenant + actor + digest to the reject route on 127.0.0.1.
-  // A mutated digest is rejected with 409 by the server.
   window.rejectAction = function (actionId, digest) {
     if (!digest) {
       var lb = el("approve-label-" + actionId);
@@ -411,9 +439,6 @@
   };
 
   // ── Propose a task (T111) ──
-  // Posts tenant_id + text to /api/v1/twin/propose.  Six specialists
-  // each insert one proposed row; the queue refreshes afterward.
-  // Empty text is rejected client-side and server-side.
   window.proposeTask = function () {
     var t = el("tenant").value || "local";
     var text = (el("propose-text") && el("propose-text").value) || "";
@@ -446,9 +471,6 @@
   }
 
   // ── Profile prefill (T114) ──
-  // On load, GET /api/v1/twin/profile/local and stash the four
-  // operator-page fields so renderQuestions() can prefill them.
-  // Does NOT auto-Start Session — the operator clicks the button.
   var profilePrefill = null;
   function loadProfile() {
     get("/api/v1/twin/profile/local", function (err, data, status) {

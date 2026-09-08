@@ -1327,9 +1327,15 @@ def create_app() -> FastAPI:
             AhmadAgent(),
             AminAgent(),
         ]
+        # T120 — generate one batch_id per propose call so the
+        # two-column home can split the newest batch (Latest) from
+        # older batches (Archive).
+        from uuid import uuid4
+
+        batch_id = f"batch-{uuid4().hex[:12]}"
         proposals: list[dict[str, Any]] = []
         for agent in specialists:
-            row = agent.propose(request.tenant_id, text)
+            row = agent.propose(request.tenant_id, text, batch_id=batch_id)
             proposals.append(
                 {
                     "action_id": row["action_id"],
@@ -1338,9 +1344,15 @@ def create_app() -> FastAPI:
                     "title": row["title"],
                     "payload_sha256": row.get("payload_sha256", ""),
                     "status": row["status"],
+                    "batch_id": batch_id,
                 }
             )
-        return {"tenant_id": request.tenant_id, "proposals": proposals, "count": len(proposals)}
+        return {
+            "tenant_id": request.tenant_id,
+            "proposals": proposals,
+            "count": len(proposals),
+            "batch_id": batch_id,
+        }
 
     # --- Serve the operator page on loopback (T107) --- #
 
