@@ -597,27 +597,87 @@ def _is_email_action(action: dict[str, Any]) -> bool:
     return "email" in haystack
 
 
+GENESIS = "GENESIS"
+
+
+def _receipt_body(action: dict[str, Any], prev_receipt_sha: str) -> str:
+    """Return the canonical receipt body *without* the ``receipt_sha`` line.
+
+    The body is a fixed-order set of ``key: value`` lines terminated by a
+    trailing newline.  ``receipt_sha`` is computed over this exact string
+    and appended separately by :func:`_write_receipt` /
+    :func:`_dry_run_receipt_bytes`.
+    """
+    lines = [
+        f"action_id: {action['action_id']}",
+        f"title: {action['title']}",
+        f"kind: {action['kind']}",
+        f"tenant_id: {action['tenant_id']}",
+        f"prev_receipt_sha: {prev_receipt_sha}",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def _compute_receipt_sha(body: str) -> str:
+    """Return ``SHA-256`` of *body* (UTF-8 encoded)."""
+    return hashlib.sha256(body.encode("utf-8")).hexdigest()
+
+
+def _prev_receipt_sha(tenant_id: str) -> str:
+    """Return the ``receipt_sha`` of the most recently written receipt for
+    *tenant_id*, or ``GENESIS`` when no prior receipt exists.
+    """
+    receipts_dir = _work_products_dir(tenant_id) / "receipts"
+    if not receipts_dir.is_dir():
+        return GENESIS
+    candidates = sorted(
+        (p for p in receipts_dir.glob("*.md") if p.is_file()),
+        key=lambda p: p.stat().st_mtime,
+    )
+    if not candidates:
+        return GENESIS
+    latest = candidates[-1]
+    for line in latest.read_text(encoding="utf-8").splitlines():
+        if line.startswith("receipt_sha:"):
+            return line.split("receipt_sha:", 1)[1].strip()
+    return GENESIS
+
+
+def _dry_run_receipt_bytes(action: dict[str, Any]) -> bytes:
+    """Return the exact bytes that :func:`_write_receipt` would write for
+    *action*, without touching disk.
+    """
+    prev = _prev_receipt_sha(action["tenant_id"])
+    body = _receipt_body(action, prev)
+    sha = _compute_receipt_sha(body)
+    full = body + f"receipt_sha: {sha}\n"
+    return full.encode("utf-8")
+
+
 def _write_receipt(action: dict[str, Any]) -> Path:
     """Write ``work_products/{tenant_id}/receipts/{action_id}.md``.
 
-    One file per *action_id*.  Returns the path of the written receipt.
+    One file per *action_id*.  Each receipt is hash-chained to the previous
+    receipt via ``prev_receipt_sha`` (or ``GENESIS`` for the first) and
+    carries its own ``receipt_sha`` (SHA-256 of the canonical body without
+    the ``receipt_sha`` line).  Returns the path of the written receipt.
     """
     tenant_id = action["tenant_id"]
     action_id = action["action_id"]
     receipts_dir = _work_products_dir(tenant_id) / "receipts"
     receipts_dir.mkdir(parents=True, exist_ok=True)
     md_path = receipts_dir / f"{action_id}.md"
-    lines = [
-        f"action_id: {action_id}",
-        f"title: {action['title']}",
-        f"kind: {action['kind']}",
-        f"tenant_id: {tenant_id}",
-    ]
-    md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    data = _dry_run_receipt_bytes(action)
+    md_path.write_bytes(data)
     return md_path
 
 
-def execute(action_id: str, tenant_id: str | None = None) -> dict[str, Any]:
+def execute(
+    action_id: str,
+    tenant_id: str | None = None,
+    *,
+    dry_run: bool = False,
+) -> dict[str, Any]:
     """Execute an approved action.
 
     The local receipt (or outbox ``.eml`` for email actions) must exist on
@@ -632,6 +692,13 @@ def execute(action_id: str, tenant_id: str | None = None) -> dict[str, Any]:
     A second execute of an already-executed id returns the existing row
     without rewriting the receipt or changing status.  The first successful
     execute remains the only truth.
+
+    **T125 — dry_run:**  When ``dry_run=True`` the function computes the
+    exact bytes that *would* be written as a receipt (key
+    ``dry_run_bytes``) but does **not** write the receipt, does **not**
+    flip status to ``executed``, and does **not** append an audit line.
+    The digest lock and TTL guard still run (a dry-run on an
+    unapproved/stale/digest-mismatch action still raises).
     """
     _ensure_schema()
     with _action_lock:
@@ -690,6 +757,16 @@ def execute(action_id: str, tenant_id: str | None = None) -> dict[str, Any]:
             raise PermissionError(
                 f"unknown effect cannot be L0: {effect!r}"
             )
+
+        # T125 — dry-run: compute the would-write bytes and return early
+        # without writing the receipt, flipping status, or appending audit.
+        if dry_run:
+            if _is_email_action(action):
+                dry_bytes = b""
+            else:
+                dry_bytes = _dry_run_receipt_bytes(action)
+            action["dry_run_bytes"] = dry_bytes
+            return action
 
         # Write the local receipts/ file (or outbox .eml for email actions)
         # while status is still ``approved``.  If this raises, status must
