@@ -166,13 +166,31 @@ def complete_safe(
 
     force_echo = not quota_allows_http(tenant_id)
 
+    from core.llm_provider import EchoProvider
+
     provider = get_provider()
     if force_echo:
-        from core.llm_provider import EchoProvider
-
         provider = EchoProvider()
+
     provider_kind = "http" if isinstance(provider, HttpProvider) else "echo"
-    raw = provider.complete(safe_prompt, model=model, max_tokens=max_tokens)
+    fallback = False
+
+    # Router rule: if the HTTP flag is on but the provider is not
+    # available (base URL missing or last probe failed), fall back to
+    # Echo and label it.
+    if provider_kind == "http" and not provider.is_available():
+        provider = EchoProvider()
+        provider_kind = "echo"
+        fallback = True
+
+    try:
+        raw = provider.complete(safe_prompt, model=model, max_tokens=max_tokens)
+    except (OSError, ValueError, RuntimeError):
+        # If complete raises timeout/HTTP error, fall back to Echo.
+        provider = EchoProvider()
+        raw = provider.complete(safe_prompt, model=model, max_tokens=max_tokens)
+        provider_kind = "echo"
+        fallback = True
 
     # Persist token spend so a restart keeps the burn.
     try:
@@ -208,6 +226,8 @@ def complete_safe(
     }
     if provider_kind == "http":
         result["fallback_label"] = "http-fallback"
+    elif fallback:
+        result["fallback_label"] = "echo(fallback)"
 
     # HTTP-path completions consume one quota unit; Echo does not.
     if provider_kind == "http":

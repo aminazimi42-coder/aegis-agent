@@ -10,6 +10,12 @@ from typing import Any, Protocol, runtime_checkable
 class LLMProvider(Protocol):
     """Protocol for LLM completion providers."""
 
+    name: str
+
+    def is_available(self) -> bool:
+        """Return True when the provider is ready to serve completions."""
+        ...
+
     def complete(
         self,
         prompt: str,
@@ -32,6 +38,12 @@ def _estimate_tokens(text: str) -> int:
 
 class EchoProvider:
     """Deterministic, no-network LLM provider for tests and offline CI."""
+
+    name: str = "echo"
+
+    def is_available(self) -> bool:
+        """Echo is always available."""
+        return True
 
     def complete(
         self,
@@ -59,9 +71,24 @@ class HttpProvider:
     Only activated when AEGIS_LLM_BASE_URL and AEGIS_LLM_API_KEY are both set.
     """
 
+    name: str = "http"
+
     def __init__(self, base_url: str, api_key: str) -> None:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
+        self._last_probe_ok: bool = True
+
+    def is_available(self) -> bool:
+        """Return False when base URL is missing or the last probe failed.
+
+        The env-flag check is handled by :func:`get_provider`, which does not
+        return an :class:`HttpProvider` when the flag is off.  This method
+        covers the remaining cases: empty base URL or a previously failed
+        probe.
+        """
+        if not self.base_url:
+            return False
+        return self._last_probe_ok
 
     def complete(
         self,
@@ -92,9 +119,11 @@ class HttpProvider:
             with urllib.request.urlopen(req, timeout=30) as resp:
                 body = json.loads(resp.read().decode("utf-8"))
         except (OSError, ValueError, RuntimeError):
+            self._last_probe_ok = False
             return EchoProvider().complete(
                 prompt, model=model, max_tokens=max_tokens,
             )
+        self._last_probe_ok = True
         # Accept OpenAI-style body.choices[0].text or plain body.text
         text = ""
         choices = body.get("choices")
