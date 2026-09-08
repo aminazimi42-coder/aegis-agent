@@ -17,6 +17,7 @@ SQLite database — no HTTP, no ``urllib``, no ``requests``, no sockets.
 from __future__ import annotations
 
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -27,6 +28,50 @@ from core.twin_home import _work_products_dir, render_home
 # so callers and tooling can introspect whether the data directory was
 # configured (T86).
 os.AEGIS_DATA_DIR = os.getenv("AEGIS_DATA_DIR", "")
+
+# T123 — optional risk-TTL for the operator-visible warning flag.  After
+# this many hours a proposed row's ``risk_warn`` flag may drop, but the
+# row **never** auto-approves or auto-executes — status stays ``proposed``.
+RISK_TTL_HOURS: int = int(os.getenv("AEGIS_RISK_TTL_HOURS", "72"))
+
+
+def _risk_label(risk_level: str | None) -> str:
+    """Return a stable typed token for *risk_level*.
+
+    Only ``L2`` and ``L3`` produce a non-empty token (``RISK_L2``,
+    ``RISK_L3``); ``L0`` and ``L1`` produce an empty string so the
+    operator card shows no risk phrase for low-risk rows.
+    """
+    if risk_level in ("L2", "L3"):
+        return f"RISK_{risk_level}"
+    return ""
+
+
+def _risk_warn(action: dict[str, Any]) -> bool:
+    """Return True when the row's risk warning flag is still active.
+
+    T123 — the warning may expire after ``RISK_TTL_HOURS`` (measured from
+    ``created_at``), but expiry only drops the flag; it never approves
+    or executes the row.  Status stays ``proposed``.
+    """
+    from core.twin_risk import classify
+
+    risk = action.get("risk_level") or ""
+    if not risk:
+        risk = classify(action.get("title", ""), action.get("kind"))
+    if risk not in ("L2", "L3"):
+        return False
+    created = action.get("created_at") or ""
+    if not created:
+        return True  # no timestamp — keep the flag
+    try:
+        dt = datetime.fromisoformat(created)
+    except (ValueError, TypeError):
+        return True  # unparseable — keep the flag
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    age = (datetime.now(timezone.utc) - dt).total_seconds() / 3600.0
+    return age <= RISK_TTL_HOURS
 
 
 def offline_mode() -> bool:
@@ -136,6 +181,17 @@ def list_queue(tenant_id: str) -> dict[str, list[dict[str, Any]]]:
         elif status == "approved":
             approved_waiting.append(a)
     pending = sort_actions(pending)
+
+    # T123 — enrich each proposed row with ``digest_label`` (a stable
+    # typed risk token such as ``RISK_L2`` / ``RISK_L3`` that appears in
+    # the operator-visible digest text on the card) and ``risk_warn``
+    # (the TTL-bound warning flag that may expire but never auto-acts).
+    from core.twin_risk import attach_risk
+
+    for a in pending:
+        a.setdefault("risk_level", attach_risk(a).get("risk_level", ""))
+        a["digest_label"] = _risk_label(a.get("risk_level"))
+        a["risk_warn"] = _risk_warn(a)
 
     # T120 — split proposed rows into latest vs archive by batch_id.
     newest_batch = _newest_batch_id(pending)

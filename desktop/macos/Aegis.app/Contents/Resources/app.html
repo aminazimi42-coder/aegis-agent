@@ -110,6 +110,7 @@
   .queue-title { font-weight: 600; }
   .queue-body { font-size: 0.85rem; color: var(--fg); margin: 0.3rem 0; white-space: pre-wrap; }
   .queue-meta { font-size: 0.8rem; color: var(--muted); }
+  .risk-label { font-weight: 600; color: #ff9500; font-size: 0.8rem; }
   .err { color: #ff3b30; }
   @media (max-width: 700px) {
     .two-col { grid-template-columns: 1fr; }
@@ -387,7 +388,8 @@
       + '<div class="queue-title">' + esc(a.title || a.action_id) + '</div>'
       + '<div class="queue-body">' + esc(bodyText) + '</div>'
       + '<div class="queue-meta">' + esc(specialistName) + ' · proposed · ' + esc(kindStr) + ' · ' + esc(a.action_id || "") + '</div>'
-      + '<div class="queue-meta">digest: <code>' + esc(digest) + '</code></div>';
+      + '<div class="queue-meta">digest: <code>' + esc(digest) + '</code>'
+        + (a.digest_label ? ' <span class="risk-label">' + esc(a.digest_label) + '</span>' : '') + '</div>';
     if (digest) {
       html += '<div class="row">'
         + '<button onclick="approveAction(\'' + esc(a.action_id) + '\',\'' + esc(digest) + '\')">Approve</button>'
