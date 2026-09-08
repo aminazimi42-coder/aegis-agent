@@ -1,24 +1,28 @@
-T125 — Hash-chained receipts and byte-exact dry-run. Do ONLY this directive. Do not start T126. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 71e5699. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, SMTP, Gmail, Slack, webhooks, Postgres, or a live paid LLM. Do not bind 0.0.0.0. Do not let any specialist execute. Do not weaken T56–T124. English only in repo files.
+T126 — Neighbor-safe purge, signed local export, conflict tags. Do ONLY this directive. Do not start T127. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend a85992f. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, SMTP, Gmail, Slack, webhooks, Postgres, or a live paid LLM. Do not bind 0.0.0.0. Do not let any specialist execute. Do not weaken T56–T125. English only in repo files.
 
-Baseline on main: T01–T124. HEAD 71e5699435a1ec4d8cb164618838576dc994a91c. pytest was 717 passed, 1 skipped after T124.
+Baseline on main: T01–T125. HEAD a85992fd1767f6aad73f0aab19d8a8514dcd546b. pytest was 721 passed, 1 skipped after T125.
 
-GOAL: Each local execute receipt includes prev_receipt_sha so the chain is auditable on disk. Dry-run returns the exact bytes that would be written and does not persist an executed receipt.
+GOAL: Purge of tenant A leaves tenant B rows and receipts untouched. Local export writes a signed file under AEGIS_DATA_DIR only. Concurrent propose on the same action_id is tagged conflict, not silently merged.
 
 Implement:
 
-1) Reuse the existing receipt writer under AEGIS_DATA_DIR
-- receipt N.prev_receipt_sha == receipt N-1.receipt_sha or GENESIS
-- receipt_sha is SHA-256 of the canonical receipt body without receipt_sha itself
+1) Purge property
+- Reuse T62 typed confirm
+- After purge(A), count(B) and receipt files for B are unchanged
 
-2) dry_run=True on execute
-- Computes the would-write bytes
-- Does not flip status to executed
-- Does not append a real receipt
+2) Signed local export
+- File path under AEGIS_DATA_DIR/export/
+- Body plus sha256 signature line
+- No email, no cloud upload
 
-3) tests/test_t125_receipt_chain.py
-- test_second_receipt_links_first
-- test_dry_run_no_receipt
-- test_dry_run_bytes_match_real_write
+3) Conflict tag
+- Second write to an existing action_id sets conflict=true on the later row or returns 409
+- Do not clobber the first payload
+
+4) tests/test_t126_purge_export_conflict.py
+- test_purge_a_leaves_b
+- test_export_has_sha256
+- test_conflict_not_silent_merge
 - No live network except TestClient
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -26,12 +30,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; t=Path('tests/test_t125_receipt_chain.py').read_text().lower(); print('prev_receipt' in t and 'dry_run' in t)"
+   ./.venv/bin/python -c "from pathlib import Path; t=Path('tests/test_t126_purge_export_conflict.py').read_text().lower(); print('purge' in t and 'export' in t and 'conflict' in t)"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count >= 717
+   Required: 0 failed, count >= 721
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t125): chained receipts and dry-run"
+6. git commit -m "feat(t126): neighbor-safe purge and signed export"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

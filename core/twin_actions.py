@@ -863,6 +863,7 @@ def insert_specialist_proposal(
     title: str,
     payload: Any,
     batch_id: str | None = None,
+    action_id: str | None = None,
 ) -> dict[str, Any]:
     """Insert one twin_action row with ``status = "proposed"``.
 
@@ -892,7 +893,28 @@ def insert_specialist_proposal(
     budget = int(os.getenv("AEGIS_PROPOSE_BUDGET_PER_SPECIALIST", "20"))
     if budget > 0 and _budget_for_specialist(tenant_id, agent_name) >= budget:
         raise ValueError("budget exceeded")
-    action_id = f"act-{uuid4().hex[:12]}"
+    # T126 — when an explicit action_id is supplied and a row already
+    # exists for that id, the second write is tagged ``conflict=True``
+    # rather than clobbering the first payload.  The original row is
+    # never overwritten.
+    generated_id = f"act-{uuid4().hex[:12]}"
+    conflict = 0
+    if action_id is not None:
+        with get_connection() as conn:
+            existing = conn.execute(
+                "SELECT action_id, payload, title FROM twin_actions "
+                "WHERE action_id = ?",
+                (action_id,),
+            ).fetchone()
+        if existing is not None:
+            # T126 — second write to the same action_id: tag conflict,
+            # do not clobber the first payload, insert a fresh id.
+            conflict = 1
+            insert_id = generated_id
+        else:
+            insert_id = action_id
+    else:
+        insert_id = generated_id
     now = _now()
     # T124 — redact secret-shaped substrings from the title and payload
     # before they are persisted or enter the canonical envelope digest.
@@ -904,9 +926,10 @@ def insert_specialist_proposal(
         else None
     )
     risk_level = classify(title)
-    conflict = 1 if _has_pending_conflict(tenant_id, title, payload) else 0
+    if not conflict:
+        conflict = 1 if _has_pending_conflict(tenant_id, title, payload) else 0
     envelope = _canonical_envelope(
-        action_id=action_id,
+        action_id=insert_id,
         tenant_id=tenant_id,
         kind=kind,
         title=title,
@@ -923,7 +946,7 @@ def insert_specialist_proposal(
                 "created_at, payload, payload_sha256, conflict, batch_id) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
-                    action_id,
+                    insert_id,
                     tenant_id,
                     kind,
                     title,
@@ -936,7 +959,7 @@ def insert_specialist_proposal(
                 ),
             )
     return {
-        "action_id": action_id,
+        "action_id": insert_id,
         "tenant_id": tenant_id,
         "kind": kind,
         "title": title,

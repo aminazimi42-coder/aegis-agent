@@ -23,6 +23,7 @@ calls, no sync server, and no vector DB.
 from __future__ import annotations
 
 import tarfile
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -183,6 +184,53 @@ def export_tenant(tenant_id: str, out_path: str) -> dict[str, Any]:
         "tenant_id": tenant_id,
         "archive": str(archive_path),
         "dirs": [str(d) for d in dirs],
+    }
+
+
+# ---------------------------------------------------------------------------#
+# Signed local export (T126)
+# ---------------------------------------------------------------------------#
+
+
+def signed_export(tenant_id: str, name: str | None = None) -> dict[str, Any]:
+    """Write a signed local export file under ``AEGIS_DATA_DIR/export/``.
+
+    The file body is a textual summary of the tenant's data-root folders.
+    A ``sha256`` signature line is appended.  No email, no cloud upload —
+    the file stays local under the data root.
+
+    Returns ``{tenant_id, path, sha256}``.
+    """
+    import hashlib
+
+    root = data_root()
+    export_dir = root / "export"
+    export_dir.mkdir(parents=True, exist_ok=True)
+
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    fname = name if name else f"{tenant_id}_{stamp}.md"
+    out_path = export_dir / fname
+
+    lines: list[str] = [
+        f"# Export — {tenant_id}",
+        "",
+        f"tenant_id: {tenant_id}",
+        f"exported_at: {stamp}",
+        "",
+        "## Directories",
+        "",
+    ]
+    for d in _tenant_dirs(tenant_id):
+        lines.append(f"- {d.relative_to(root)}")
+    lines.append("")
+    body = "\n".join(lines)
+    sha = hashlib.sha256(body.encode("utf-8")).hexdigest()
+    full = body + f"sha256: {sha}\n"
+    out_path.write_text(full, encoding="utf-8")
+    return {
+        "tenant_id": tenant_id,
+        "path": str(out_path),
+        "sha256": sha,
     }
 
 
