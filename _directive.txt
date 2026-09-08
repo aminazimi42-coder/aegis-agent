@@ -1,41 +1,30 @@
-T118 — Local desk brief tick, readonly scope guard, JSONL audit, fa locale render. Do ONLY this directive. Do not start T119. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 0f991f7. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, SMTP, Gmail, Slack, webhooks, push, launchd, system cron, Postgres, or a live paid LLM. Do not bind 0.0.0.0. Do not let any specialist execute. Do not open a write OAuth scope. Do not weaken T56–T117. English only in repo files.
+T119 — Durable operator profile and session. Do ONLY this directive. Do not start T120. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend b378345. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, SMTP, Gmail, Slack, webhooks, Postgres, or a live paid LLM. Do not bind 0.0.0.0. Do not let any specialist execute. Do not auto Start Session. Do not weaken T56–T118. English only in repo files.
 
-Baseline on main: T01–T117. HEAD 0f991f774c1f252b5e5630a1e5a29bb4e1eb6592. pytest was 687 passed, 1 skipped after T117.
+Baseline on main: T01–T118. HEAD b378345. pytest was 692 passed, 1 skipped after T118.
 
-GOAL: Deepen the existing UTC scheduler into a render-only local brief. Guard observe tokens to readonly scopes if a token appears. Write one JSONL audit line per cycle event under AEGIS_DATA_DIR. Add a fa-IR render helper for operator copy only. No new product surface.
+GOAL: Name, role, goals, timezone for tenant local survive quit and engine restart. Opening the operator page prefills those four fields when a committed profile exists. Propose works without forcing a new interview. Do not invent a cloud login.
 
 Implement:
 
-1) Desk brief
-- Reuse the T68 UTC scheduler. Do not install OS cron or launchd.
-- Add render-only brief writer: markdown file under AEGIS_DATA_DIR/briefs/, no network.
-- If the last tick is older than 48 hours, print a local warning on the next CLI/home load only.
+1) Persistence
+- Reuse the existing interview/profile store and AEGIS_DATA_DIR
+- Commit profile remains the source of truth
+- A new process against the same AEGIS_DATA_DIR must read the same four fields
 
-2) Readonly scope guard
-- core/oauth_scope_guard.py (or equivalent)
-- Allow only scopes that end with .readonly or are already the local git-observe path
-- Reject tokens that contain gmail.send, calendar.events, or any write scope before persist
-- Do not build a live OAuth client or Keychain integration
+2) desktop/macos/Aegis.app/Contents/Resources/app.html
+- On load, GET /api/v1/twin/profile/local and fill the four fields when present
+- Do not clear the fields on ordinary refresh
+- Do not auto-click Start Session
+- If the profile is missing, leave fields empty
 
-3) Audit JSONL
-- core/audit_logger.py
-- One JSON object per propose/approve/reject/execute/purge/replay
-- correlation_id shared across one action_id
-- File path: AEGIS_DATA_DIR/audit/YYYY-MM-DD.jsonl
-- No telemetry egress
+3) Session helper if needed
+- Small local marker under AEGIS_DATA_DIR only, for example last_tenant=local
+- No browser cloud cookie as the source of truth
 
-4) fa locale render
-- Small helper core/render_locale.py
-- locale=en stays default
-- locale=fa-IR only flips template strings for brief/home copy
-- No Jalali calendar product
-- Logic of propose/approve/execute stays locale-agnostic
-
-5) tests/test_t118_desk_audit_locale.py
-- test_brief_render_writes_local_file
-- test_write_scope_rejected
-- test_audit_line_has_correlation_id
-- test_fa_locale_does_not_change_digest
+4) tests/test_t119_durable_profile.py
+- test_profile_survives_new_store
+- test_html_prefills_from_profile_endpoint
+- test_start_session_not_auto
 - No live network except TestClient
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -43,12 +32,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; t=Path('tests/test_t118_desk_audit_locale.py').read_text(); print('readonly' in t.lower() and 'correlation' in t.lower() and 'fa' in t.lower())"
+   ./.venv/bin/python -c "from pathlib import Path; t=Path('desktop/macos/Aegis.app/Contents/Resources/app.html').read_text().lower(); print('profile' in t and 'timezone' in t and 'start session' in t)"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count >= 687
+   Required: 0 failed, count >= 692
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t118): desk brief audit locale and readonly guard"
+6. git commit -m "feat(t119): durable local operator profile"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

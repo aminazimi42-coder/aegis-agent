@@ -14,8 +14,10 @@ For explicit isolation pass ``store=`` a fresh ``TwinInterviewStore``.
 from __future__ import annotations
 
 import json
+import os
 import threading
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
@@ -78,6 +80,38 @@ def _ensure_schema() -> None:
 
 
 # ---------------------------------------------------------------------------#
+# Session marker (T119) — durable last-tenant hint under AEGIS_DATA_DIR
+# ---------------------------------------------------------------------------#
+
+def _marker_path() -> Path:
+    """Return the path to the ``last_tenant`` marker file."""
+    raw = os.getenv("AEGIS_DATA_DIR", "data")
+    return Path(raw) / "last_tenant"
+
+
+def set_last_tenant(tenant_id: str) -> None:
+    """Write ``tenant_id`` to the ``last_tenant`` marker file.
+
+    A new process pointing at the same ``AEGIS_DATA_DIR`` can read this file
+    to know which tenant was last active.  This is a local hint only — the
+    committed profile in SQLite remains the source of truth.
+    """
+    path = _marker_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(tenant_id, encoding="utf-8")
+
+
+def get_last_tenant() -> str | None:
+    """Return the last-tenant marker or ``None`` when missing/unreadable."""
+    path = _marker_path()
+    try:
+        text = path.read_text(encoding="utf-8").strip()
+    except (OSError, ValueError):
+        return None
+    return text or None
+
+
+# ---------------------------------------------------------------------------#
 # Store
 # ---------------------------------------------------------------------------#
 
@@ -135,6 +169,7 @@ class TwinInterviewStore:
         with self._lock:
             self._ensure_schema()
             self._save_session(session_id, tenant_id, state)
+            set_last_tenant(tenant_id)
         return state
 
     def answer(self, session_id: str, question_id: str, text: str) -> dict[str, Any]:
