@@ -1,21 +1,24 @@
-T121 — Distinct specialist proposals; Ahmad/Amin gate. Do ONLY this directive. Do not start T122. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 027e27a. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, SMTP, Gmail, Slack, webhooks, Postgres, or a live paid LLM. Do not bind 0.0.0.0. Do not let any specialist execute. Do not weaken T56–T120. English only in repo files.
+T122 — Honest desktop operator when the engine is down. Do ONLY this directive. Do not start T123. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 2b5b090. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, SMTP, Gmail, Slack, webhooks, Postgres, or a live paid LLM. Do not bind 0.0.0.0. Do not let any specialist execute. Do not weaken T56–T121. English only in repo files.
 
-Baseline on main: T01–T120. HEAD 027e27aa8dcc7e8453204f5ff93a4b15b3dc9c67. pytest was 699 passed, 1 skipped after T120.
+Baseline on main: T01–T121. HEAD 2b5b09099fed88b460f4bdc7753808236efbc4c5. pytest was 704 passed, 1 skipped after T121.
 
-GOAL: One propose batch still creates six rows. Each row must be a different effect_type or title prefix so the operator can tell the specialists apart. Ahmad and Amin are gate/review cards, not a second Alina brief. Specialists still only propose.
+GOAL: If the local engine is not reachable, the operator page must say so in English. It must not look like an empty twin. One documented start path remains scripts/run_local.sh or the existing desktop helper. No second server.
 
 Implement:
 
-1) Keep the existing six names: Bita, Kian, Alina, Aylin, Ahmad, Amin
-2) Alina = strategy brief. Kian = execution draft. Bita = insight. Aylin = quality review. Ahmad = security/oversight gate. Amin = finance/cost gate.
-3) Titles or kind/effect_type must differ inside one batch_id. Identical copy-paste bodies across all six fail the test.
-4) Do not add an orchestrator that executes. Do not drop specialists from the batch.
+1) desktop/macos/Aegis.app/Contents/Resources/app.html
+- Fetch health or profile on load
+- On network/engine failure show a visible banner: engine offline, start the local server, then refresh
+- Do not clear a committed profile from the form just because the fetch failed once
+- Propose/Approve stay disabled while offline
 
-5) tests/test_t121_specialist_distinct.py
-- test_six_rows_one_batch
-- test_titles_or_kinds_are_unique_in_batch
-- test_ahmad_is_gate_not_alina_clone
-- test_amin_is_finance_gate
+2) docs or STATUS one line
+- Point at the existing local start script only
+- Do not claim a packaged unsigned .app is a standalone product without the engine
+
+3) tests/test_t122_engine_offline.py
+- test_html_has_offline_banner_copy
+- test_health_or_profile_error_path_exists
 - No live network except TestClient
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -23,12 +26,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; t=Path('tests/test_t121_specialist_distinct.py').read_text().lower(); print('ahmad' in t and 'amin' in t and 'unique' in t)"
+   ./.venv/bin/python -c "from pathlib import Path; t=Path('desktop/macos/Aegis.app/Contents/Resources/app.html').read_text().lower(); print('offline' in t or 'engine' in t)"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count >= 699
+   Required: 0 failed, count >= 704
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t121): distinct six-specialist proposals"
+6. git commit -m "feat(t122): honest operator offline banner"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

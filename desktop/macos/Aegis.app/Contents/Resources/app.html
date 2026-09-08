@@ -119,6 +119,15 @@
 <body>
   <span class="badge">Local Twin</span>
   <h1>Aegis Operator</h1>
+
+  <!-- T122 — honest offline banner: shown only when the engine is down -->
+  <div id="offline-banner" class="card" style="display:none;border:1px solid #ff3b30;background:#fff5f5;">
+    <div class="queue-title" style="color:#ff3b30;">Engine offline</div>
+    <div class="queue-body">The local twin at <code>http://127.0.0.1:8741</code> is not reachable.
+    Start the local server (<code>scripts/run_local.sh</code>), then refresh this page.
+    Your committed profile is preserved — nothing is cleared while the engine is down.</div>
+  </div>
+
   <p class="muted">
     Operator page for interview, status, and the two-column home.
     All requests go to the local twin at <code>http://127.0.0.1:8741</code> only —
@@ -221,17 +230,44 @@
   }
 
   // ── Health / status ──
+  var engineOnline = false;
+  function setOffline() {
+    engineOnline = false;
+    el("offline-banner").style.display = "block";
+    var dot = el("health-dot");
+    var text = el("health-text");
+    if (dot) { dot.className = "status-dot dot-err"; }
+    if (text) { text.textContent = "Local twin unreachable on 127.0.0.1:8741"; }
+    var box = el("health-json");
+    if (box) { box.textContent = ""; }
+    // Disable propose and approve controls while offline.
+    var bp = el("btn-propose");
+    if (bp) { bp.disabled = true; }
+    var bc = el("btn-commit");
+    if (bc) { bc.disabled = true; }
+    var bs = el("btn-start");
+    if (bs) { bs.disabled = true; }
+  }
+  function setOnline() {
+    engineOnline = true;
+    el("offline-banner").style.display = "none";
+    var bp = el("btn-propose");
+    if (bp) { bp.disabled = false; }
+    var bc = el("btn-commit");
+    if (bc) { bc.disabled = false; }
+    var bs = el("btn-start");
+    if (bs) { bs.disabled = false; }
+  }
   function checkHealth() {
     get("/health", function (err, data, status) {
       var dot = el("health-dot");
       var text = el("health-text");
       var box = el("health-json");
       if (err || status !== 200) {
-        dot.className = "status-dot dot-err";
-        text.textContent = "Local twin unreachable on 127.0.0.1:8741";
-        box.textContent = "";
+        setOffline();
         return;
       }
+      setOnline();
       dot.className = "status-dot dot-ok";
       text.textContent = "Local twin healthy";
       box.textContent = JSON.stringify(data, null, 2);
@@ -392,6 +428,11 @@
 
   // ── Approve a pending action (T106) ──
   window.approveAction = function (actionId, digest) {
+    if (!engineOnline) {
+      var lb0 = el("approve-label-" + actionId);
+      if (lb0) { lb0.textContent = "Engine offline — start the server, then refresh"; }
+      return;
+    }
     if (!digest) {
       var lb = el("approve-label-" + actionId);
       if (lb) { lb.textContent = "Cannot approve without digest"; }
@@ -416,6 +457,11 @@
 
   // ── Reject a pending action (T114) ──
   window.rejectAction = function (actionId, digest) {
+    if (!engineOnline) {
+      var lb0 = el("approve-label-" + actionId);
+      if (lb0) { lb0.textContent = "Engine offline — start the server, then refresh"; }
+      return;
+    }
     if (!digest) {
       var lb = el("approve-label-" + actionId);
       if (lb) { lb.textContent = "Cannot reject without digest"; }
@@ -440,6 +486,14 @@
 
   // ── Propose a task (T111) ──
   window.proposeTask = function () {
+    if (!engineOnline) {
+      var plabel = el("propose-label");
+      if (plabel) {
+        plabel.textContent = "Engine offline — start the server, then refresh";
+        plabel.className = "muted err";
+      }
+      return;
+    }
     var t = el("tenant").value || "local";
     var text = (el("propose-text") && el("propose-text").value) || "";
     var label = el("propose-label");
