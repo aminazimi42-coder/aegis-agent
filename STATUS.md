@@ -56,6 +56,15 @@ Honest lock of what is actually shipped in this tree as of T70.
 - **SQLite persistence** for approvals, budgets, jobs, and receipts under
   `AEGIS_DATA_DIR` (defaults to `data/`).
 
+### Privacy and durability
+
+- **Privacy and durability** — see [`docs/PRIVACY_MODEL.md`](docs/PRIVACY_MODEL.md).
+  State is **SQLite** under `AEGIS_DATA_DIR` on the operator machine:
+  local profile, actions, jobs, and receipts. Default inference is local
+  **Echo**; the optional HTTP adapter is off unless configured. No
+  Gmail, Slack, or SMTP is shipped. Six specialists: **Bita, Kian,
+  Alina, Aylin, Ahmad, Amin**.
+
 ### Work products
 
 - **Morning brief**, **meeting briefs**, **followups**, **delegate pack**,
