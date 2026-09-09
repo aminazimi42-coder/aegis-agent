@@ -1364,12 +1364,33 @@ def create_app() -> FastAPI:
                     "batch_id": batch_id,
                 }
             )
-        return {
+        # T138 — surface the last reject reason on the next propose card.
+        # If the tenant has a stored reject note, include it in the response
+        # so the next card shows why the previous proposal was rejected.
+        # Approve notes do not replace the reject reason.  When no reject
+        # exists the field is omitted entirely.
+        from core.twin_actions import list_recent_notes
+
+        notes = list_recent_notes(request.tenant_id, n=10)
+        last_reject_reason: str | None = None
+        for note in notes:
+            if note.get("decision") == "reject":
+                reason_text = note.get("why_text", "") or ""
+                reason_enum = note.get("reason") or ""
+                if reason_text:
+                    last_reject_reason = reason_text
+                elif reason_enum:
+                    last_reject_reason = reason_enum
+                break
+        result: dict[str, Any] = {
             "tenant_id": request.tenant_id,
             "proposals": proposals,
             "count": len(proposals),
             "batch_id": batch_id,
         }
+        if last_reject_reason is not None:
+            result["last_reject_reason"] = last_reject_reason
+        return result
 
     # --- Local buyer one-pager export (T136) ---
 

@@ -1,44 +1,34 @@
-T137 — Home depth: approved receipt stays visible, live engine-off banner, signed brief export on the operator page. This is 2 of 3 remaining slices. After this file, 1 slice remains. Do ONLY this directive. Do not start T138. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend b6cf9b4. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, SMTP, speech, or a live paid LLM. Do not bind 0.0.0.0. Do not let any specialist execute. Do not weaken T56–T136. English only in repo files.
+T138 — Last slice of this pack: sole local start path, last reject reason on the next propose card. This is 3 of 3 remaining slices. After this file, 0 slices remain in the approved extras-and-depth pack. Do ONLY this directive. Do not start T139. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 01fd0ac. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, SMTP, speech, or a live paid LLM. Do not bind 0.0.0.0. Do not let any specialist execute. Do not weaken T56–T137. English only in repo files.
 
-Baseline on main: T01–T136. HEAD b6cf9b4. pytest was 762 passed, 1 skipped after T136.
+Baseline on main: T01–T137. HEAD 01fd0ac404d3cac90e9459efbce36d6dd39fdd1a. pytest was 769 passed, 1 skipped after T137.
 
-GOAL: Depth on the existing operator home. No new pillar.
-1) Approve must not make the action disappear from the operator. Pending column stays proposed-only. A second visible strip or column shows approved receipts for this tenant.
-2) When the local engine is unreachable or /health fails, the operator page shows a single honest Engine offline banner and points the operator back to the local start path. No fake healthy state.
-3) One button exports the signed local weekly-brief pack already defined by T126. File lands under AEGIS_DATA_DIR or $HOME/.aegis/exports/. Never into the git worktree.
+GOAL: Two depth items only.
+1) One documented local start path. Prefer the existing scripts/start_operator.sh or scripts/run_local.sh. Do not invent a second engine launcher. Do not put a new product tree under the git root.
+2) The next propose card for that tenant shows the last reject reason when one exists. T130 already persists notes. Surface the latest reason on the proposal text or a typed field. Do not auto-execute.
 
 Implement:
 
-A) Approved receipt surface
-- Pending queue: proposed only (keep T114).
-- Add an Approved strip or Archive column that lists approved twin actions for the current tenant after refresh.
-- Each row shows agent, title or task excerpt, digest prefix, and approved timestamp.
-- Rejected actions do not appear in Approved.
-- Do not auto-execute an approved row.
+A) Sole start path
+- Keep one wrapper script that exports AEGIS_DATA_DIR, uses the project venv, and starts create_app on 127.0.0.1:8741.
+- If two wrappers exist, make one call the other or delete the duplicate launcher body. Do not delete a script that tests already import if you can alias it.
+- Operator page or README Now: one sentence naming that script. No second start story.
+- Do not bind 0.0.0.0. Do not add launchd or a notarized .app.
 
-B) Engine offline banner
-- Reuse T122 copy if present. One banner, English.
-- Probe existing health route. On failure or fetch error, show the banner.
-- On success, hide the banner.
-- Do not invent a second health URL. Do not bind 0.0.0.0.
+B) Last reject reason on next card
+- On propose, if the tenant has a stored reject note, include it in the new proposal body or a dedicated last_reject_reason field.
+- If no reject exists, omit the field. Do not invent a reason.
+- Approve notes do not replace the reject reason.
+- Specialists still propose only.
 
-C) Signed brief export button
-- Label: Export signed brief
-- Calls the existing signed export path if one exists. If missing, add the smallest local writer that hashes the brief bytes and writes sidecar digest under the data dir.
-- Empty profile or empty brief → typed 400, no file.
-- Do not commit export files.
-
-D) tests/test_t137_home_depth.py
-- test_pending_hides_approved
-- test_approved_strip_shows_approved_action
-- test_rejected_not_in_approved_strip
-- test_health_ok_hides_offline_banner
-- test_health_down_shows_offline_banner
-- test_signed_export_writes_outside_repo
+C) tests/test_t138_start_and_reject.py
+- test_single_start_script_binds_localhost
+- test_start_script_sets_data_dir
+- test_next_propose_includes_last_reject_reason
+- test_no_reject_omits_reason
 - No live network except TestClient.
 
-E) README
-- At most two honest Now sentences: approved receipts stay visible on home; offline banner is local health, not cloud SLA.
+D) README
+- At most two honest Now sentences: one start script; last reject reason feeds the next card.
 - Do not rewrite Author. Do not claim GA.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -46,12 +36,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; t=Path('tests/test_t137_home_depth.py').read_text().lower(); print(('approved' in t) and ('offline' in t or 'banner' in t) and ('export' in t))"
+   ./.venv/bin/python -c "from pathlib import Path; t=Path('tests/test_t138_start_and_reject.py').read_text().lower(); print(('start' in t) and ('reject' in t) and ('127.0.0.1' in t or 'localhost' in t))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count >= 762
+   Required: 0 failed, count >= 769
 5. git add -A (do not force-add .kms/ or data/ or $HOME/.aegis/; do not delete _directive.txt)
-6. git commit -m "feat(t137): approved receipts, offline banner, signed brief export"
+6. git commit -m "feat(t138): sole start path and last reject reason on next card"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

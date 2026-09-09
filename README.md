@@ -54,6 +54,8 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Buyer one-pager** — a local ``.md`` export from the saved profile, not a marketing site; written under `AEGIS_DATA_DIR`, never committed.
 - **Approved receipts on home** — approved twin actions stay visible on the operator home page after refresh; they do not auto-execute.
 - **Engine offline banner** — the operator page shows an honest "Engine offline" banner when the local `/health` probe fails; it is local health, not a cloud SLA.
+- **Sole start path** — `scripts/start_operator.sh` is the one local start script; it exports `AEGIS_DATA_DIR`, uses the project venv, and starts the engine on `127.0.0.1:8741`. There is no second engine launcher.
+- **Last reject reason on next card** — when a tenant has a stored reject note, the next propose response includes a `last_reject_reason` field so the operator sees why the prior card was rejected; the field is omitted when no reject exists.
 
 ---
 
