@@ -45,16 +45,22 @@ class BaseAgent(ABC):
         batches (Archive).  When *batch_id* is ``None`` the row is
         inserted with a ``NULL`` batch_id (treated as archive).
 
+        T130 — the payload also carries ``recent_notes``: the last N
+        local style/risk feedback notes for this tenant (approve/reject
+        decisions) so the specialist brief is shaped by prior outcomes.
+
         Specialists must never call ``twin_actions.execute``; the only
         path to ``executed`` is human approval followed by execution.
         """
-        from core.twin_actions import insert_specialist_proposal
+        from core.twin_actions import insert_specialist_proposal, list_recent_notes
 
         title = f"{self.name} proposal for {tenant_id}"
         payload: dict[str, Any] = {}
         if text:
             title = f"{self.name} proposal: {text}"
             payload = {"text": text, "body": self._propose_body(text)}
+        # T130 — attach the last N local feedback notes to the brief.
+        payload["recent_notes"] = list_recent_notes(tenant_id)
         return insert_specialist_proposal(
             tenant_id, self.name, title, payload, batch_id=batch_id
         )

@@ -209,6 +209,12 @@ def forget_all(tenant_id: str) -> dict[str, Any]:
             "DELETE FROM twin_actions WHERE tenant_id = ?",
             (tenant_id,),
         )
+        # T130 — also delete twin_feedback rows for this tenant so the
+        # local style/risk notes are purged alongside the actions.
+        conn2.execute(
+            "DELETE FROM twin_feedback WHERE tenant_id = ?",
+            (tenant_id,),
+        )
 
     # 4. Write the deletion receipt.
     out_dir.mkdir(parents=True, exist_ok=True)

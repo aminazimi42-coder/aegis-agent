@@ -1,25 +1,25 @@
-T129 — Durable operator session after restart. Do ONLY this directive. Do not start T130. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 5926c3f. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, SMTP, Gmail, Slack, webhooks, Postgres, speech-to-text APIs, or a live paid LLM. Do not bind 0.0.0.0. Do not let any specialist execute. Do not weaken T56–T128. English only in repo files.
+T130 — Thin local twin loop from approve and reject. Do ONLY this directive. Do not start T131. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 5447af2. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, SMTP, Gmail, Slack, webhooks, Postgres, speech-to-text, or a live paid LLM. Do not bind 0.0.0.0. Do not let any specialist execute. Do not weaken T56–T129. English only in repo files.
 
-Baseline on main: T01–T128. HEAD 5926c3f. pytest was 731 passed, 1 skipped after T128.
+Baseline on main: T01–T129. HEAD 5447af2. pytest was 734 passed, 1 skipped after T129.
 
-GOAL: After engine restart, GET profile returns the last committed local profile so the operator form is prefilled. Interview remains typed text only. No microphone. No cloud STT.
+GOAL: Approve and reject persist a local style/risk note that later propose text can read. This is not a multi-month personality and not a cloud model.
 
 Implement:
 
-1) Reuse T119 last_tenant + profile store under AEGIS_DATA_DIR
-- Commit profile writes durable rows
-- Next GET /profile or equivalent returns name, role, goals, timezone
-- Missing store still shows empty form, not a crash
+1) Reuse T65 feedback store under AEGIS_DATA_DIR
+- On approve, append {action_id, decision: approve, agent, ts}
+- On reject, append reason code from T117
+- Propose path may include last N notes in the specialist brief string
+- Forget/purge still deletes these notes for that tenant
 
-2) desktop app.html
-- On load, if profile returns fields, fill inputs
-- Do not add a voice button
-- Keep T122 offline banner
+2) Do not call complete_safe / HTTP LLM from this slice
+- Echo remains default
+- No new env keys
 
-3) tests/test_t129_session.py
-- test_commit_then_get_returns_profile
-- test_missing_store_empty_not_500
-- test_html_has_no_microphone_hook
+3) tests/test_t130_twin_loop.py
+- test_approve_writes_feedback
+- test_reject_writes_reason
+- test_purge_removes_feedback
 - No live network except TestClient
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -27,12 +27,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; t=Path('tests/test_t129_session.py').read_text().lower(); print('profile' in t and 'microphone' in t)"
+   ./.venv/bin/python -c "from pathlib import Path; t=Path('tests/test_t130_twin_loop.py').read_text().lower(); print('approve' in t and 'reject' in t and 'purge' in t)"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count >= 731
+   Required: 0 failed, count >= 734
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t129): durable profile after restart"
+6. git commit -m "feat(t130): local approve-reject twin notes"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

@@ -207,6 +207,15 @@ def _ensure_schema() -> None:
         except sqlite3.OperationalError:
             pass
 
+        # T130 — agent and reason columns on twin_feedback so the local
+        # style/risk note carries who approved (agent) and the T117 typed
+        # reject reason (reason_enum).
+        for col in ("agent TEXT", "reason TEXT"):
+            try:
+                conn.execute(f"ALTER TABLE twin_feedback ADD COLUMN {col}")
+            except sqlite3.OperationalError:
+                pass
+
 
 # ---------------------------------------------------------------------------#
 # Internal helpers
@@ -459,11 +468,19 @@ def approve(
             action_dict["approved_at"] = now
             action_dict["why_text"] = why or ""
             # T65 — durable feedback row.
+            # T130 — include agent (actor_id) and ts (now).
             conn.execute(
                 "INSERT INTO twin_feedback "
-                "(action_id, tenant_id, decision, why_text, created_at) "
-                "VALUES (?, ?, ?, ?, ?)",
-                (action_id, action_dict["tenant_id"], "approve", why or "", now),
+                "(action_id, tenant_id, decision, why_text, created_at, agent) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    action_id,
+                    action_dict["tenant_id"],
+                    "approve",
+                    why or "",
+                    now,
+                    actor_id,
+                ),
             )
             return action_dict
 
@@ -530,11 +547,22 @@ def reject(
                 (why or "", reason, reason_enum, action_id),
             )
             # T65 — durable feedback row.
+            # T130 — include reason (from T117 reason_enum) and ts.
+            now = _now()
             conn.execute(
                 "INSERT INTO twin_feedback "
-                "(action_id, tenant_id, decision, why_text, created_at) "
-                "VALUES (?, ?, ?, ?, ?)",
-                (action_id, action["tenant_id"], "reject", why or "", _now()),
+                "(action_id, tenant_id, decision, why_text, created_at, "
+                " agent, reason) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (
+                    action_id,
+                    action["tenant_id"],
+                    "reject",
+                    why or "",
+                    now,
+                    actor_id,
+                    reason_enum,
+                ),
             )
         action["status"] = "rejected"
         action["why_text"] = why or ""
@@ -563,26 +591,78 @@ def list_feedback(tenant_id: str) -> list[dict[str, Any]]:
     """Return all feedback rows for ``tenant_id`` ordered by ``created_at``.
 
     Each row is a dict with keys: ``action_id``, ``tenant_id``, ``decision``,
-    ``why_text``, ``created_at``.
+    ``why_text``, ``created_at``.  T130 — also includes ``agent`` and
+    ``reason`` when the columns exist.
     """
     _ensure_schema()
     with get_connection() as conn:
+        # Detect whether the T130 columns exist (they may not on an old DB).
+        cols = {
+            r["name"]
+            for r in conn.execute("PRAGMA table_info(twin_feedback)").fetchall()
+        }
+        agent_col = ", agent" if "agent" in cols else ""
+        reason_col = ", reason" if "reason" in cols else ""
         rows = conn.execute(
-            "SELECT action_id, tenant_id, decision, why_text, created_at "
+            f"SELECT action_id, tenant_id, decision, why_text, created_at"
+            f"{agent_col}{reason_col} "
             "FROM twin_feedback WHERE tenant_id = ? "
             "ORDER BY created_at ASC",
             (tenant_id,),
         ).fetchall()
-    return [
-        {
+    result: list[dict[str, Any]] = []
+    for r in rows:
+        item: dict[str, Any] = {
             "action_id": r["action_id"],
             "tenant_id": r["tenant_id"],
             "decision": r["decision"],
             "why_text": r["why_text"],
             "created_at": r["created_at"],
         }
-        for r in rows
-    ]
+        if "agent" in cols and r["agent"] is not None:
+            item["agent"] = r["agent"]
+        if "reason" in cols and r["reason"] is not None:
+            item["reason"] = r["reason"]
+        result.append(item)
+    return result
+
+
+def list_recent_notes(tenant_id: str, n: int = 5) -> list[dict[str, Any]]:
+    """Return the last *n* feedback notes for ``tenant_id``, newest first.
+
+    T130 — the local style/risk note that later propose text can read.
+    Each row is a compact dict with ``action_id``, ``decision``, ``agent``,
+    ``reason``, ``why_text``, and ``created_at``.
+    """
+    _ensure_schema()
+    with get_connection() as conn:
+        cols = {
+            r["name"]
+            for r in conn.execute("PRAGMA table_info(twin_feedback)").fetchall()
+        }
+        agent_col = ", agent" if "agent" in cols else ""
+        reason_col = ", reason" if "reason" in cols else ""
+        rows = conn.execute(
+            f"SELECT action_id, decision, why_text, created_at"
+            f"{agent_col}{reason_col} "
+            "FROM twin_feedback WHERE tenant_id = ? "
+            "ORDER BY created_at DESC LIMIT ?",
+            (tenant_id, n),
+        ).fetchall()
+    notes: list[dict[str, Any]] = []
+    for r in rows:
+        item: dict[str, Any] = {
+            "action_id": r["action_id"],
+            "decision": r["decision"],
+            "why_text": r["why_text"],
+            "created_at": r["created_at"],
+        }
+        if "agent" in cols and r["agent"] is not None:
+            item["agent"] = r["agent"]
+        if "reason" in cols and r["reason"] is not None:
+            item["reason"] = r["reason"]
+        notes.append(item)
+    return notes
 
 
 def _work_products_dir(tenant_id: str) -> Path:
