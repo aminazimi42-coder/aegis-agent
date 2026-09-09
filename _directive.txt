@@ -1,29 +1,31 @@
-T127 — Audit only. No new product. Do ONLY this directive. Do not start T128. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend ab0e1e0. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, SMTP, Gmail, Slack, webhooks, Postgres, or a live paid LLM. Do not bind 0.0.0.0. Do not let any specialist execute. Do not weaken T56–T126. English only in repo files.
+T128 — Local desktop start bundle. Do ONLY this directive. Do not start T129. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend f4a40c4. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, SMTP, Gmail, Slack, webhooks, Postgres, or a live paid LLM. Do not bind 0.0.0.0. Do not let any specialist execute. Do not weaken T56–T127. English only in repo files.
 
-Baseline on main: T01–T126. HEAD ab0e1e036c939beeeb781acff5f0765952c4bd32. pytest was 725 passed, 1 skipped after T126.
+Baseline on main: T01–T127. HEAD f4a40c4a3515492c03d56e61d1dda154e0089f52. pytest was 728 passed, 1 skipped after T127.
 
-GOAL: Write a local truth audit and fix only stale sentences in STATUS.md / RELEASES.md / README product claims so they match the running code. No new endpoints. No new agents. No UI redesign.
+GOAL: One documented command starts the local engine and points the operator at it. The packaged app must not pretend it is a store-signed product. A stranger still needs this repo or a copied bundle for this slice; T129 will persist session.
 
-Allowed edits:
-1) docs/AUDIT_T127.md (create)
-- Twenty short headings, each one paragraph
-- Cover: six specialists propose-only, digest bind, tenant bind, Echo default, no PSP in core, local SQLite, two-column home, offline banner, redact, receipt chain, neighbor purge, signed export, conflict tag, no production-SaaS claim, Render is demo not the product, Grok Bot is not Aegis, desktop still needs run_local.sh, Ahmad/Amin are gates not executors, version string consistency, open test count
-2) STATUS.md and RELEASES.md
-- Replace sentences that contradict T115–T126
-- Do not invent shipped features
-3) README
-- Keep Author paragraph byte-stable
-- Only change product-claim sentences that are false today
+Implement:
 
-Forbidden:
-- New routes, new tables, new agents, new HTML columns
-- LICENSE edits
-- Author block edits
+1) scripts/start_operator.sh
+- Reuse scripts/run_local.sh or call the same uvicorn bind as today
+- Print one English line: engine URL and that the .app is a wrapper
+- Exit non-zero if venv or app.html is missing
+- Do not curl a cloud host
 
-4) tests/test_t127_audit.py
-- test_audit_file_exists
-- test_status_does_not_claim_saas
-- test_author_paragraph_unchanged
+2) desktop/macos/Aegis.app
+- Keep T122 offline banner
+- If a start helper exists in Contents/MacOS, it may exec start_operator.sh
+- Do not require sudo
+- Do not write outside AEGIS_DATA_DIR except the existing app bundle
+
+3) STATUS.md one line
+- Start path is scripts/start_operator.sh
+- Do not claim notarized installer or paid SKU
+
+4) tests/test_t128_start_bundle.py
+- test_start_script_exists
+- test_script_mentions_run_local_or_uvicorn
+- test_status_not_notarized_claim
 - No live network except TestClient
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -31,12 +33,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; print(Path('docs/AUDIT_T127.md').is_file())"
+   ./.venv/bin/python -c "from pathlib import Path; print(Path('scripts/start_operator.sh').is_file())"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count >= 725
+   Required: 0 failed, count >= 728
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "docs(t127): truth audit and stale claim fix"
+6. git commit -m "feat(t128): operator start bundle"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

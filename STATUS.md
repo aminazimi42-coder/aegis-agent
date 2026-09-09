@@ -102,7 +102,9 @@ Honest lock of what is actually shipped in this tree as of T70.
 - **HTTP provider** (`HttpProvider`) activates only when both
   `AEGIS_LLM_BASE_URL` and `AEGIS_LLM_API_KEY` environment variables are set
   and `AEGIS_LLM_PROVIDER=http`.
-- **Local start** — start the engine with `scripts/run_local.sh`; the
-  operator page shows an "Engine offline" banner when the local twin is
-  not reachable and points back to that script. No packaged .app is a
-  standalone product without the engine.
+- **Local start** — start the engine with `scripts/start_operator.sh`
+  (or `scripts/run_local.sh`); the operator page shows an "Engine offline"
+  banner (T122) when the local twin is not reachable and points back to
+  that script. The `desktop/macos/Aegis.app` bundle is a wrapper around
+  `start_operator.sh`; it is not a notarized installer or a paid SKU and
+  still needs this repo or a copied bundle to run.

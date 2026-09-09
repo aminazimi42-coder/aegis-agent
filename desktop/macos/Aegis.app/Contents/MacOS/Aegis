@@ -1,10 +1,14 @@
 #!/bin/sh
-# Aegis — local twin launcher (T104).
+# Aegis — local twin launcher (T104, T128).
 #
 # Starts the existing local FastAPI app bound to 127.0.0.1 only
 # (never 0.0.0.0), then opens the stub page with the default
 # macOS opener.  Data stays under $HOME/.aegis unless
 # AEGIS_DATA_DIR is already set.
+#
+# T128: if scripts/start_operator.sh exists, exec it so the .app
+# uses the same operator start path.  The .app is a wrapper, not a
+# store-signed product.
 
 set -euo pipefail
 
@@ -12,6 +16,12 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # The repo root is the directory above desktop/macos/Aegis.app/Contents
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+
+# --- T128: delegate to the operator start script if present ---------------
+START_OP="$REPO_ROOT/scripts/start_operator.sh"
+if [ -f "$START_OP" ]; then
+    exec "$START_OP"
+fi
 
 # --- resolve python -------------------------------------------------------
 PY="${AEGIS_PY:-$REPO_ROOT/.venv/bin/python}"
