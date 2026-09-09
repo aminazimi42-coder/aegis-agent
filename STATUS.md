@@ -99,7 +99,8 @@ Honest lock of what is actually shipped in this tree as of T70. See the **Now** 
 
 ## Optional
 
-- **Default Echo; optional local adapter via `AGENT_LLM_BASE_URL`** — the default LLM provider is offline `EchoProvider`; an optional local OpenAI-compatible HTTP adapter activates when `AGENT_LLM_BASE_URL` is set (alongside `AEGIS_LLM_API_KEY` and `AEGIS_LLM_PROVIDER=http`), labeled in `complete_safe` as the `http` path.
+- **Default Echo; optional local adapter via `AGENT_LLM_BASE_URL`** — the default LLM provider is offline `EchoProvider`; an optional local OpenAI-compatible HTTP adapter activates when `AGENT_LLM_BASE_URL` is set (alongside `AEGIS_LLM_API_KEY` and `AEGIS_LLM_PROVIDER=http`), labeled in `complete_safe` as the `http` path. `AGENT_LLM_BACKEND=ollama` is an alias label that activates the same HTTP path; it is not a bundled binary and falls back to Echo when unreachable.
+- **Buyer one-pager** — a local ``.md`` export built from the saved profile (name, role, goals, timezone) plus honest shipped facts; written under `AEGIS_DATA_DIR` or `~/.aegis/exports/`, never into the git worktree.
 - **Local start** — start the engine with `scripts/start_operator.sh`
   (or `scripts/run_local.sh`); the operator page shows an "Engine offline"
   banner (T122) when the local twin is not reachable and points back to

@@ -161,6 +161,13 @@ def get_provider() -> LLMProvider:
     if offline_mode():
         return EchoProvider()
     kind = os.getenv("AEGIS_LLM_PROVIDER", "echo").lower()
+    # T136 — AGENT_LLM_BACKEND=ollama is an alias label that activates
+    # the same HTTP complete path as AEGIS_LLM_PROVIDER=http.  No new
+    # gateway, no vendored binary — the same HttpProvider is reused.
+    if kind == "echo":
+        backend = os.getenv("AGENT_LLM_BACKEND", "").lower()
+        if backend == "ollama":
+            kind = "http"
     if kind == "http":
         base_url = os.getenv("AEGIS_LLM_BASE_URL")
         api_key = os.getenv("AEGIS_LLM_API_KEY")

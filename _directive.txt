@@ -1,37 +1,36 @@
-T135 — First-run weekly brief from saved profile. Do ONLY this directive. Do not start T136. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 8f5f7c4. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, SMTP, speech-to-text, or a live paid LLM. Do not bind 0.0.0.0. Do not let any specialist execute. Do not weaken T56–T134. English only in repo files.
+T136 CONTINUE — finish the interrupted extras slice. Do ONLY this file. Do not start T137. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, speech-to-text, microphone, cloud TTS, or a live paid LLM. Do not bind 0.0.0.0. Do not let any specialist execute. Do not weaken T56–T135. Do not revert committed T135. English only.
 
-Baseline on main: T01–T134. HEAD 8f5f7c4. pytest was 751 passed, 1 skipped after T134.
+Baseline: T01–T135 on main at 9eb89fa. pytest was 755 passed, 1 skipped. A previous session ran out of Nous credits while editing README, STATUS, app.html, and tests/test_t136_extras.py. Those edits are NOT committed. Finish them. Do not start over. Do not re-implement T135 weekly brief.
 
-GOAL: After a durable profile exists, operator home has one button that proposes a weekly desk brief from name/role/goals/timezone. Same Propose path. Empty profile does not invent a brief.
+GOAL: complete original T136 only.
+1) Optional AGENT_LLM_BACKEND=ollama is a label on the existing T116 HTTP adapter. Echo stays default. Unreachable HTTP falls back to Echo and labels provider=echo(fallback). No Ollama binary. No live host in tests.
+2) Interview stays typed. No speech import in app/ or desktop/.
+3) Export buyer one-pager writes a .md under AEGIS_DATA_DIR or $HOME/.aegis/exports/ from saved profile plus honest shipped facts only. Empty profile → typed 400, no file. Never write the export into the git worktree.
 
-Implement:
+If a file is already half-edited, finish it. Do not duplicate routes or buttons. Do not invent a third LLM gateway.
 
-1) desktop/app.html or twin home
-- Button: Propose weekly brief
-- POST existing propose with a deterministic task string built from saved profile fields
-- No microphone
-- No new agent
+tests/test_t136_extras.py must exist and include:
+- test_default_provider_still_echo
+- test_ollama_alias_falls_back_to_echo_when_unreachable
+- test_no_speech_to_text_import
+- test_empty_profile_no_onepager
+- test_profile_present_writes_onepager_outside_repo
+- test_onepager_not_added_to_git_worktree
+No live network except TestClient.
 
-2) If profile empty, button disabled or returns 400 typed error
-- Do not fabricate goals
-
-3) tests/test_t135_weekly_brief.py
-- test_profile_present_proposes_brief
-- test_empty_profile_no_brief
-- test_no_voice_hook
-- No live network except TestClient
+README Now: at most two honest sentences already drafted in the interrupted edit. Keep them if they are true. Do not claim GA.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; t=Path('tests/test_t135_weekly_brief.py').read_text().lower(); print('brief' in t and 'empty' in t)"
+   ./.venv/bin/python -c "from pathlib import Path; t=Path('tests/test_t136_extras.py').read_text().lower(); print(('echo' in t) and ('speech' in t) and ('empty' in t))"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count >= 751
-5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t135): weekly brief from saved profile"
+   Required: 0 failed, count >= 755
+5. git add -A (do not force-add .kms/ or data/ or $HOME/.aegis/; do not delete _directive.txt)
+6. git commit -m "feat(t136): optional ollama alias, typed interview lock, local one-pager"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

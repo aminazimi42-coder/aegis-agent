@@ -50,6 +50,8 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Approve/reject notes** — every approve or reject writes a feedback row with the actor and timestamp.
 - **Local entitlement file** — a signed local file controls the active tier; no cloud billing, no card charge.
 - **`start_operator.sh` + `.app` wrapper** — a local shell script and a macOS `.app` bundle start the engine; neither is a notarized installer or a paid SKU.
+- **Optional local HTTP/Ollama adapter** — `AGENT_LLM_BACKEND=ollama` is an alias for the same HTTP complete path; it falls back to Echo when unreachable and is not a bundled binary.
+- **Buyer one-pager** — a local ``.md`` export from the saved profile, not a marketing site; written under `AEGIS_DATA_DIR`, never committed.
 
 ---
 

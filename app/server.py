@@ -413,6 +413,12 @@ class TwinHomeRequest(BaseModel):
     tenant_id: str
 
 
+class TwinBuyerOnePagerRequest(BaseModel):
+    """Body for exporting a local buyer one-pager from the saved profile (T136)."""
+
+    tenant_id: str
+
+
 def create_app() -> FastAPI:
     """Create and configure the production FastAPI application."""
     app = FastAPI(
@@ -1353,6 +1359,17 @@ def create_app() -> FastAPI:
             "count": len(proposals),
             "batch_id": batch_id,
         }
+
+    # --- Local buyer one-pager export (T136) ---
+
+    @app.post("/api/v1/twin/buyer/one-pager", tags=["twin"], status_code=200)
+    def twin_buyer_one_pager(request: TwinBuyerOnePagerRequest) -> Any:
+        from core.twin_one_pager import render_buyer_one_pager as _render
+
+        try:
+            return _render(request.tenant_id)
+        except ValueError as exc:
+            return twin_value_error_response(exc)
 
     # --- Serve the operator page on loopback (T107) --- #
 

@@ -175,6 +175,15 @@
     </div>
   </div>
 
+  <!-- ── Buyer one-pager (T136) ─────────────────────────────────── -->
+  <h2>Buyer One-Pager</h2>
+  <div class="card">
+    <div class="row">
+      <button id="btn-buyer-pager" onclick="exportBuyerPager()" disabled>Export buyer one-pager</button>
+      <span class="muted" id="buyer-pager-label"></span>
+    </div>
+  </div>
+
   <!-- ── Home / Status ───────────────────────────────────────────── -->
   <h2>Home / Status</h2>
   <div class="card">
@@ -259,6 +268,8 @@
     if (bs) { bs.disabled = true; }
     var bw = el("btn-weekly-brief");
     if (bw) { bw.disabled = true; }
+    var bp2 = el("btn-buyer-pager");
+    if (bp2) { bp2.disabled = true; }
   }
   function setOnline() {
     engineOnline = true;
@@ -272,6 +283,8 @@
     var bw = el("btn-weekly-brief");
     // Enabled only when a saved profile exists.
     if (bw) { bw.disabled = !profilePrefill; }
+    var bp2 = el("btn-buyer-pager");
+    if (bp2) { bp2.disabled = !profilePrefill; }
   }
   function checkHealth() {
     get("/health", function (err, data, status) {
@@ -579,6 +592,40 @@
         wl.className = "muted";
       }
       loadQueue();
+    });
+  };
+
+  // ── Export buyer one-pager (T136) ──
+  window.exportBuyerPager = function () {
+    if (!engineOnline) {
+      var bp = el("buyer-pager-label");
+      if (bp) {
+        bp.textContent = "Engine offline — start the server, then refresh";
+        bp.className = "muted err";
+      }
+      return;
+    }
+    var bp = el("buyer-pager-label");
+    if (bp) { bp.textContent = ""; bp.className = "muted"; }
+    if (!profilePrefill) {
+      if (bp) {
+        bp.textContent = "No saved profile — commit a profile first";
+        bp.className = "muted err";
+      }
+      return;
+    }
+    var t = el("tenant").value || "local";
+    post("/api/v1/twin/buyer/one-pager", { tenant_id: t }, function (err, data, status) {
+      if (err || status !== 200) {
+        var detail = "Export failed";
+        if (data && data.detail) { detail = data.detail; }
+        if (bp) { bp.textContent = detail; bp.className = "muted err"; }
+        return;
+      }
+      if (bp) {
+        bp.textContent = "Exported: " + (data.path || data.filename || "buyer one-pager");
+        bp.className = "muted";
+      }
     });
   };
 
