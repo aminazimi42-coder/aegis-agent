@@ -204,6 +204,15 @@ def list_queue(tenant_id: str) -> dict[str, list[dict[str, Any]]]:
         else:
             archive.append(a)
 
+    # T137 — enrich each approved row with the operator-visible fields:
+    # agent (from kind prefix), title/task excerpt, digest prefix, and
+    # approved timestamp.  Rejected actions are excluded.
+    for a in approved_waiting:
+        kind_str = a.get("kind", "")
+        a["agent"] = kind_str.split(":")[0] if ":" in kind_str else kind_str
+        a["digest_prefix"] = (a.get("payload_sha256", "") or "")[:12]
+        a["approved_at"] = a.get("approved_at", "")
+
     return {
         "pending": pending,
         "approved_waiting": approved_waiting,

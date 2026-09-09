@@ -209,6 +209,21 @@
     </div>
   </div>
 
+  <!-- ── Approved strip (T137): approved receipts for current tenant ── -->
+  <h2>Approved</h2>
+  <div class="card">
+    <div id="approved-items"><span class="muted">Loading…</span></div>
+  </div>
+
+  <!-- ── Signed brief export (T137) ────────────────────────────── -->
+  <h2>Signed Brief Export</h2>
+  <div class="card">
+    <div class="row">
+      <button id="btn-signed-brief" onclick="exportSignedBrief()" disabled>Export signed brief</button>
+      <span class="muted" id="signed-brief-label"></span>
+    </div>
+  </div>
+
 <script>
 (function () {
   "use strict";
@@ -270,6 +285,9 @@
     if (bw) { bw.disabled = true; }
     var bp2 = el("btn-buyer-pager");
     if (bp2) { bp2.disabled = true; }
+    // T137 — disable signed brief export while offline.
+    var bs2 = el("btn-signed-brief");
+    if (bs2) { bs2.disabled = true; }
   }
   function setOnline() {
     engineOnline = true;
@@ -285,6 +303,9 @@
     if (bw) { bw.disabled = !profilePrefill; }
     var bp2 = el("btn-buyer-pager");
     if (bp2) { bp2.disabled = !profilePrefill; }
+    // T137 — enable signed brief export only when a profile exists.
+    var bs2 = el("btn-signed-brief");
+    if (bs2) { bs2.disabled = !profilePrefill; }
   }
   function checkHealth() {
     get("/health", function (err, data, status) {
@@ -434,9 +455,11 @@
     get("/api/v1/twin/queue/" + encodeURIComponent(t), function (err, data) {
       var archiveBox = el("archive-items");
       var latestBox = el("latest-items");
+      var approvedBox = el("approved-items");
       if (err || !data) {
         archiveBox.innerHTML = '<span class="muted">No archive data.</span>';
         latestBox.innerHTML = '<span class="muted">No latest data.</span>';
+        if (approvedBox) { approvedBox.innerHTML = '<span class="muted">No approved data.</span>'; }
         return;
       }
       // T120 — split proposed rows into Archive and Latest by batch_id.
@@ -452,7 +475,30 @@
       } else {
         archiveBox.innerHTML = archive.map(renderCard).join("");
       }
+      // T137 — render the Approved strip from approved_waiting rows.
+      var approved = data.approved_waiting || [];
+      if (approvedBox) {
+        if (approved.length === 0) {
+          approvedBox.innerHTML = '<span class="muted">No approved actions — approve a proposed action first.</span>';
+        } else {
+          approvedBox.innerHTML = approved.map(renderApprovedRow).join("");
+        }
+      }
     });
+  }
+
+  // T137 — render one approved row in the Approved strip.
+  function renderApprovedRow(a) {
+    var agent = a.agent || "";
+    var title = a.title || a.action_id || "";
+    var digestPrefix = a.digest_prefix || "";
+    var approvedAt = a.approved_at || "";
+    var html = '<div class="queue-item">'
+      + '<div class="queue-title">' + esc(title) + '</div>'
+      + '<div class="queue-meta">' + esc(agent) + ' · approved · ' + esc(a.kind || "") + ' · ' + esc(a.action_id || "") + '</div>'
+      + '<div class="queue-meta">digest: <code>' + esc(digestPrefix) + '</code> · approved: ' + esc(approvedAt) + '</div>'
+      + '</div>';
+    return html;
   }
 
   // ── Approve a pending action (T106) ──
@@ -625,6 +671,40 @@
       if (bp) {
         bp.textContent = "Exported: " + (data.path || data.filename || "buyer one-pager");
         bp.className = "muted";
+      }
+    });
+  };
+
+  // ── Export signed brief (T137) ──
+  window.exportSignedBrief = function () {
+    if (!engineOnline) {
+      var sb = el("signed-brief-label");
+      if (sb) {
+        sb.textContent = "Engine offline — start the server, then refresh";
+        sb.className = "muted err";
+      }
+      return;
+    }
+    var sb = el("signed-brief-label");
+    if (sb) { sb.textContent = ""; sb.className = "muted"; }
+    if (!profilePrefill) {
+      if (sb) {
+        sb.textContent = "No saved profile — commit a profile first";
+        sb.className = "muted err";
+      }
+      return;
+    }
+    var t = el("tenant").value || "local";
+    post("/api/v1/twin/brief/signed-export", { tenant_id: t }, function (err, data, status) {
+      if (err || status !== 200) {
+        var detail = "Export failed";
+        if (data && data.detail) { detail = data.detail; }
+        if (sb) { sb.textContent = detail; sb.className = "muted err"; }
+        return;
+      }
+      if (sb) {
+        sb.textContent = "Exported: " + (data.path || "signed brief");
+        sb.className = "muted";
       }
     });
   };

@@ -52,6 +52,8 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **`start_operator.sh` + `.app` wrapper** — a local shell script and a macOS `.app` bundle start the engine; neither is a notarized installer or a paid SKU.
 - **Optional local HTTP/Ollama adapter** — `AGENT_LLM_BACKEND=ollama` is an alias for the same HTTP complete path; it falls back to Echo when unreachable and is not a bundled binary.
 - **Buyer one-pager** — a local ``.md`` export from the saved profile, not a marketing site; written under `AEGIS_DATA_DIR`, never committed.
+- **Approved receipts on home** — approved twin actions stay visible on the operator home page after refresh; they do not auto-execute.
+- **Engine offline banner** — the operator page shows an honest "Engine offline" banner when the local `/health` probe fails; it is local health, not a cloud SLA.
 
 ---
 

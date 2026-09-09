@@ -419,6 +419,17 @@ class TwinBuyerOnePagerRequest(BaseModel):
     tenant_id: str
 
 
+class TwinSignedBriefExportRequest(BaseModel):
+    """Body for exporting the signed local weekly-brief pack (T137).
+
+    Calls the existing ``signed_export`` path from T126.  The file lands
+    under ``AEGIS_DATA_DIR/export/`` (or ``$HOME/.aegis/exports/``) — never
+    into the git worktree.
+    """
+
+    tenant_id: str
+
+
 def create_app() -> FastAPI:
     """Create and configure the production FastAPI application."""
     app = FastAPI(
@@ -1370,6 +1381,33 @@ def create_app() -> FastAPI:
             return _render(request.tenant_id)
         except ValueError as exc:
             return twin_value_error_response(exc)
+
+    # --- Signed brief export (T137) --- #
+
+    @app.post("/api/v1/twin/brief/signed-export", tags=["twin"], status_code=200)
+    def twin_signed_brief_export(request: TwinSignedBriefExportRequest) -> Any:
+        """Export the signed local weekly-brief pack from T126's signed_export.
+
+        The file lands under ``AEGIS_DATA_DIR/export/`` (or
+        ``$HOME/.aegis/export/``) — never into the git worktree.  An
+        empty profile or empty brief returns a typed 400, no file.
+        """
+        from core.twin_interview import get_latest_profile
+        from core.twin_local_recall import signed_export
+
+        profile = get_latest_profile(request.tenant_id)
+        if profile is None:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "no consented profile"},
+            )
+        try:
+            return signed_export(request.tenant_id)
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": str(exc)},
+            )
 
     # --- Serve the operator page on loopback (T107) --- #
 
