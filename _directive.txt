@@ -1,25 +1,24 @@
-T134 — Optional local model on existing adapter. Do ONLY this directive. Do not start T135. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 4585b6c. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, SMTP, Gmail, Slack, webhooks, Postgres, or speech-to-text. Do not bind 0.0.0.0. Do not let any specialist execute. Do not weaken T56–T133. English only in repo files.
+T135 — First-run weekly brief from saved profile. Do ONLY this directive. Do not start T136. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend 8f5f7c4. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, SMTP, speech-to-text, or a live paid LLM. Do not bind 0.0.0.0. Do not let any specialist execute. Do not weaken T56–T134. English only in repo files.
 
-Baseline on main: T01–T133. HEAD 4585b6c. pytest was 747 passed, 1 skipped after T133.
+Baseline on main: T01–T134. HEAD 8f5f7c4. pytest was 751 passed, 1 skipped after T134.
 
-GOAL: complete_safe may use a local OpenAI-compatible base URL when env is set. Default remains Echo. HTTP path stays labeled. No cloud vendor name required.
+GOAL: After a durable profile exists, operator home has one button that proposes a weekly desk brief from name/role/goals/timezone. Same Propose path. Empty profile does not invent a brief.
 
 Implement:
 
-1) Reuse T116 adapter
-- If AGENT_LLM_BASE_URL is empty, Echo
-- If set, labeled HTTP complete, not silent swap
-- Timeout stays local and short
-- Do not add new payment keys
+1) desktop/app.html or twin home
+- Button: Propose weekly brief
+- POST existing propose with a deterministic task string built from saved profile fields
+- No microphone
+- No new agent
 
-2) STATUS.md one line
-- Default Echo; optional local adapter via AGENT_LLM_BASE_URL
-- Do not claim Ollama is bundled
+2) If profile empty, button disabled or returns 400 typed error
+- Do not fabricate goals
 
-3) tests/test_t134_local_adapter.py
-- test_empty_env_is_echo
-- test_set_url_is_labeled_http
-- test_status_does_not_claim_bundled_ollama
+3) tests/test_t135_weekly_brief.py
+- test_profile_present_proposes_brief
+- test_empty_profile_no_brief
+- test_no_voice_hook
 - No live network except TestClient
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
@@ -27,12 +26,12 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; t=Path('tests/test_t134_local_adapter.py').read_text().lower(); print('echo' in t and 'http' in t)"
+   ./.venv/bin/python -c "from pathlib import Path; t=Path('tests/test_t135_weekly_brief.py').read_text().lower(); print('brief' in t and 'empty' in t)"
    Required: True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count >= 747
+   Required: 0 failed, count >= 751
 5. git add -A (do not force-add .kms/ or data/; do not delete _directive.txt)
-6. git commit -m "feat(t134): optional labeled local adapter"
+6. git commit -m "feat(t135): weekly brief from saved profile"
 7. git push origin main
 8. Print new SHA, pytest count, proof output.
 

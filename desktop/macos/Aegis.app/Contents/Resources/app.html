@@ -166,6 +166,15 @@
     </div>
   </div>
 
+  <!-- ── Weekly brief (T135) ─────────────────────────────────────── -->
+  <h2>Weekly Brief</h2>
+  <div class="card">
+    <div class="row">
+      <button id="btn-weekly-brief" onclick="proposeWeeklyBrief()" disabled>Propose weekly brief</button>
+      <span class="muted" id="weekly-brief-label"></span>
+    </div>
+  </div>
+
   <!-- ── Home / Status ───────────────────────────────────────────── -->
   <h2>Home / Status</h2>
   <div class="card">
@@ -248,6 +257,8 @@
     if (bc) { bc.disabled = true; }
     var bs = el("btn-start");
     if (bs) { bs.disabled = true; }
+    var bw = el("btn-weekly-brief");
+    if (bw) { bw.disabled = true; }
   }
   function setOnline() {
     engineOnline = true;
@@ -258,6 +269,9 @@
     if (bc) { bc.disabled = false; }
     var bs = el("btn-start");
     if (bs) { bs.disabled = false; }
+    var bw = el("btn-weekly-brief");
+    // Enabled only when a saved profile exists.
+    if (bw) { bw.disabled = !profilePrefill; }
   }
   function checkHealth() {
     get("/health", function (err, data, status) {
@@ -521,6 +535,53 @@
     });
   };
 
+  // ── Propose weekly brief (T135) ──
+  // Builds a deterministic task string from the saved profile fields
+  // (name, role, goals, timezone).  When no profile exists the button
+  // stays disabled and the endpoint is not called — no fabricated brief.
+  window.proposeWeeklyBrief = function () {
+    if (!engineOnline) {
+      var wl = el("weekly-brief-label");
+      if (wl) {
+        wl.textContent = "Engine offline — start the server, then refresh";
+        wl.className = "muted err";
+      }
+      return;
+    }
+    var wl = el("weekly-brief-label");
+    if (wl) { wl.textContent = ""; wl.className = "muted"; }
+    if (!profilePrefill) {
+      if (wl) {
+        wl.textContent = "No saved profile — commit a profile first";
+        wl.className = "muted err";
+      }
+      return;
+    }
+    var name = profilePrefill.name || "";
+    var role = profilePrefill.role || "";
+    var goals = profilePrefill.goals || "";
+    var tz = profilePrefill.timezone || "";
+    var briefText = "Weekly desk brief for " + name
+      + " (" + role + ")"
+      + " — goals: " + goals
+      + " — timezone: " + tz;
+    var t = el("tenant").value || "local";
+    post("/api/v1/twin/propose", { tenant_id: t, text: briefText }, function (err, data, status) {
+      if (err || status !== 200) {
+        var detail = "Weekly brief failed";
+        if (data && data.detail) { detail = data.detail; }
+        if (wl) { wl.textContent = detail; wl.className = "muted err"; }
+        return;
+      }
+      if (wl) {
+        var cnt = (data && data.count) || 0;
+        wl.textContent = "Weekly brief proposed: " + cnt + " row" + (cnt === 1 ? "" : "s");
+        wl.className = "muted";
+      }
+      loadQueue();
+    });
+  };
+
   function esc(s) {
     if (!s) return "";
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -538,6 +599,9 @@
         goals: data.decision_style || "",
         timezone: data.tools || "",
       };
+      // T135 — enable the weekly-brief button now that a profile exists.
+      var bw = el("btn-weekly-brief");
+      if (bw && engineOnline) { bw.disabled = false; }
     });
   }
 
