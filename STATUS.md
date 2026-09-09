@@ -1,6 +1,6 @@
 # Aegis Agent — Shipped Capability Status
 
-Honest lock of what is actually shipped in this tree as of T70.
+Honest lock of what is actually shipped in this tree as of T70. See the **Now** and **Destination — Planned** sections in `README.md` for the current capability and the planned road ahead.
 
 ## Shipped
 

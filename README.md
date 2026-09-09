@@ -38,6 +38,35 @@ flowchart LR
 
 ---
 
+## Now
+
+A local digital-twin operator — not a store installer, not a cloud brain. Today it ships:
+
+- **Six specialists propose only** — Alina, Kian, Bita, Aylin, Ahmad, Amin; nothing executes without a human approval gate.
+- **Hash approve** — approvals bind to the SHA-256 digest of the action payload.
+- **Local execute** — approved actions write a local outbox file or a markdown receipt; nothing sends externally.
+- **Echo default** — `EchoProvider` is the offline default; no paid LLM is wired unless explicitly configured.
+- **Durable profile** — a Day-0 interview builds a consented tenant profile that survives restarts.
+- **Approve/reject notes** — every approve or reject writes a feedback row with the actor and timestamp.
+- **Local entitlement file** — a signed local file controls the active tier; no cloud billing, no card charge.
+- **`start_operator.sh` + `.app` wrapper** — a local shell script and a macOS `.app` bundle start the engine; neither is a notarized installer or a paid SKU.
+
+---
+
+## Destination — Planned
+
+The road ahead, not yet shipped:
+
+- **Double-click installer** — a packaged desktop binary the operator can install without a terminal.
+- **Local model on the existing adapter** — a model that runs on the operator's machine through the current HTTP adapter, not a new cloud dependency.
+- **Weekly-brief button** — one click renders the weekly brief from the existing morning-brief renderer.
+- **Multi-week style loop** — the writing-style lock extended across multiple weeks of samples.
+- **License server outside core** — a separate license server; the core repository stays payment-free.
+- **Professional, then Executive, then Engineering** — tier rollout in that order; each tier is a local entitlement file, not a card charge.
+- **Payments never enter core** — billing, if any, lives outside this repository; `core/` stays free of payment logic.
+
+---
+
 ## Specialists
 
 Six agents registered in the specialist catalog. Each **proposes only** — a human must approve before anything executes.
