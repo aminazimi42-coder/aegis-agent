@@ -83,10 +83,15 @@ def _render_markdown(
 ) -> str:
     """Render the home page markdown body."""
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    from core.entitlement import current_tier
+
+    tier = current_tier()
     lines: list[str] = [
         f"# Home — {tenant_id}",
         "",
         f"_Generated: {now}_",
+        "",
+        f"Tier: {tier}",
         "",
         "## Pending actions",
         "",

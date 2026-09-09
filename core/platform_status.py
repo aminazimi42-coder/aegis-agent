@@ -35,6 +35,8 @@ def _twin_routes_available() -> bool:
 
 def platform_status() -> dict:
     """Return an honest, verifiable platform status dict."""
+    from core.entitlement import current_tier
+
     config = load_config()
     provider = get_provider()
     return {
@@ -44,4 +46,5 @@ def platform_status() -> dict:
         "llm_provider": type(provider).__name__,
         "twin_routes": _twin_routes_available(),
         "persistence": "sqlite",
+        "tier": current_tier(),
     }
