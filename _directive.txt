@@ -1,42 +1,51 @@
-T139_FIX2 — Export button is disabled in served HTML so click never runs. Enable it. Do ONLY this directive. Do not start T140. Do not read task_instruction.txt. Do not rewrite LICENSE or README Author. English only in repo files.
+T140 — Sole daily start path. This is slice 1 of 3 (T140 start, T141 CTO-copy strip, T142 export depth). Do ONLY this directive. Do not start T141. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, SMTP, voice, or a live paid LLM. Do not bind 0.0.0.0. Do not let any specialist execute. Do not weaken T56–T139. English only in repo files.
 
-Laptop proof 2026-09-10 04:13 CEST after cac45a7 and uvicorn PID 41916:
-curl -s http://127.0.0.1:8741/ | grep shows:
-  <button id="btn-signed-brief" onclick="exportSignedBrief()" disabled>Export signed brief</button>
-The function exportSignedBrief exists and posts /api/v1/twin/brief/signed-export and sets Exporting...
-Click still produces no POST because the control is disabled. That is the only remaining defect.
+Owner laptop 2026-09-11 after Mac power-on: profile Amin Azimi / Ai Architect / Europe/Berlin returned; session twin-5e0d9ae2f043; Local twin healthy; six specialists still distinct; Approved strip intact; Export signed brief wrote $HOME/.aegis/export/local_20260910T220551Z.md. Operator still starts with three manual lines. That is the defect.
 
-GOAL: The served operator page must ship #btn-signed-brief without a disabled attribute, and no script may set that button disabled when the engine is up.
+GOAL: One script is the only documented operator start. It exports AEGIS_DATA_DIR=$HOME/.aegis, uses the project venv, binds 127.0.0.1:8741, and prints an honest line if the engine cannot start. It does not open Safari. It does not merge Grok Bot.
 
 Implement:
 
-A) Markup
-- In the operator HTML that GET / actually serves, the signed-brief button must be:
-  <button id="btn-signed-brief" type="button" onclick="exportSignedBrief()">Export signed brief</button>
-- Remove the disabled attribute from that tag.
+1) scripts/start_operator.sh
+- Must be executable.
+- cd to the repo root from the script location so the operator can run it from any cwd.
+- export AEGIS_DATA_DIR="${AEGIS_DATA_DIR:-$HOME/.aegis}"
+- mkdir -p "$AEGIS_DATA_DIR"
+- Use ./.venv/bin/python -m uvicorn app.server:create_app --factory --host 127.0.0.1 --port 8741
+- If .venv or app.html is missing, print one English line and exit non-zero.
+- If port 8741 is already bound, print one English line that the engine is already up at http://127.0.0.1:8741/ and exit non-zero. Do not kill a stranger process.
+- On start, print exactly one English block: data dir, URL http://127.0.0.1:8741/, and that Safari is opened by the operator not by this script.
+- Do not curl a cloud host. Do not open a browser.
 
-B) Script
-- Any line that sets btn-signed-brief.disabled = true / bw.disabled = true when the label is Export signed brief must stop doing that while engineOnline is true.
-- Other buttons may keep their own guards. Do not disable the export button behind profilePrefill.
+2) README Now vs planned
+- One Now sentence: daily local start is scripts/start_operator.sh with data in $HOME/.aegis on 127.0.0.1:8741.
+- Do not claim a notarized installer, auto-start after sleep, or that the script opens the operator page.
+- Do not write a long test novel. One Now sentence may list the owner daily check already proven: profile persist, six distinct proposes, approve/reject, two-column home, approved strip, signed-export click.
+- Author block unchanged.
 
-C) tests/test_t139_signed_export_button.py
-- Add test_signed_export_button_markup_is_not_disabled: the HTML string served by GET / (TestClient) contains id="btn-signed-brief" and that same tag does not contain disabled.
-- Keep existing tests.
+3) STATUS.md one line
+- Operator start path is scripts/start_operator.sh only.
 
-D) README
-- Do not claim the laptop click worked. One Now sentence: export button is enabled when the local engine is up.
+4) tests/test_t140_start_operator.py
+- test_start_script_exists_and_executable
+- test_script_exports_aegis_data_dir
+- test_script_binds_127_0_0_1_8741
+- test_script_does_not_open_browser
+- test_readme_names_start_operator_sh
+- No live network except TestClient.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from fastapi.testclient import TestClient; from app.server import create_app; h=TestClient(create_app()).get('/').text; i=h.find('btn-signed-brief'); chunk=h[i:i+180]; print(chunk); assert 'btn-signed-brief' in h and 'disabled' not in chunk"
+   ./.venv/bin/python -c "from pathlib import Path; p=Path('scripts/start_operator.sh'); t=p.read_text(); print(p.is_file(), oct(p.stat().st_mode)[-3:], 'AEGIS_DATA_DIR' in t, '127.0.0.1' in t, '8741' in t, 'open ' not in t.lower() and 'xdg-open' not in t)"
+   Required: True plus the script flags true
 4. ./.venv/bin/python -m pytest -q
    Required: 0 failed
 5. git add -A (do not force-add .kms/ or $HOME/.aegis/; do not delete _directive.txt)
-6. git commit -m "fix(t139): enable signed-export button; do not ship disabled"
+6. git commit -m "feat(t140): sole daily start_operator.sh path"
 7. git push origin main
-8. Print new SHA, pytest count, and the proof chunk.
+8. Print new SHA, pytest count, and the proof line.
 
 Stop after push. Do nothing else.

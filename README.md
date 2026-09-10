@@ -54,7 +54,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Buyer one-pager** — a local ``.md`` export from the saved profile, not a marketing site; written under `AEGIS_DATA_DIR`, never committed.
 - **Approved receipts on home** — approved twin actions stay visible on the operator home page after refresh; they do not auto-execute.
 - **Engine offline banner** — the operator page shows an honest "Engine offline" banner when the local `/health` probe fails; it is local health, not a cloud SLA.
-- **Sole start path** — `scripts/start_operator.sh` is the one local start script; it exports `AEGIS_DATA_DIR`, uses the project venv, and starts the engine on `127.0.0.1:8741`. There is no second engine launcher.
+- **Sole start path** — daily local start is `scripts/start_operator.sh` with data in `$HOME/.aegis` on `127.0.0.1:8741`; it uses the project venv, exports `AEGIS_DATA_DIR`, and prints one English block. There is no second engine launcher.
 - **Last reject reason on next card** — when a tenant has a stored reject note, the next propose response includes a `last_reject_reason` field so the operator sees why the prior card was rejected; the field is omitted when no reject exists.
 - **Operator Export signed brief** — the operator button POSTs the local signed-export route and shows the returned file path or a typed error; it does not download into the git worktree. Now: the export button is enabled when the local engine is up.
 
