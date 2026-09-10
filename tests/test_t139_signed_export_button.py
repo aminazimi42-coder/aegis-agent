@@ -137,7 +137,47 @@ class TestT139SignedExportButton(unittest.TestCase):
         )
 
     # ------------------------------------------------------------------ #
-    # 4) No live network
+    # 4) Handler has no silent prefill return (T139_FIX)
+    # ------------------------------------------------------------------ #
+
+    def test_export_button_handler_has_no_silent_prefill_return(self) -> None:
+      """Handler source contains signed-export and must not return before
+      fetch solely because profilePrefill is falsy."""
+      html = _APP_HTML.read_text(encoding="utf-8")
+      lowered = html.lower()
+      self.assertIn("signed-export", lowered,
+                    "handler missing signed-export route string")
+      # Extract the exportSignedBrief function body (lowercased source).
+      start = lowered.find("window.exportsignedbrief")
+      self.assertGreater(start, -1, "exportSignedBrief function not found")
+      end = lowered.find("};", start)
+      self.assertGreater(end, start, "exportSignedBrief function end not found")
+      body = lowered[start:end]
+      # Must contain a post call referencing signed-export.
+      self.assertIn("signed-export", body,
+                    "handler body missing signed-export post call")
+      # Must NOT contain the silent profilePrefill return that swallowed
+      # the click before the POST.
+      self.assertNotIn("if (!profileprefill)", body,
+                       "handler still has silent profilePrefill early-return")
+
+    # ------------------------------------------------------------------ #
+    # 5) Status sets "Exporting…" text on click (T139_FIX)
+    # ------------------------------------------------------------------ #
+
+    def test_export_status_sets_exporting_text(self) -> None:
+      """Handler source contains the word 'Exporting' so the operator
+      sees a status change immediately on click."""
+      html = _APP_HTML.read_text(encoding="utf-8")
+      lowered = html.lower()
+      start = lowered.find("window.exportsignedbrief")
+      end = lowered.find("};", start)
+      body = lowered[start:end]
+      self.assertIn("exporting", body,
+                    "handler missing 'Exporting…' immediate status text")
+
+    # ------------------------------------------------------------------ #
+    # 6) No live network
     # ------------------------------------------------------------------ #
 
     def test_no_live_network(self) -> None:

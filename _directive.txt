@@ -1,50 +1,48 @@
-T139 — Operator Export signed brief button must call the live API and show the result on the page. This is 1 of 1 tonight. Do ONLY this directive. Do not start T140. Do not read task_instruction.txt. Do not patch SKILL.md or files outside this repo. Do not force-push or amend bd2e625. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, SMTP, speech, or a live paid LLM. Do not bind 0.0.0.0. Do not let any specialist execute. Do not weaken T56–T138. English only in repo files.
+T139_FIX — Laptop proof failed: Export signed brief click still produces no POST. Repair the live click path only. Do ONLY this directive. Do not start T140. Do not read task_instruction.txt. Do not rewrite LICENSE or README Author. Do not force-push or amend fd3c253. English only in repo files.
 
-Baseline on main: T01–T138. HEAD bd2e625. pytest was 775 passed, 1 skipped after T138.
+Baseline: T139 claimed fd3c253. pytest was 779 passed, 1 skipped. Owner laptop 2026-09-10 after restart of process 39752: git log shows fd3c253 on main. Clicking the blue button labeled "Export signed brief" under Signed Brief Export produced no uvicorn line POST /api/v1/twin/brief/signed-export. Only GET /, /health, /profile/local, /queue/local and POST /session/start appeared. curl to the same route still works.
 
-GOAL: The operator page button labeled "Export signed brief" must POST the existing route and tell the operator what happened. No new pillar.
-
-Owner laptop proof 2026-09-10:
-- curl POST http://127.0.0.1:8741/api/v1/twin/brief/signed-export with header x-tenant-id: local and body {"tenant_id":"local"} returned HTTP 200 and wrote /Users/hermesdev/.aegis/export/local_20260910T005506Z.md
-- The HTML button produced no POST in the uvicorn log and wrote no file.
-- Do not change the signed_export writer contract except if a test already requires a typed 400 for empty profile. Keep writes under AEGIS_DATA_DIR/export or $HOME/.aegis/export. Never into the git worktree.
+GOAL: The visible operator button must fire fetch/XHR to POST /api/v1/twin/brief/signed-export when clicked in Safari. A status line next to the button must change on click even if the POST fails.
 
 Implement:
 
-A) Wire the button
-- Find the operator HTML (app.html or the file that already contains the label Export signed brief).
-- On click, POST /api/v1/twin/brief/signed-export with Content-Type application/json, header x-tenant-id set to the current operator tenant (reuse last_tenant / profile tenant / "local" already used by queue and profile fetches), body {"tenant_id":"<same>"}.
-- Do not gate the click behind a silent flag. If the engine is offline, show the existing offline banner and a one-line English status. Still attempt the POST only when /health is reachable.
-- The click must produce a uvicorn line POST /api/v1/twin/brief/signed-export.
+A) Find the real markup
+- Search the whole repo for the exact label "Export signed brief" and for signed-export. Do not assume app.html at repo root.
+- The handler that owns that button is the only file to change plus tests.
 
-B) Visible result on the same page
-- Add one status line next to the button, English only.
-- HTTP 200: show the returned path and sha256 prefix. Example: Exported: ~/.aegis/export/local_….md
-- HTTP 400 or other error: show the typed detail. Do not swallow.
-- Do not open a new tab. Do not download into the git worktree.
+B) Click must always POST when engine is up
+- Remove every silent early-return on profilePrefill, empty name, missing session, or missing status node.
+- onclick / addEventListener must call POST /api/v1/twin/brief/signed-export with header x-tenant-id set to tenant field value or "local", body JSON {"tenant_id":"<same>"}.
+- On click, immediately set the status text to "Exporting…" so the operator sees a change before the response.
+- HTTP 200: show path and sha256 prefix.
+- Any other status or network error: show the typed detail or the exception text. Never swallow.
 
 C) tests/test_t139_signed_export_button.py
-- test_operator_html_posts_signed_export_route (HTML or JS source contains the route string and a click handler)
-- test_signed_export_status_element_present
-- test_signed_export_api_still_200_with_profile (TestClient POST, tenant local or fixture tenant, asserts 200 and path outside the repo)
-- No live network except TestClient.
+- Keep existing tests.
+- Add test_export_button_handler_has_no_silent_prefill_return: the handler source must contain signed-export and must not return before fetch solely because profilePrefill is falsy.
+- Add test_export_status_sets_exporting_text: handler source contains Exporting.
 
 D) README
-- At most one honest Now sentence: operator Export signed brief posts the local signed-export route and shows path or typed error.
-- Do not rewrite Author. Do not claim GA.
+- One honest Now sentence if needed: operator Export signed brief click posts the local route; laptop click was verified after T139_FIX.
+- Do not claim the laptop click worked until this slice lands.
 
-Verification, exact order. If a proof fails, fix only that failure and restart from 1. Do not commit a red suite.
+Verification, exact order. If a proof fails, fix only that failure and restart from 1.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; t=Path('tests/test_t139_signed_export_button.py').read_text().lower(); print(('signed-export' in t) and ('status' in t or 'path' in t))"
-   Required: True
+   ./.venv/bin/python -c "from pathlib import Path; hits=[]; 
+for p in Path('.').rglob('*'):
+    if p.suffix.lower() in {'.html','.js','.py'} and p.is_file() and '.venv' not in str(p):
+        t=p.read_text(errors='ignore');
+        if 'Export signed brief' in t or 'signed-export' in t: hits.append(str(p))
+print('HITS', hits); print(bool(hits))"
+   Required: HITS non-empty and True
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count >= 775
-5. git add -A (do not force-add .kms/ or data/ or $HOME/.aegis/; do not delete _directive.txt)
-6. git commit -m "fix(t139): operator export button posts signed-export and shows result"
+   Required: 0 failed, count >= 779
+5. git add -A (do not force-add .kms/ or $HOME/.aegis/; do not delete _directive.txt)
+6. git commit -m "fix(t139): export button click always posts signed-export"
 7. git push origin main
-8. Print new SHA, pytest count, proof output.
+8. Print new SHA, pytest count, proof HITS.
 
 Stop after push. Do nothing else.

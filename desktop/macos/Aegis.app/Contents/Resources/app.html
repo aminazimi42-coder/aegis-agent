@@ -678,30 +678,28 @@
     });
   };
 
-  // ── Export signed brief (T137) ──
+  // ── Export signed brief (T137 / T139_FIX) ──
   window.exportSignedBrief = function () {
+    var sb = el("signed-brief-label");
     if (!engineOnline) {
-      var sb = el("signed-brief-label");
       if (sb) {
         sb.textContent = "Engine offline — start the server, then refresh";
         sb.className = "muted err";
       }
       return;
     }
-    var sb = el("signed-brief-label");
-    if (sb) { sb.textContent = ""; sb.className = "muted"; }
-    if (!profilePrefill) {
-      if (sb) {
-        sb.textContent = "No saved profile — commit a profile first";
-        sb.className = "muted err";
-      }
-      return;
-    }
-    var t = el("tenant").value || "local";
+    // T139_FIX — always POST on click; no silent early-return on
+    // profilePrefill, empty name, or missing status node.
+    if (sb) { sb.textContent = "Exporting…"; sb.className = "muted"; }
+    var t = (el("tenant") && el("tenant").value) || "local";
     post("/api/v1/twin/brief/signed-export", { tenant_id: t }, function (err, data, status) {
-      if (err || status !== 200) {
-        var detail = "Export failed";
-        if (data && data.detail) { detail = data.detail; }
+      if (err) {
+        var detail = (err && err.message) ? err.message : String(err);
+        if (sb) { sb.textContent = "Export error: " + detail; sb.className = "muted err"; }
+        return;
+      }
+      if (status !== 200) {
+        var detail = (data && data.detail) ? data.detail : ("Export failed (HTTP " + status + ")");
         if (sb) { sb.textContent = detail; sb.className = "muted err"; }
         return;
       }
