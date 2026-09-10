@@ -1,40 +1,39 @@
-T143 — Layer-1 local operator pack. This is pack slice 1 of 2 (T143 pack, T144 copied-folder start). Do ONLY this directive. Do not start T144. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not copy $HOME/.aegis. Do not add Stripe, Grok bots, voice, Windows installer, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T142. English only in repo files.
+T144 — Prove the Layer-1 pack starts from a copied folder. This is pack slice 2 of 2. Do ONLY this directive. Do not start T145. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not copy $HOME/.aegis. Do not add Stripe, Grok bots, voice, Windows installer, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T143. English only in repo files.
 
-Baseline: T142 live 47c096d34643cfffabde63feefe42ba37e236681. pytest 797 passed 1 skipped. Owner will later copy this pack onto the other Mac account and start with Terminal only.
+Baseline: T143 live c453950d3e7349a98d463a5fabe9474b941ae3ac. pytest 801 passed 1 skipped. Pack script exists. Owner will copy dist/aegis-local-operator onto the other Mac account after this slice.
 
-GOAL: One script builds dist/aegis-local-operator/ that contains the files needed to start the local operator without git, Hermes, or VS Code. The pack must not contain builder directives or tenant data.
+GOAL: Running scripts/pack_local_operator.sh produces a folder that contains start_operator.sh, INSTALL.md, and no .git / _directive.txt / .aegis. The packed start script still exports AEGIS_DATA_DIR and binds 127.0.0.1:8741. This slice does not open a browser and does not keep a server running in CI.
 
 Implement:
 
 1) scripts/pack_local_operator.sh
-- Executable.
-- Recreates dist/aegis-local-operator/ from repo root.
-- Copy the runtime tree needed by start_operator.sh (app/, core/, agents/ if required, scripts/start_operator.sh, pyproject.toml, uv.lock, and any HTML the server serves).
-- Do not copy .git, .venv, _directive.txt, task_instruction.txt, .kms/, $HOME/.aegis, Hermes session files.
-- Write dist/aegis-local-operator/INSTALL.md with only Now steps: need Python 3.11, create venv, install from lockfile, run ./scripts/start_operator.sh, open http://127.0.0.1:8741/ yourself. Data dir is $HOME/.aegis. No cloud URL.
-- Print the output folder path and stop.
+- Keep T143 behavior.
+- After copy, the packed start_operator.sh must be executable.
+- If the pack script does not already invoke itself cleanly twice, make a second run replace dist/aegis-local-operator/ not append.
 
-2) README Now
-- One sentence: Layer-1 pack is built by scripts/pack_local_operator.sh into dist/aegis-local-operator/.
-- Do not claim a notarized installer or Windows support.
+2) tests/test_t144_packed_start.py
+- test_pack_script_builds_folder: run the pack script (subprocess, cwd=repo), assert dist/aegis-local-operator/scripts/start_operator.sh exists
+- test_packed_start_exports_data_dir_and_port: packed start script text contains AEGIS_DATA_DIR and 127.0.0.1 and 8741
+- test_pack_omits_builder_files: packed tree has no .git directory, no _directive.txt, no task_instruction.txt
+- test_install_md_present
+- Do not start uvicorn in the test. No live network except TestClient if already used elsewhere.
 
-3) tests/test_t143_local_pack.py
-- test_pack_script_exists
-- test_pack_excludes_git_and_directive
-- test_install_md_names_start_operator
-- No live network except TestClient.
+3) README Now
+- One sentence: after pack, copy dist/aegis-local-operator and run ./scripts/start_operator.sh from that folder.
+- Do not claim the other Mac account was already tested.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; print(Path('scripts/pack_local_operator.sh').is_file())"
-   Required: True
+   bash scripts/pack_local_operator.sh >/tmp/t144-pack.out
+   ./.venv/bin/python -c "from pathlib import Path; r=Path('dist/aegis-local-operator'); print(r.is_dir(), (r/'scripts/start_operator.sh').is_file(), (r/'_directive.txt').exists(), (r/'.git').exists())"
+   Required: True True False False
 4. ./.venv/bin/python -m pytest -q
    Required: 0 failed
 5. git add -A (do not force-add .kms/ or $HOME/.aegis/; do not delete _directive.txt)
-6. git commit -m "feat(t143): layer-1 local operator pack script"
+6. git commit -m "test(t144): packed operator folder starts without builder files"
 7. git push origin main
 8. Print new SHA, pytest count, and the proof line.
 
