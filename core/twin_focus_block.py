@@ -1,6 +1,6 @@
 """Local focus-block hold — markdown + iCalendar for a principal's calendar.
 
-``create_block(tenant_id, start, ...)`` produces two local files a CTO can
+``create_block(tenant_id, start, ...)`` produces two local files a senior operator can
 drop into a calendar:
 
 * ``focus_block.md`` — a human-readable summary of the block.

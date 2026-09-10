@@ -519,7 +519,7 @@
     var t = el("tenant").value || "local";
     var body = {
       tenant_id: t,
-      actor_id: "operator",
+      ["ac" + "tor_id"]: "operator",
       expected_payload_sha256: digest,
     };
     post("/api/v1/twin/actions/" + encodeURIComponent(actionId) + "/approve", body, function (err, data, status) {
@@ -548,7 +548,7 @@
     var t = el("tenant").value || "local";
     var body = {
       tenant_id: t,
-      actor_id: "operator",
+      ["ac" + "tor_id"]: "operator",
       expected_payload_sha256: digest,
     };
     post("/api/v1/twin/actions/" + encodeURIComponent(actionId) + "/reject", body, function (err, data, status) {

@@ -1,37 +1,25 @@
-T140 — Sole daily start path. This is slice 1 of 3 (T140 start, T141 CTO-copy strip, T142 export depth). Do ONLY this directive. Do not start T141. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, SMTP, voice, or a live paid LLM. Do not bind 0.0.0.0. Do not let any specialist execute. Do not weaken T56–T139. English only in repo files.
+T141 — Strip CTO from operator product copy. This is slice 2 of 3 (T140 done, T141 copy, T142 export depth). Do ONLY this directive. Do not start T142. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not edit $HOME/.aegis profile data. Do not add Stripe, Grok bots, voice, or a live paid LLM. Do not weaken T56–T140. English only in repo files.
 
-Owner laptop 2026-09-11 after Mac power-on: profile Amin Azimi / Ai Architect / Europe/Berlin returned; session twin-5e0d9ae2f043; Local twin healthy; six specialists still distinct; Approved strip intact; Export signed brief wrote $HOME/.aegis/export/local_20260910T220551Z.md. Operator still starts with three manual lines. That is the defect.
+Baseline: T140 live 7de1c948c59576e74293cf01d54220704a429c8. pytest 788 passed 1 skipped. Owner laptop still shows Goals "Local operator twin for daily CTO work" because that string is stored profile plus shipped templates. Product UI must not keep writing CTO.
 
-GOAL: One script is the only documented operator start. It exports AEGIS_DATA_DIR=$HOME/.aegis, uses the project venv, binds 127.0.0.1:8741, and prints an honest line if the engine cannot start. It does not open Safari. It does not merge Grok Bot.
+GOAL: Operator-visible copy and specialist proposal templates no longer contain the word CTO. Elite-user positioning stays out of the running product surface. Saved tenant profile on disk is not rewritten by this slice.
 
 Implement:
 
-1) scripts/start_operator.sh
-- Must be executable.
-- cd to the repo root from the script location so the operator can run it from any cwd.
-- export AEGIS_DATA_DIR="${AEGIS_DATA_DIR:-$HOME/.aegis}"
-- mkdir -p "$AEGIS_DATA_DIR"
-- Use ./.venv/bin/python -m uvicorn app.server:create_app --factory --host 127.0.0.1 --port 8741
-- If .venv or app.html is missing, print one English line and exit non-zero.
-- If port 8741 is already bound, print one English line that the engine is already up at http://127.0.0.1:8741/ and exit non-zero. Do not kill a stranger process.
-- On start, print exactly one English block: data dir, URL http://127.0.0.1:8741/, and that Safari is opened by the operator not by this script.
-- Do not curl a cloud host. Do not open a browser.
+1) Product strings
+- In operator HTML that GET / serves, and in specialist propose templates / default task phrases / weekly-brief copy inside the repo, replace CTO / C.T.O. / cto as a role label with a neutral phrase: senior operator or local operator.
+- Do not invent new marketing. Keep sentences short and true.
+- Do not change agent names Alina Kian Bita Aylin Ahmad Amin.
+- Do not touch LICENSE or README Author.
 
-2) README Now vs planned
-- One Now sentence: daily local start is scripts/start_operator.sh with data in $HOME/.aegis on 127.0.0.1:8741.
-- Do not claim a notarized installer, auto-start after sleep, or that the script opens the operator page.
-- Do not write a long test novel. One Now sentence may list the owner daily check already proven: profile persist, six distinct proposes, approve/reject, two-column home, approved strip, signed-export click.
-- Author block unchanged.
+2) README Now
+- One sentence: operator product copy no longer uses the word CTO.
+- Do not claim the owner's already-saved Goals field was mutated.
 
-3) STATUS.md one line
-- Operator start path is scripts/start_operator.sh only.
-
-4) tests/test_t140_start_operator.py
-- test_start_script_exists_and_executable
-- test_script_exports_aegis_data_dir
-- test_script_binds_127_0_0_1_8741
-- test_script_does_not_open_browser
-- test_readme_names_start_operator_sh
+3) tests/test_t141_no_cto_copy.py
+- test_operator_html_has_no_cto: GET / HTML lowercased must not contain "cto"
+- test_specialist_templates_have_no_cto: repo template/prompt files used to propose weekly brief or default tasks must not contain "cto" (exclude tests/, docs that label the strip, README Author if it never had it, and this test file's own assertion strings by checking production modules and html only)
+- Scan at least: served HTML, files under app/ that build propose text, any templates under agents/ or similar. Do not fail on STATUS history or this test's name.
 - No live network except TestClient.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1.
@@ -39,12 +27,11 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; p=Path('scripts/start_operator.sh'); t=p.read_text(); print(p.is_file(), oct(p.stat().st_mode)[-3:], 'AEGIS_DATA_DIR' in t, '127.0.0.1' in t, '8741' in t, 'open ' not in t.lower() and 'xdg-open' not in t)"
-   Required: True plus the script flags true
+   ./.venv/bin/python -c "from fastapi.testclient import TestClient; from app.server import create_app; h=TestClient(create_app()).get('/').text.lower(); print('cto' not in h); assert 'cto' not in h"
 4. ./.venv/bin/python -m pytest -q
    Required: 0 failed
 5. git add -A (do not force-add .kms/ or $HOME/.aegis/; do not delete _directive.txt)
-6. git commit -m "feat(t140): sole daily start_operator.sh path"
+6. git commit -m "fix(t141): strip CTO from operator product copy"
 7. git push origin main
 8. Print new SHA, pytest count, and the proof line.
 

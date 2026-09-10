@@ -1,6 +1,6 @@
 """Local work-product rendering for the cognitive twin.
 
-``render(tenant_id)`` produces real, openable local files a CTO can read:
+``render(tenant_id)`` produces real, openable local files a senior operator can read:
 a weekly plan (``weekly_plan.md``) and repo review notes (``review_notes.md``).
 The content is derived deterministically from the twin's behavioral snapshot
 and profile layers — no live LLM, no network calls.
