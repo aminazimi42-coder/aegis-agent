@@ -251,6 +251,9 @@
     var xhr = new XMLHttpRequest();
     xhr.open("POST", BASE + path, true);
     xhr.setRequestHeader("Content-Type", "application/json");
+    var tenantVal = (el("tenant") && el("tenant").value) || "local";
+    if (body && body.tenant_id) { tenantVal = body.tenant_id; }
+    xhr.setRequestHeader("x-tenant-id", tenantVal);
     xhr.onreadystatechange = function () {
       if (xhr.readyState === 4) {
         try {
@@ -703,7 +706,9 @@
         return;
       }
       if (sb) {
-        sb.textContent = "Exported: " + (data.path || "signed brief");
+        var outPath = (data && data.path) ? data.path : "signed brief";
+        var shaPref = (data && data.sha256) ? data.sha256.slice(0, 12) : "";
+        sb.textContent = "Exported: " + outPath + (shaPref ? ("  sha256:" + shaPref + "…") : "");
         sb.className = "muted";
       }
     });
