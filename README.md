@@ -57,6 +57,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Sole start path** — daily local start is `scripts/start_operator.sh` with data in `$HOME/.aegis` on `127.0.0.1:8741`; it uses the project venv, exports `AEGIS_DATA_DIR`, and prints one English block. There is no second engine launcher.
 - **Last reject reason on next card** — when a tenant has a stored reject note, the next propose response includes a `last_reject_reason` field so the operator sees why the prior card was rejected; the field is omitted when no reject exists.
 - **Operator Export signed brief** — the operator button POSTs the local signed-export route and shows the returned file path or a typed error; it does not download into the git worktree. Now: the export button is enabled when the local engine is up.
+- **Signed-export status depth** — the signed-export click keeps the returned local path and sha256 prefix on the operator page and shows a typed `export_failed:` line when the write fails.
 - **No CTO in product copy** — operator-visible copy and specialist proposal templates no longer use the word CTO; the product surface stays neutral.
 
 ---

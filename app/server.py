@@ -430,6 +430,16 @@ class TwinSignedBriefExportRequest(BaseModel):
     tenant_id: str
 
 
+class TwinRevealExportRequest(BaseModel):
+    """Body for revealing a previously exported file in Finder (T142).
+
+    The ``path`` must be an existing local file under
+    ``AEGIS_DATA_DIR/export/`` — never a remote URL or repo path.
+    """
+
+    path: str
+
+
 def create_app() -> FastAPI:
     """Create and configure the production FastAPI application."""
     app = FastAPI(
@@ -1429,6 +1439,72 @@ def create_app() -> FastAPI:
                 status_code=400,
                 content={"detail": str(exc)},
             )
+
+    @app.post("/api/v1/twin/brief/reveal-export", tags=["twin"], status_code=200)
+    def twin_reveal_export(request: TwinRevealExportRequest) -> Any:
+        """Reveal a previously exported file in macOS Finder (T142).
+
+        Validates that ``path`` is an existing local file under
+        ``AEGIS_DATA_DIR/export/`` — never a remote URL or repo path.
+        Calls ``scripts/reveal_export.sh`` which runs ``open -R``.
+        """
+        import subprocess
+
+        from core.twin_local_view import data_root
+
+        root = data_root()
+        export_dir = root / "export"
+        target = Path(request.path)
+
+        # Resolve and verify the path is under the export dir.
+        try:
+            resolved = target.resolve()
+            export_resolved = export_dir.resolve()
+            if not str(resolved).startswith(str(export_resolved)):
+                return JSONResponse(
+                    status_code=400,
+                    content={"detail": "path outside export dir"},
+                )
+        except (OSError, ValueError):
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "invalid path"},
+            )
+
+        if not resolved.is_file():
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "missing_file"},
+            )
+
+        # Run the local reveal helper script.
+        _repo_root = Path(__file__).resolve().parent.parent
+        script = _repo_root / "scripts" / "reveal_export.sh"
+        if not script.is_file():
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "reveal script not found"},
+            )
+
+        try:
+            result = subprocess.run(
+                [str(script), str(resolved)],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            if result.returncode != 0:
+                return JSONResponse(
+                    status_code=400,
+                    content={"detail": "reveal_failed"},
+                )
+        except (subprocess.TimeoutExpired, OSError):
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "reveal_failed"},
+            )
+
+        return {"path": str(resolved), "revealed": True}
 
     # --- Serve the operator page on loopback (T107) --- #
 

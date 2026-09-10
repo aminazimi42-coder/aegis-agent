@@ -220,6 +220,7 @@
   <div class="card">
     <div class="row">
       <button id="btn-signed-brief" type="button" onclick="exportSignedBrief()">Export signed brief</button>
+      <button id="btn-reveal-export" type="button" onclick="revealExport()">Reveal in Finder</button>
       <span class="muted" id="signed-brief-label"></span>
     </div>
   </div>
@@ -291,6 +292,9 @@
     // T137 — disable signed brief export while offline.
     var bs2 = el("btn-signed-brief");
     if (bs2) { bs2.disabled = true; }
+    // T142 — disable reveal while offline.
+    var br2 = el("btn-reveal-export");
+    if (br2) { br2.disabled = true; }
   }
   function setOnline() {
     engineOnline = true;
@@ -309,6 +313,9 @@
     // T139 — signed brief export stays enabled while engine is up.
     var bs2 = el("btn-signed-brief");
     if (bs2) { bs2.disabled = false; }
+    // T142 — reveal stays enabled while engine is up.
+    var br2 = el("btn-reveal-export");
+    if (br2) { br2.disabled = false; }
   }
   function checkHealth() {
     get("/health", function (err, data, status) {
@@ -678,7 +685,11 @@
     });
   };
 
-  // ── Export signed brief (T137 / T139_FIX) ──
+  // ── Export signed brief (T137 / T139_FIX / T142) ──
+  // T142 — keep the path + sha256 prefix on success; show a typed
+  // ``export_failed:`` line on non-200, network error, or missing file.
+  // The status is never cleared by the next health poll.
+  var lastExportPath = null; // remember the last good path for Reveal
   window.exportSignedBrief = function () {
     var sb = el("signed-brief-label");
     if (!engineOnline) {
@@ -694,21 +705,52 @@
     var t = (el("tenant") && el("tenant").value) || "local";
     post("/api/v1/twin/brief/signed-export", { tenant_id: t }, function (err, data, status) {
       if (err) {
-        var detail = (err && err.message) ? err.message : String(err);
-        if (sb) { sb.textContent = "Export error: " + detail; sb.className = "muted err"; }
+        // Network failure — XHR threw or response was not JSON.
+        if (sb) { sb.textContent = "export_failed: network"; sb.className = "muted err"; }
         return;
       }
       if (status !== 200) {
-        var detail = (data && data.detail) ? data.detail : ("Export failed (HTTP " + status + ")");
-        if (sb) { sb.textContent = detail; sb.className = "muted err"; }
+        // Non-200 from the server — show the typed HTTP status.
+        if (sb) { sb.textContent = "export_failed: " + status; sb.className = "muted err"; }
+        return;
+      }
+      // T142 — if the JSON says the file is missing, show a typed error.
+      if (data && data.detail === "missing_file") {
+        if (sb) { sb.textContent = "export_failed: missing_file"; sb.className = "muted err"; }
         return;
       }
       if (sb) {
-        var outPath = (data && data.path) ? data.path : "signed brief";
+        var outPath = (data && data.path) ? data.path : "";
+        if (outPath) { lastExportPath = outPath; }
         var shaPref = (data && data.sha256) ? data.sha256.slice(0, 12) : "";
         sb.textContent = "Exported: " + outPath + (shaPref ? ("  sha256:" + shaPref + "…") : "");
         sb.className = "muted";
       }
+    });
+  };
+
+  // ── Reveal exported file in Finder (T142) ──
+  // Optional: opens the last exported path in Finder via a local
+  // helper script.  Does not open a browser or copy the file.
+  window.revealExport = function () {
+    if (!lastExportPath) {
+      var sb2 = el("signed-brief-label");
+      if (sb2) { sb2.textContent = "Nothing to reveal yet — export first"; sb2.className = "muted err"; }
+      return;
+    }
+    var sb3 = el("signed-brief-label");
+    if (sb3) { sb3.textContent = "Revealing…"; sb3.className = "muted"; }
+    // Fire-and-forget — the reveal script is a local macOS `open -R`.
+    post("/api/v1/twin/brief/reveal-export", { path: lastExportPath }, function (err, data, status) {
+      if (err) {
+        if (sb3) { sb3.textContent = "reveal_failed: network"; sb3.className = "muted err"; }
+        return;
+      }
+      if (status !== 200) {
+        if (sb3) { sb3.textContent = "reveal_failed: " + status; sb3.className = "muted err"; }
+        return;
+      }
+      if (sb3) { sb3.textContent = "Revealed in Finder: " + lastExportPath; sb3.className = "muted"; }
     });
   };
 

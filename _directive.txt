@@ -1,25 +1,29 @@
-T141 — Strip CTO from operator product copy. This is slice 2 of 3 (T140 done, T141 copy, T142 export depth). Do ONLY this directive. Do not start T142. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not edit $HOME/.aegis profile data. Do not add Stripe, Grok bots, voice, or a live paid LLM. Do not weaken T56–T140. English only in repo files.
+T142 — Signed-export depth on the operator page. This is slice 3 of 3 (T140 start, T141 copy, T142 export). Do ONLY this directive. Do not start T143. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, voice, or a live paid LLM. Do not bind 0.0.0.0. Do not weaken T56–T141. English only in repo files.
 
-Baseline: T140 live 7de1c948c59576e74293cf01d54220704a429c8. pytest 788 passed 1 skipped. Owner laptop still shows Goals "Local operator twin for daily CTO work" because that string is stored profile plus shipped templates. Product UI must not keep writing CTO.
+Baseline: T141 live 75fb05be71159da1648ae8f19e861b578a4dbd8e. pytest 791 passed 1 skipped. Laptop already proved click POST /api/v1/twin/brief/signed-export 200 and shows path plus sha256 prefix. This slice deepens that same button. It does not add a second exporter.
 
-GOAL: Operator-visible copy and specialist proposal templates no longer contain the word CTO. Elite-user positioning stays out of the running product surface. Saved tenant profile on disk is not rewritten by this slice.
+GOAL: After a successful click the operator page keeps showing the returned local path and sha256 prefix. If the route returns an error or the file is missing, the same status node shows a typed English error. Optional Reveal in Finder uses the local path only. No new browser tab. No cloud.
 
 Implement:
 
-1) Product strings
-- In operator HTML that GET / serves, and in specialist propose templates / default task phrases / weekly-brief copy inside the repo, replace CTO / C.T.O. / cto as a role label with a neutral phrase: senior operator or local operator.
-- Do not invent new marketing. Keep sentences short and true.
-- Do not change agent names Alina Kian Bita Aylin Ahmad Amin.
-- Do not touch LICENSE or README Author.
+1) Operator status after export
+- Keep the existing #signed-brief-label (or current status node) next to Export signed brief.
+- On HTTP 200: show `Exported: <path>` and `sha256:<prefix>` exactly as today if already present. Do not clear it on the next health poll.
+- On non-200 or network failure: show a typed line such as `export_failed: <status>` or `export_failed: network`. Never leave the label blank after a click.
+- If the JSON says the file is missing, show `export_failed: missing_file`. Do not invent a success path.
 
-2) README Now
-- One sentence: operator product copy no longer uses the word CTO.
-- Do not claim the owner's already-saved Goals field was mutated.
+2) Optional Reveal
+- If a Reveal control exists or is added, it may call a local helper with the last exported path only (macOS `open -R` is allowed inside a tiny scripts/reveal_export.sh).
+- Do not open Safari. Do not open http URLs. Do not copy the file to the repo.
 
-3) tests/test_t141_no_cto_copy.py
-- test_operator_html_has_no_cto: GET / HTML lowercased must not contain "cto"
-- test_specialist_templates_have_no_cto: repo template/prompt files used to propose weekly brief or default tasks must not contain "cto" (exclude tests/, docs that label the strip, README Author if it never had it, and this test file's own assertion strings by checking production modules and html only)
-- Scan at least: served HTML, files under app/ that build propose text, any templates under agents/ or similar. Do not fail on STATUS history or this test's name.
+3) README Now
+- One sentence: signed-export click keeps path and sha256 on the page and shows a typed error when the write fails.
+- Do not claim Finder reveal is required for the slice to pass.
+
+4) tests/test_t142_export_status.py
+- test_signed_export_button_still_posts_route
+- test_status_node_exists
+- test_export_failed_copy_in_html_or_script
 - No live network except TestClient.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1.
@@ -27,11 +31,11 @@ Verification, exact order. If a proof fails, fix only that failure and restart f
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from fastapi.testclient import TestClient; from app.server import create_app; h=TestClient(create_app()).get('/').text.lower(); print('cto' not in h); assert 'cto' not in h"
+   ./.venv/bin/python -c "from fastapi.testclient import TestClient; from app.server import create_app; h=TestClient(create_app()).get('/').text; print('signed-export' in h, 'export_failed' in h or 'Exporting' in h); assert 'signed-export' in h"
 4. ./.venv/bin/python -m pytest -q
    Required: 0 failed
 5. git add -A (do not force-add .kms/ or $HOME/.aegis/; do not delete _directive.txt)
-6. git commit -m "fix(t141): strip CTO from operator product copy"
+6. git commit -m "feat(t142): keep signed-export path and typed failure on operator page"
 7. git push origin main
 8. Print new SHA, pytest count, and the proof line.
 
