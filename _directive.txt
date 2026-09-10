@@ -1,48 +1,42 @@
-T139_FIX — Laptop proof failed: Export signed brief click still produces no POST. Repair the live click path only. Do ONLY this directive. Do not start T140. Do not read task_instruction.txt. Do not rewrite LICENSE or README Author. Do not force-push or amend fd3c253. English only in repo files.
+T139_FIX2 — Export button is disabled in served HTML so click never runs. Enable it. Do ONLY this directive. Do not start T140. Do not read task_instruction.txt. Do not rewrite LICENSE or README Author. English only in repo files.
 
-Baseline: T139 claimed fd3c253. pytest was 779 passed, 1 skipped. Owner laptop 2026-09-10 after restart of process 39752: git log shows fd3c253 on main. Clicking the blue button labeled "Export signed brief" under Signed Brief Export produced no uvicorn line POST /api/v1/twin/brief/signed-export. Only GET /, /health, /profile/local, /queue/local and POST /session/start appeared. curl to the same route still works.
+Laptop proof 2026-09-10 04:13 CEST after cac45a7 and uvicorn PID 41916:
+curl -s http://127.0.0.1:8741/ | grep shows:
+  <button id="btn-signed-brief" onclick="exportSignedBrief()" disabled>Export signed brief</button>
+The function exportSignedBrief exists and posts /api/v1/twin/brief/signed-export and sets Exporting...
+Click still produces no POST because the control is disabled. That is the only remaining defect.
 
-GOAL: The visible operator button must fire fetch/XHR to POST /api/v1/twin/brief/signed-export when clicked in Safari. A status line next to the button must change on click even if the POST fails.
+GOAL: The served operator page must ship #btn-signed-brief without a disabled attribute, and no script may set that button disabled when the engine is up.
 
 Implement:
 
-A) Find the real markup
-- Search the whole repo for the exact label "Export signed brief" and for signed-export. Do not assume app.html at repo root.
-- The handler that owns that button is the only file to change plus tests.
+A) Markup
+- In the operator HTML that GET / actually serves, the signed-brief button must be:
+  <button id="btn-signed-brief" type="button" onclick="exportSignedBrief()">Export signed brief</button>
+- Remove the disabled attribute from that tag.
 
-B) Click must always POST when engine is up
-- Remove every silent early-return on profilePrefill, empty name, missing session, or missing status node.
-- onclick / addEventListener must call POST /api/v1/twin/brief/signed-export with header x-tenant-id set to tenant field value or "local", body JSON {"tenant_id":"<same>"}.
-- On click, immediately set the status text to "Exporting…" so the operator sees a change before the response.
-- HTTP 200: show path and sha256 prefix.
-- Any other status or network error: show the typed detail or the exception text. Never swallow.
+B) Script
+- Any line that sets btn-signed-brief.disabled = true / bw.disabled = true when the label is Export signed brief must stop doing that while engineOnline is true.
+- Other buttons may keep their own guards. Do not disable the export button behind profilePrefill.
 
 C) tests/test_t139_signed_export_button.py
+- Add test_signed_export_button_markup_is_not_disabled: the HTML string served by GET / (TestClient) contains id="btn-signed-brief" and that same tag does not contain disabled.
 - Keep existing tests.
-- Add test_export_button_handler_has_no_silent_prefill_return: the handler source must contain signed-export and must not return before fetch solely because profilePrefill is falsy.
-- Add test_export_status_sets_exporting_text: handler source contains Exporting.
 
 D) README
-- One honest Now sentence if needed: operator Export signed brief click posts the local route; laptop click was verified after T139_FIX.
-- Do not claim the laptop click worked until this slice lands.
+- Do not claim the laptop click worked. One Now sentence: export button is enabled when the local engine is up.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; hits=[]; 
-for p in Path('.').rglob('*'):
-    if p.suffix.lower() in {'.html','.js','.py'} and p.is_file() and '.venv' not in str(p):
-        t=p.read_text(errors='ignore');
-        if 'Export signed brief' in t or 'signed-export' in t: hits.append(str(p))
-print('HITS', hits); print(bool(hits))"
-   Required: HITS non-empty and True
+   ./.venv/bin/python -c "from fastapi.testclient import TestClient; from app.server import create_app; h=TestClient(create_app()).get('/').text; i=h.find('btn-signed-brief'); chunk=h[i:i+180]; print(chunk); assert 'btn-signed-brief' in h and 'disabled' not in chunk"
 4. ./.venv/bin/python -m pytest -q
-   Required: 0 failed, count >= 779
+   Required: 0 failed
 5. git add -A (do not force-add .kms/ or $HOME/.aegis/; do not delete _directive.txt)
-6. git commit -m "fix(t139): export button click always posts signed-export"
+6. git commit -m "fix(t139): enable signed-export button; do not ship disabled"
 7. git push origin main
-8. Print new SHA, pytest count, proof HITS.
+8. Print new SHA, pytest count, and the proof chunk.
 
 Stop after push. Do nothing else.

@@ -219,7 +219,7 @@
   <h2>Signed Brief Export</h2>
   <div class="card">
     <div class="row">
-      <button id="btn-signed-brief" onclick="exportSignedBrief()" disabled>Export signed brief</button>
+      <button id="btn-signed-brief" type="button" onclick="exportSignedBrief()">Export signed brief</button>
       <span class="muted" id="signed-brief-label"></span>
     </div>
   </div>
@@ -306,9 +306,9 @@
     if (bw) { bw.disabled = !profilePrefill; }
     var bp2 = el("btn-buyer-pager");
     if (bp2) { bp2.disabled = !profilePrefill; }
-    // T137 — enable signed brief export only when a profile exists.
+    // T139 — signed brief export stays enabled while engine is up.
     var bs2 = el("btn-signed-brief");
-    if (bs2) { bs2.disabled = !profilePrefill; }
+    if (bs2) { bs2.disabled = false; }
   }
   function checkHealth() {
     get("/health", function (err, data, status) {

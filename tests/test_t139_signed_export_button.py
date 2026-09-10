@@ -177,7 +177,27 @@ class TestT139SignedExportButton(unittest.TestCase):
                     "handler missing 'Exporting…' immediate status text")
 
     # ------------------------------------------------------------------ #
-    # 6) No live network
+    # 6) Markup is not disabled (T139_FIX2)
+    # ------------------------------------------------------------------ #
+
+    def test_signed_export_button_markup_is_not_disabled(self) -> None:
+        """The HTML string served by GET / contains id="btn-signed-brief"
+        and that same tag does not contain disabled."""
+        from app.server import create_app
+        from fastapi.testclient import TestClient
+
+        client = TestClient(create_app())
+        html = client.get("/").text
+        i = html.find('id="btn-signed-brief"')
+        self.assertGreater(i, -1, "served HTML missing id=\"btn-signed-brief\"")
+        chunk = html[i:i + 180]
+        self.assertIn("btn-signed-brief", chunk,
+                      "chunk around btn-signed-brief missing the id")
+        self.assertNotIn("disabled", chunk,
+                         "btn-signed-brief tag must not contain disabled")
+
+    # ------------------------------------------------------------------ #
+    # 7) No live network
     # ------------------------------------------------------------------ #
 
     def test_no_live_network(self) -> None:
