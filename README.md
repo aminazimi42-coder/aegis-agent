@@ -62,6 +62,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Layer-1 local operator pack** — the pack is built by `scripts/pack_local_operator.sh` into `dist/aegis-local-operator/`; it is not a notarized installer and it does not add Windows support. After the pack, copy `dist/aegis-local-operator` onto the other Mac and run `./scripts/start_operator.sh` from that folder.
 - **Packed start is self-contained** — the packed folder starts without git, Hermes, or VS Code; it contains `start_operator.sh`, `INSTALL.md`, and no `_directive.txt` or `.git`.
 - **Pack root start path** — the packed folder starts with `./start_operator.sh` at the pack root; copy the folder into the operator home, not Shared, if Shared is not writable.
+- **Operator entitlement line** — the operator page shows the local tier and expiry, or the Echo-limited phrase when the file is missing, expired, mutated, or bound to another tenant.
 
 ---
 

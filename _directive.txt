@@ -1,49 +1,43 @@
-T146 — Signed local entitlement bind. This is Layer 2 instruction 1 of 3. Do ONLY this directive. Do not start T147 or T148. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a live license server, Grok bots, voice, Windows installer, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T145. English only in repo files.
+T147 — Operator page entitlement truth. This is Layer 2 instruction 2 of 3. Do ONLY this directive. Do not start T148. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a live license server, Grok bots, voice, Windows installer, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T146. English only in repo files. Do not write the word CTO into operator HTML or specialist templates.
 
-Baseline: T145 live 2370a20f. pytest 809 passed 1 skipped. T131 already reads AEGIS_DATA_DIR/entitlement.json and maps missing or expired to echo. Layer 2 deepens that file. It does not add payment.
+Baseline: T146 live eeb8899. pytest 814 passed 1 skipped. Entitlement.json is signed and tenant-bound. Missing, expired, mutated, or foreign-tenant files stay Echo-limited. The operator page does not yet show that truth in one short line.
 
-GOAL: The engine treats entitlement.json as a local signed bind. A valid file names tenant_id, tier, expires_at, and signature_sha256 over the canonical body without the signature field. Missing, expired, bad signature, mutated body, or tenant mismatch all stay Echo-limited. No network call. No prices. No Stripe strings.
+GOAL: The local operator page shows one honest entitlement line: current tier and expiry when valid, or the Echo-limited phrase when load() degrades. No prices. No Stripe. No cloud-quota claim.
 
 Implement:
 
-1) core/entitlement.py (extend T131, do not invent a second file format)
-- Path stays AEGIS_DATA_DIR/entitlement.json
-- Required fields when present: tenant_id, tier, expires_at (ISO UTC or null), signature_sha256
-- Canonical body is the JSON object without signature_sha256, UTF-8, sorted keys, compact separators
-- signature_sha256 must equal SHA-256 hex of that canonical body
-- load(tenant_id=...) returns tier="echo" and a typed reason when: file missing, JSON invalid, expired, signature mismatch, tenant_id missing, or tenant_id != caller tenant
-- Valid professional or equivalent local tier is accepted only when signature and tenant match and expiry is null or in the future
-- Never open a socket. Never read $HOME files outside AEGIS_DATA_DIR
+1) Operator HTML only
+- One short visible line on the home/operator page
+- Valid: tier plus expires_at when present, or tier plus no-expiry wording when expires_at is null
+- Degraded: a typed Echo-limited phrase. Use the reason from entitlement load when it exists (missing, expired, signature, tenant). Do not invent a second policy.
+- Do not add a pay button, upgrade modal, or card field
 
-2) Call sites that already load entitlement
-- Pass the current twin/session tenant when one exists
-- Do not change propose/approve/execute truth from T56–T145
-- Do not add a new paid LLM path
+2) Wire the existing load()
+- Pass the current twin/session tenant
+- Do not change propose/approve/execute
+- Do not add a network license check
 
 3) README Now
-- One sentence only: local entitlement.json is signed and tenant-bound; missing, expired, or mutated files stay Echo-limited
-- Do not claim a license server, App Store, or paid cloud quota
+- One sentence only: the operator page shows local tier and expiry, or Echo-limited when the file is missing, expired, mutated, or bound to another tenant
+- Do not claim a paid portal
 
-4) tests/test_t146_entitlement_bind.py
-- test_missing_file_is_echo
-- test_expired_is_echo
-- test_valid_signed_professional_reads_tier
-- test_mutated_body_is_echo
-- test_foreign_tenant_is_echo
-- No live network except TestClient
-- Do not start uvicorn as a subprocess
+4) tests/test_t147_operator_entitlement_line.py
+- test_valid_professional_line_shows_tier
+- test_missing_file_line_is_echo_limited
+- test_expired_line_is_echo_limited
+- Use TestClient only. Do not start uvicorn as a subprocess
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; t=Path('tests/test_t146_entitlement_bind.py').read_text().lower(); print('mutated' in t and 'tenant' in t and 'echo' in t)"
+   ./.venv/bin/python -c "from pathlib import Path; t=Path('tests/test_t147_operator_entitlement_line.py').read_text().lower(); print('echo' in t and 'tier' in t and 'expired' in t)"
    Required: True
 4. ./.venv/bin/python -m pytest -q
    Required: 0 failed
 5. git add -A (do not force-add .kms/ or $HOME/.aegis/; do not delete _directive.txt)
-6. git commit -m "feat(t146): signed tenant-bound local entitlement"
+6. git commit -m "feat(t147): operator page entitlement line"
 7. git push origin main
 8. Print new SHA, pytest count, and the proof line.
 

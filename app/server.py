@@ -1506,6 +1506,43 @@ def create_app() -> FastAPI:
 
         return {"path": str(resolved), "revealed": True}
 
+    # --- Local entitlement line for the operator page (T147) --- #
+
+    @app.get("/api/v1/twin/entitlement/{tenant_id}", tags=["twin"])
+    def twin_entitlement_line(tenant_id: str) -> Any:
+        """Return the local entitlement tier and expiry, or the typed
+        Echo-limited reason when ``load()`` degrades.
+
+        No network license check — the file is local and signed.
+        """
+        from core.entitlement import load
+
+        result = load(tenant_id=tenant_id)
+        tier = result.get("tier", "echo")
+        reason = result.get("reason")
+        # Read expires_at from the local file so the operator page can
+        # show the date when the entitlement is valid.
+        expires_at = None
+        if reason is None:
+            from core.entitlement import _entitlement_path
+
+            path = _entitlement_path()
+            if path.is_file():
+                try:
+                    raw = path.read_text(encoding="utf-8")
+                    data = json.loads(raw)
+                    if isinstance(data, dict):
+                        ea = data.get("expires_at")
+                        if isinstance(ea, str) or ea is None:
+                            expires_at = ea
+                except (OSError, ValueError, TypeError):
+                    pass
+        return {
+            "tier": tier,
+            "reason": reason,
+            "expires_at": expires_at,
+        }
+
     # --- Serve the operator page on loopback (T107) --- #
 
     @app.get("/", tags=["twin"])

@@ -184,7 +184,15 @@
     </div>
   </div>
 
-  <!-- ── Home / Status ───────────────────────────────────────────── -->
+  <!-- ── Entitlement line (T147) — local tier and expiry, or Echo-limited ── -->
+  <h2>Entitlement</h2>
+  <div class="card">
+    <div class="row">
+      <span id="entitlement-line" class="muted">Loading entitlement…</span>
+    </div>
+  </div>
+
+  <!-- ── Home / Status ───────────────────────────────────────────── --> -->
   <h2>Home / Status</h2>
   <div class="card">
     <div class="row">
@@ -777,10 +785,40 @@
     });
   }
 
+  // ── Entitlement line (T147) ──
+  // Show one honest line: current tier and expiry when valid, or the
+  // typed Echo-limited phrase when load() degrades.
+  function loadEntitlement() {
+    var t = (el("tenant") && el("tenant").value) || "local";
+    get("/api/v1/twin/entitlement/" + encodeURIComponent(t), function (err, data, status) {
+      var ln = el("entitlement-line");
+      if (!ln) { return; }
+      if (err || !data || status !== 200) {
+        ln.textContent = "Echo-limited (unavailable)";
+        ln.className = "muted";
+        return;
+      }
+      var tier = data.tier || "echo";
+      var reason = data.reason || null;
+      var expires = data.expires_at || null;
+      if (reason) {
+        ln.textContent = "Echo-limited (" + reason + ")";
+        ln.className = "muted";
+      } else if (expires) {
+        ln.textContent = "Tier: " + tier + " — expires " + expires;
+        ln.className = "muted";
+      } else {
+        ln.textContent = "Tier: " + tier + " — no expiry";
+        ln.className = "muted";
+      }
+    });
+  }
+
   // ── Init ──
   checkHealth();
   loadQueue();
   loadProfile();
+  loadEntitlement();
 })();
 </script>
 </body>
