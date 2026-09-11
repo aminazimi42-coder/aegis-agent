@@ -1,17 +1,19 @@
-"""Local entitlement file reader (T131).
+"""Local entitlement file reader (T131/T146).
 
 Reads a single JSON file under ``AEGIS_DATA_DIR/entitlement.json`` to
 determine the operator's tier.  The file carries:
 
-* ``tier``           — ``"echo"`` or ``"professional"``
-* ``expires_at``     — ISO-8601 UTC string or ``null``
+* ``tenant_id``       — string identifying the tenant this file is bound to
+* ``tier``            — ``"echo"`` or ``"professional"``
+* ``expires_at``      — ISO-8601 UTC string or ``null``
 * ``signature_sha256`` — SHA-256 hex digest of the canonical body
   (every field **except** ``signature_sha256``, serialised with
   ``sort_keys=True, separators=(",", ":")``).
 
-When the file is **missing**, **unreadable**, or **expired** (``expires_at``
-is in the past), :func:`load` returns ``tier="echo"``.  A missing or
-malformed file never raises and never calls a network host.
+When the file is **missing**, **unreadable**, **expired** (``expires_at``
+is in the past), **signature-mismatched**, or **tenant-mismatched**,
+:func:`load` returns ``tier="echo"`` with a typed ``reason``.  A missing
+or malformed file never raises and never calls a network host.
 """
 
 from __future__ import annotations
@@ -65,32 +67,41 @@ def _signature_valid(data: dict[str, Any]) -> bool:
     return sig == expected
 
 
-def load() -> dict[str, Any]:
+def load(tenant_id: str | None = None) -> dict[str, Any]:
     """Load the local entitlement file and return a tier dict.
 
-    Returns ``{"tier": "echo"}`` when the file is missing, expired,
-    malformed, or signature-invalid.  Never calls a network host.
+    When *tenant_id* is provided, the file's ``tenant_id`` field must
+    match it; otherwise the tier degrades to ``echo`` with a typed
+    ``reason``.  Returns ``{"tier": "echo", "reason": ...}`` when the
+    file is missing, expired, malformed, signature-invalid, or
+    tenant-mismatched.  Never calls a network host.
     """
     path = _entitlement_path()
     if not path.is_file():
-        return {"tier": ECHO_TIER}
+        return {"tier": ECHO_TIER, "reason": "missing_file"}
     try:
         raw = path.read_text(encoding="utf-8")
         data = json.loads(raw)
     except (OSError, ValueError, TypeError):
-        return {"tier": ECHO_TIER}
+        return {"tier": ECHO_TIER, "reason": "invalid_json"}
     if not isinstance(data, dict):
-        return {"tier": ECHO_TIER}
+        return {"tier": ECHO_TIER, "reason": "invalid_json"}
     tier = data.get("tier")
     if not isinstance(tier, str) or tier not in _VALID_TIERS:
-        return {"tier": ECHO_TIER}
+        return {"tier": ECHO_TIER, "reason": "invalid_tier"}
     if _is_expired(data.get("expires_at")):
-        return {"tier": ECHO_TIER}
+        return {"tier": ECHO_TIER, "reason": "expired"}
     if not _signature_valid(data):
-        return {"tier": ECHO_TIER}
+        return {"tier": ECHO_TIER, "reason": "signature_mismatch"}
+    if tenant_id is not None:
+        file_tenant = data.get("tenant_id")
+        if not isinstance(file_tenant, str) or not file_tenant:
+            return {"tier": ECHO_TIER, "reason": "tenant_id_missing"}
+        if file_tenant != tenant_id:
+            return {"tier": ECHO_TIER, "reason": "tenant_mismatch"}
     return {"tier": tier}
 
 
-def current_tier() -> str:
+def current_tier(tenant_id: str | None = None) -> str:
     """Return the current entitlement tier as a string (``echo`` or ``professional``)."""
-    return load().get("tier", ECHO_TIER)
+    return load(tenant_id=tenant_id).get("tier", ECHO_TIER)

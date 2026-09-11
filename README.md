@@ -48,7 +48,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Echo default** — `EchoProvider` is the offline default; no paid LLM is wired unless explicitly configured.
 - **Durable profile** — a Day-0 interview builds a consented tenant profile that survives restarts.
 - **Approve/reject notes** — every approve or reject writes a feedback row with the actor and timestamp.
-- **Local entitlement file** — a signed local file controls the active tier; no cloud billing, no card charge.
+- **Local entitlement file** — a signed local file controls the active tier; missing, expired, or mutated files stay Echo-limited, and the file is tenant-bound so a foreign tenant's entitlement never applies. No cloud billing, no card charge.
 - **`start_operator.sh` + `.app` wrapper** — a local shell script and a macOS `.app` bundle start the engine; neither is a notarized installer or a paid SKU.
 - **Optional local HTTP/Ollama adapter** — `AGENT_LLM_BACKEND=ollama` is an alias for the same HTTP complete path; it falls back to Echo when unreachable and is not a bundled binary.
 - **Buyer one-pager** — a local ``.md`` export from the saved profile, not a marketing site; written under `AEGIS_DATA_DIR`, never committed.
