@@ -64,6 +64,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Pack root start path** — the packed folder starts with `./start_operator.sh` at the pack root; copy the folder into the operator home, not Shared, if Shared is not writable.
 - **Operator entitlement line** — the operator page shows the local tier and expiry, or the Echo-limited phrase when the file is missing, expired, mutated, or bound to another tenant.
 - **Pack ships entitlement example** — the local pack ships `entitlement.example.json`; the live entitlement stays under `AEGIS_DATA_DIR` and is never packed.
+- **Layer-3 installer folder** — `dist/AegisOperator-mac` is built by `scripts/build_mac_installer.sh`; it is unsigned, Terminal venv install is still required tonight, and it is not a notarized installer or a paid desktop shop.
 
 ---
 
