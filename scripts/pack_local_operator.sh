@@ -69,6 +69,20 @@ exec "$SCRIPT_DIR/scripts/start_operator.sh" "$@"
 ROOT_START_EOF
 chmod +x "$OUT/start_operator.sh"
 
+# --- entitlement.example.json (dummy, pack-only) --------------------------
+# A dummy example file so the operator can copy it to
+# $HOME/.aegis/entitlement.json and replace the fake values.  The engine
+# never loads this example — the live path stays
+# AEGIS_DATA_DIR/entitlement.json.
+cat > "$OUT/entitlement.example.json" <<'ENTITLEMENT_EOF'
+{
+  "tenant_id": "example-tenant",
+  "tier": "echo",
+  "expires_at": null,
+  "signature_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+}
+ENTITLEMENT_EOF
+
 # --- INSTALL.md (Now steps only) -----------------------------------------
 cat > "$OUT/INSTALL.md" <<'INSTALL_EOF'
 # Aegis local operator — install
@@ -86,6 +100,14 @@ cat > "$OUT/INSTALL.md" <<'INSTALL_EOF'
 
 The data dir is `$HOME/.aegis` in that account.  There is no cloud URL
 and no Windows package.
+
+## Optional local entitlement
+
+The pack ships `entitlement.example.json` — a dummy file with fake values.
+If you want a local tier file, copy it to `$HOME/.aegis/entitlement.json`
+on this laptop and replace the dummy `tenant_id`, `tier`, `expires_at`, and
+`signature_sha256` with real values.  When the file is missing the engine
+stays Echo-limited; no file is required.
 INSTALL_EOF
 
 echo "$OUT"

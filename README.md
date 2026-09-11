@@ -63,6 +63,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Packed start is self-contained** — the packed folder starts without git, Hermes, or VS Code; it contains `start_operator.sh`, `INSTALL.md`, and no `_directive.txt` or `.git`.
 - **Pack root start path** — the packed folder starts with `./start_operator.sh` at the pack root; copy the folder into the operator home, not Shared, if Shared is not writable.
 - **Operator entitlement line** — the operator page shows the local tier and expiry, or the Echo-limited phrase when the file is missing, expired, mutated, or bound to another tenant.
+- **Pack ships entitlement example** — the local pack ships `entitlement.example.json`; the live entitlement stays under `AEGIS_DATA_DIR` and is never packed.
 
 ---
 
