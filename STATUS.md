@@ -102,3 +102,7 @@ Honest lock of what is actually shipped in this tree as of T70. See the **Now** 
 - **Default Echo; optional local adapter via `AGENT_LLM_BASE_URL`** — the default LLM provider is offline `EchoProvider`; an optional local OpenAI-compatible HTTP adapter activates when `AGENT_LLM_BASE_URL` is set (alongside `AEGIS_LLM_API_KEY` and `AEGIS_LLM_PROVIDER=http`), labeled in `complete_safe` as the `http` path. `AGENT_LLM_BACKEND=ollama` is an alias label that activates the same HTTP path; it is not a bundled binary and falls back to Echo when unreachable.
 - **Buyer one-pager** — a local ``.md`` export built from the saved profile (name, role, goals, timezone) plus honest shipped facts; written under `AEGIS_DATA_DIR` or `~/.aegis/exports/`, never into the git worktree.
 - **Operator start path** — `scripts/start_operator.sh` is the sole daily start path; it exports `AEGIS_DATA_DIR`, uses the project venv, and binds `127.0.0.1:8741`. The `desktop/macos/Aegis.app` bundle is a wrapper around it; it is not a notarized installer or a paid SKU.
+
+## Layer 3
+
+Layer 3 git slices T149–T152 landed; installer laptop trial not yet recorded.

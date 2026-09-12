@@ -49,7 +49,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Durable profile** — a Day-0 interview builds a consented tenant profile that survives restarts.
 - **Approve/reject notes** — every approve or reject writes a feedback row with the actor and timestamp.
 - **Local entitlement file** — a signed local file controls the active tier; missing, expired, or mutated files stay Echo-limited, and the file is tenant-bound so a foreign tenant's entitlement never applies. No cloud billing, no card charge.
-- **`start_operator.sh` + `.app` wrapper** — a local shell script and a macOS `.app` bundle start the engine; neither is a notarized installer or a paid SKU.
+- **`start_operator.sh` + `.app` wrapper** — a local shell script and a macOS `.app` bundle start the engine; neither is a signed installer or a paid SKU.
 - **Optional local HTTP/Ollama adapter** — `AGENT_LLM_BACKEND=ollama` is an alias for the same HTTP complete path; it falls back to Echo when unreachable and is not a bundled binary.
 - **Buyer one-pager** — a local ``.md`` export from the saved profile, not a marketing site; written under `AEGIS_DATA_DIR`, never committed.
 - **Approved receipts on home** — approved twin actions stay visible on the operator home page after refresh; they do not auto-execute.
@@ -59,13 +59,13 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Operator Export signed brief** — the operator button POSTs the local signed-export route and shows the returned file path or a typed error; it does not download into the git worktree. Now: the export button is enabled when the local engine is up.
 - **Signed-export status depth** — the signed-export click keeps the returned local path and sha256 prefix on the operator page and shows a typed `export_failed:` line when the write fails.
 - **No CTO in product copy** — operator-visible copy and specialist proposal templates no longer use the word CTO; the product surface stays neutral.
-- **Layer-1 local operator pack** — the pack is built by `scripts/pack_local_operator.sh` into `dist/aegis-local-operator/`; it is not a notarized installer and it does not add Windows support. After the pack, copy `dist/aegis-local-operator` onto the other Mac and run `./scripts/start_operator.sh` from that folder.
+- **Layer-1 local operator pack** — the pack is built by `scripts/pack_local_operator.sh` into `dist/aegis-local-operator/`; it is unsigned and it does not add Windows support. After the pack, copy `dist/aegis-local-operator` onto the other Mac and run `./scripts/start_operator.sh` from that folder.
 - **Packed start is self-contained** — the packed folder starts without git, Hermes, or VS Code; it contains `start_operator.sh`, `INSTALL.md`, and no `_directive.txt` or `.git`.
 - **Pack root start path** — the packed folder starts with `./start_operator.sh` at the pack root; copy the folder into the operator home, not Shared, if Shared is not writable.
 - **Optional remote license status** — `AEGIS_LICENSE_STATUS_URL` is a labeled GET (default off); when unset the local file stays the only source, when set the remote host can only confirm or report unreachable — it never unlocks a tier when the local file is missing, and no payments live in core.
 - **Operator entitlement line** — the operator page shows the local tier and expiry, or the Echo-limited phrase when the file is missing, expired, mutated, or bound to another tenant.
 - **Pack ships entitlement example** — the local pack ships `entitlement.example.json`; the live entitlement stays under `AEGIS_DATA_DIR` and is never packed.
-- **Layer-3 installer folder** — `dist/AegisOperator-mac` is built by `scripts/build_mac_installer.sh`; it is unsigned, Terminal venv install is still required tonight, and it is not a notarized installer or a paid desktop shop. The uninstall script leaves `$HOME/.aegis` in place; the installer app is still unsigned.
+- **Layer-3 installer folder** — `dist/AegisOperator-mac` is built by `scripts/build_mac_installer.sh`; it is unsigned, Terminal venv install is still required tonight, and it is not a paid desktop shop. The uninstall script leaves `$HOME/.aegis` in place; the installer app is still unsigned.
 
 ---
 
@@ -80,6 +80,7 @@ The road ahead, not yet shipped:
 - **License server outside core** — a separate license server; the core repository stays payment-free.
 - **Professional, then Executive, then Engineering** — tier rollout in that order; each tier is a local entitlement file, not a card charge.
 - **Payments never enter core** — billing, if any, lives outside this repository; `core/` stays free of payment logic.
+- **Mac installer trial and Developer ID** — the Mac installer folder will be trialed on owner and amin accounts; signing requires a Developer ID, and the license host remains outside this repo.
 
 ---
 
