@@ -1,5 +1,6 @@
 .kms/
 data/
+dist/
 __pycache__/
 *.pyc
 *.pyo

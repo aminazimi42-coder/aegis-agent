@@ -70,6 +70,10 @@ echo "Start: ./start_operator.sh after venv"
 INSTALL_CMD_EOF
 chmod +x "$OUT/Install.command"
 
+# --- 4b) uninstall.command (copy of scripts/uninstall_aegis_operator.sh) --
+cp "$REPO_ROOT/scripts/uninstall_aegis_operator.sh" "$OUT/uninstall.command"
+chmod +x "$OUT/uninstall.command"
+
 # --- 5) Aegis Operator.app (minimal unsigned bundle) ---------------------
 APP="$OUT/Aegis Operator.app"
 mkdir -p "$APP/Contents/MacOS"
@@ -93,6 +97,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST_EOF'
     <string>APPL</string>
     <key>CFBundleExecutable</key>
     <string>AegisOperator</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon.png</string>
 </dict>
 </plist>
 PLIST_EOF
@@ -116,6 +122,11 @@ exec "$PACK_DIR/start_operator.sh" "$@"
 STUB_EOF
 chmod +x "$APP/Contents/MacOS/AegisOperator"
 
+# --- 5b) App icon resource -----------------------------------------------
+mkdir -p "$APP/Contents/Resources"
+"$REPO_ROOT/.venv/bin/python" "$REPO_ROOT/scripts/generate_app_icon.py" \
+    "$APP/Contents/Resources/AppIcon.png"
+
 # --- 6) INSTALL.md --------------------------------------------------------
 cat > "$OUT/INSTALL.md" <<'INSTALL_MD_EOF'
 # Aegis Operator — Mac installer folder
@@ -130,9 +141,11 @@ cat > "$OUT/INSTALL.md" <<'INSTALL_MD_EOF'
 6. `./start_operator.sh`
 7. Open `http://127.0.0.1:8741/` yourself in a browser.
 
+Uninstall: run `uninstall.command` (or `scripts/uninstall_aegis_operator.sh`) — it removes the copied program folder `$HOME/aegis-local-operator`; it does not delete `$HOME/.aegis`.
+
 This app is unsigned; macOS Gatekeeper may warn; this is not App Store and not notarized.
 
-Data stays in that account `$HOME/.aegis`.
+Data stays in that account `$HOME/.aegis` — profile, actions, and exports stay on that laptop after uninstall, and a later install reuses that data.
 INSTALL_MD_EOF
 
 echo "$OUT"
