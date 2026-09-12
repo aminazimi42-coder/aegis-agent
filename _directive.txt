@@ -1,51 +1,48 @@
-T153 — Record the proven amin installer-path laptop trial. This is pack instruction 1 of 6. Do ONLY this directive. Do not start T154. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a live license host, Apple notarization, Grok bots, voice, Windows installer, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T152. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates. Do not claim notarization, App Store, one-click install, or that Aegis Operator.app was opened on amin.
+T154 — Local signed entitlement issuer CLI. This is pack instruction 2 of 6. Do ONLY this directive. Do not start T155. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a card form, a live license host, Apple notarization, Grok bots, voice, Windows installer, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T153. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates. Do not claim a paid shop or a deployed license server.
 
-Baseline: T152 live a07bd2f. pytest 840 passed 1 skipped. Layer 3 git pack T149–T152 is in the tree. amin 2026-09-13 00:42 CEST installer-path trial is now proven and must replace the "trial not yet recorded" sentence.
+Baseline: T153 live 0cc3b17ec77969686a04734b158317185176cf30. pytest 845 passed 1 skipped. Live entitlement is only $AEGIS_DATA_DIR/entitlement.json. Missing file is Echo-limited. Pack ships entitlement.example.json. Optional AEGIS_LICENSE_STATUS_URL cannot unlock without the local file. There is no repo command that issues a signed local entitlement.
 
-GOAL: README Now and STATUS.md state only the laptop facts that were observed. No new product behavior. No personal calendar or pay-date. No claim that Layer 3 is a sellable shop.
+GOAL: One local CLI writes a signed entitlement.json under AEGIS_DATA_DIR. Signing stays on the laptop. Propose and execute do not call the issuer. No HTTP. No Stripe.
 
 Implement:
 
-1) README.md Now
-- Keep every prior proven Now bullet that is still true.
-- Replace any sentence that says the Mac installer folder has not been trialed, or that a stranger account has not run Install.command.
-- Add only these observed facts, in English:
-  - On 2026-09-13 the amin Mac account copied unsigned dist/AegisOperator-mac from Shared after chmod a+rX, ran Install.command --replace, then created a local python3.11 venv and pip install -e . because Install.command does not create .venv.
-  - start_operator.sh bound AEGIS_DATA_DIR=/Users/amin/.aegis on 127.0.0.1:8741 and did not open Safari.
-  - Session twin-1ca1a06ea177 prefills Sara Novak / Operator / Europe/Berlin from that account data dir.
-  - Approved Alina act-7142b446680f and Bita act-c1c6e615c0bc persisted from 2026-09-11.
-  - POST /api/v1/twin/brief/signed-export returned 200 and wrote /Users/amin/.aegis/export/local_20260912T224141Z.md sha256 5007b9cd47d9; Reveal in Finder opened that file next to the 2026-09-11 exports.
-  - Entitlement stayed Echo-limited (missing_file). Aegis Operator.app was not opened in this trial.
-- One honest gap sentence: the unsigned installer is not one-click; Terminal venv is still required.
-- Do not write hermesdev .aegis paths. Do not write Apple Developer prices. Do not write a third friend.
+1) scripts/issue_entitlement.py (or extend the existing entitlement module — do not fork a second schema)
+- Reads AEGIS_DATA_DIR (default $HOME/.aegis) and writes entitlement.json there only.
+- Arguments: --tenant (required), --tier (echo|professional), --days (int, default 30), --key-file (optional path to a local issuer secret).
+- Canonical JSON payload: tenant_id, tier, issued_at (UTC), expires_at (UTC), issuer=local-cli.
+- Signature: HMAC-SHA256 hex over the canonical UTF-8 payload using the issuer secret.
+- If --key-file is omitted, read AEGIS_ENTITLEMENT_ISSUER_KEY from the environment. If both missing, refuse with a typed English error and write nothing.
+- Never print the secret. Never write the secret into entitlement.json.
+- Never POST. Never import Stripe. Never open a socket.
 
-2) README.md Destination — Planned
-- Keep license server, payments outside core, Developer ID, and one-click installer as Planned.
-- Do not move those into Now.
+2) Verification of the file stays in the existing entitlement reader
+- A file issued by this CLI must be accepted when tenant matches and expiry is in the future.
+- A file with a broken signature or a foreign tenant stays Echo-limited.
+- Do not change propose or execute to call the CLI.
 
-3) STATUS.md
-- Replace the Layer 3 line "installer laptop trial not yet recorded" with: Layer 3 git slices T149–T152 landed; amin 2026-09-13 installer-path trial recorded (Install.command + venv + start_operator.sh + signed export); Aegis Operator.app not opened; installer is not one-click.
-- Fix the stale Not shipped bullet that says there is no packaged desktop binary if the unsigned dist/AegisOperator-mac folder is already described in README Now. Say: unsigned installer folder exists; it is not notarized and not one-click.
+3) README Now
+- One sentence: scripts/issue_entitlement.py writes a signed local entitlement.json under AEGIS_DATA_DIR; default remains Echo-limited when the file is missing; no payments in core.
+- Do not claim a license server is deployed.
 
-4) tests/test_t153_amin_trial_truth.py
-- test_readme_records_amin_install_command_trial
-- test_readme_says_venv_still_required
-- test_readme_does_not_claim_app_opened_or_notarized
-- test_status_no_longer_says_trial_not_yet_recorded
-- test_status_says_amin_2026_09_13
-- Do not start uvicorn as a subprocess.
+4) tests/test_t154_issue_entitlement.py
+- test_cli_writes_signed_file_under_data_dir
+- test_cli_refuses_without_key
+- test_broken_signature_stays_echo_limited
+- test_foreign_tenant_file_does_not_apply
+- test_issue_module_does_not_import_stripe_or_open_socket
+- Use tmp_path. Do not write into the developer's real $HOME/.aegis. Do not start uvicorn.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; r=Path('README.md').read_text(); s=Path('STATUS.md').read_text(); print('2026-09-13' in r and 'Install.command' in r, 'one-click' in r.lower() or 'venv' in r.lower(), 'notarized' not in r.lower() and 'App Store' not in r, 'not yet recorded' not in s.lower(), 'amin' in s.lower() and '2026-09-13' in s)"
-   Required: True True True True True
+   ./.venv/bin/python -c "from pathlib import Path; p=Path('scripts/issue_entitlement.py'); t=p.read_text() if p.is_file() else ''; print(p.is_file(), 'stripe' not in t.lower(), 'socket' not in t.lower() or 'opensocket' not in t.lower())"
+   Required: True True True
 4. ./.venv/bin/python -m pytest -q
    Required: 0 failed
 5. git add -A (do not force-add .kms/ or $HOME/.aegis/; do not delete _directive.txt)
-6. git commit -m "docs(t153): record amin 2026-09-13 installer-path trial"
+6. git commit -m "feat(t154): local signed entitlement issuer CLI"
 7. git push origin main
 8. Print new SHA, pytest count, and the proof line.
 

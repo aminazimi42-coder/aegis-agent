@@ -19,7 +19,9 @@ or malformed file never raises and never calls a network host.
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +30,13 @@ from core.twin_local_view import data_root
 ECHO_TIER: str = "echo"
 PROFESSIONAL_TIER: str = "professional"
 _VALID_TIERS: frozenset[str] = frozenset({ECHO_TIER, PROFESSIONAL_TIER})
+
+# T154 — HMAC key for local-cli issuer.  When the entitlement carries
+# ``issuer="local-cli"``, the ``signature_sha256`` field is an
+# HMAC-SHA256 hex digest of the canonical body keyed with the issuer
+# secret.  Legacy files (no ``issuer`` field) keep plain SHA-256 so
+# prior tests and hand-issued files stay valid.
+_ISSUER_KEY_ENV: str = "AEGIS_ENTITLEMENT_ISSUER_KEY"
 
 
 def _entitlement_path() -> Path:
@@ -59,11 +68,27 @@ def _is_expired(expires_at: Any) -> bool:
 
 
 def _signature_valid(data: dict[str, Any]) -> bool:
-    """Return True when ``signature_sha256`` matches the canonical body."""
+    """Return True when ``signature_sha256`` matches the canonical body.
+
+    When the file carries ``issuer="local-cli"``, the signature is an
+    HMAC-SHA256 hex digest keyed with the issuer secret (read from
+    ``AEGIS_ENTITLEMENT_ISSUER_KEY``).  Legacy files with no ``issuer``
+    field use plain SHA-256 and stay valid without a key.
+    """
     sig = data.get("signature_sha256")
     if not isinstance(sig, str) or not sig:
         return False
-    expected = hashlib.sha256(_canonical_body(data).encode("utf-8")).hexdigest()
+    body = _canonical_body(data)
+    issuer = data.get("issuer")
+    if isinstance(issuer, str) and issuer == "local-cli":
+        key = os.getenv(_ISSUER_KEY_ENV, "")
+        if not key:
+            return False
+        expected = hmac.new(
+            key.encode("utf-8"), body.encode("utf-8"), hashlib.sha256
+        ).hexdigest()
+        return hmac.compare_digest(sig, expected)
+    expected = hashlib.sha256(body.encode("utf-8")).hexdigest()
     return sig == expected
 
 
