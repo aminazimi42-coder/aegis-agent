@@ -11,9 +11,8 @@ Covers:
 * ``test_readme_does_not_claim_license_server_deployed`` — README does
   not claim a deployed license server (no ``license server deployed``
   or ``license host live`` phrase).
-* ``test_status_says_trial_not_yet_recorded`` — STATUS.md says the
-  installer laptop trial is not yet recorded (``trial`` and
-  ``not yet``).
+* ``test_status_trial_now_recorded`` — STATUS.md mentions the installer
+  trial and no longer says ``not yet recorded`` (superseded by T153).
 
 No uvicorn subprocess.  No network.  Text-only assertions on repo files.
 """
@@ -91,11 +90,11 @@ class TestT152Layer3Truth(unittest.TestCase):
         )
 
     # ------------------------------------------------------------------ #
-    # 4) STATUS says trial not yet recorded
+    # 4) STATUS trial now recorded (superseded by T153)
     # ------------------------------------------------------------------ #
-    def test_status_says_trial_not_yet_recorded(self) -> None:
-        """STATUS.md says the installer laptop trial is not yet
-        recorded."""
+    def test_status_trial_now_recorded(self) -> None:
+        """STATUS.md mentions the installer trial and does not say
+        ``not yet recorded`` (superseded by T153)."""
         self.assertTrue(
             _STATUS.is_file(),
             "STATUS.md must exist",
@@ -107,10 +106,10 @@ class TestT152Layer3Truth(unittest.TestCase):
             lower,
             "STATUS.md must mention the installer trial",
         )
-        self.assertIn(
-            "not yet",
+        self.assertNotIn(
+            "not yet recorded",
             lower,
-            "STATUS.md must say the trial is not yet recorded",
+            "STATUS.md must no longer say trial not yet recorded",
         )
 
 

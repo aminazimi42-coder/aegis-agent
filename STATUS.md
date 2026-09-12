@@ -90,8 +90,7 @@ Honest lock of what is actually shipped in this tree as of T70. See the **Now** 
   service.
 - **Hosted multi-tenant SaaS** — there is no hosted multi-tenant billing,
   card-charging, or tenant-provisioning logic in this tree.
-- **Installable desktop app** — there is no packaged desktop binary or
-  installer in this tree.
+- **Installable desktop app** — unsigned installer folder `dist/AegisOperator-mac` exists; it is not notarized and not one-click.
 - **Payment or license inside Aegis** — no Stripe, billing, or license-key
   logic ships in this repository.
 - **Cloud LLM as the default** — the default provider is offline
@@ -105,4 +104,4 @@ Honest lock of what is actually shipped in this tree as of T70. See the **Now** 
 
 ## Layer 3
 
-Layer 3 git slices T149–T152 landed; installer laptop trial not yet recorded.
+Layer 3 git slices T149–T152 landed; amin 2026-09-13 installer-path trial recorded (Install.command + venv + start_operator.sh + signed export); Aegis Operator.app not opened; installer is not one-click.
