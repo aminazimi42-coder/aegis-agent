@@ -1,57 +1,57 @@
-T150 — App icon and uninstall that leaves local data. This is Layer 3 instruction 2 of 4. Do ONLY this directive. Do not start T151. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a live license server, Grok bots, voice, Windows installer, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T149. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates. Do not claim notarization, App Store, or Developer ID.
+T151 — Optional license-status client outside execute. This is Layer 3 instruction 3 of 4. Do ONLY this directive. Do not start T152. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a card form, Grok bots, voice, Windows installer, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T150. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates. Do not claim a live paid shop.
 
-Baseline: T149 live 338f84468d28be3e7014e32b0479282c80263d4d. pytest 826 passed 1 skipped. dist/AegisOperator-mac has Install.command, unsigned Aegis Operator.app, and the packed tree. No icon. No uninstall path. Owner Mac trial of the installer is tomorrow, not this slice.
+Baseline: T150 live e333e5a4658541a2e021c59fcbc8db0df14ad678. pytest 831 passed 1 skipped. Live entitlement is only $AEGIS_DATA_DIR/entitlement.json. Missing or expired file is Echo-limited. Pack ships entitlement.example.json. No HTTP license client exists. Payment stays outside the twin core.
 
-GOAL: The unsigned app bundle ships a local icon resource. One uninstall script removes the copied operator folder and does not delete $HOME/.aegis. INSTALL tells the operator that profile, actions, and exports stay on that laptop after uninstall.
+GOAL: One optional labeled HTTP client can ask a separate license host for status. Default is off. Execute, approve, and specialist propose do not call that host. If the URL is unset, behavior stays T146–T148. If the URL is set and the host fails, the page stays Echo-limited and says the check was unreachable. No card data ever leaves the laptop.
 
 Implement:
 
-1) scripts/build_mac_installer.sh
-- Keep T149 replace-not-append behavior and exclusions.
-- Write dist/AegisOperator-mac/Aegis Operator.app/Contents/Resources/AppIcon.png
-- The PNG may be a small generated shield-style mark; do not download a remote image; do not vendor a huge binary.
-- Info.plist must name CFBundleIconFile as AppIcon.png or AppIcon
-- MacOS stub still sets AEGIS_DATA_DIR default $HOME/.aegis and execs the adjacent pack start_operator.sh
-- Still no Safari, no codesign, no notarytool
+1) app/licensing/status_client.py (or the existing entitlement module if one already exists — extend, do not fork a second source of truth)
+- Function check_remote_status() reads AEGIS_LICENSE_STATUS_URL
+- If unset or empty: return a typed local-only result; do not open a socket
+- If set: HTTP GET only, timeout <= 2 seconds, no request body, no cookies, no authorization header unless AEGIS_LICENSE_BEARER is set
+- Parse only {tier, expires_at, status}; ignore unknown fields
+- On timeout, DNS fail, TLS fail, or non-200: return unreachable, never raise into execute
+- Never POST. Never send entitlement.json. Never send profile fields.
 
-2) scripts/uninstall_aegis_operator.sh
-- Executable.
-- Removes only $HOME/aegis-local-operator if present.
-- Must not run rm -rf on $HOME/.aegis or any path under it.
-- Must not touch /Users/hermesdev/Aegis Agent or /Users/Shared.
-- Print one English block: what was removed, that $HOME/.aegis was left in place, and that a later install reuses that data.
-- Do not open a browser. Do not kill port 8741.
+2) Wire the client only to the existing entitlement read used by the operator page / status payload
+- Propose and execute paths must not import or call the HTTP client
+- Local file still wins when present and unexpired
+- Remote result may only confirm or leave Echo-limited; it must not unlock a tier when the local file is missing
 
-3) Install.command and generated INSTALL.md
-- Name scripts/uninstall_aegis_operator.sh or the copy of that script inside dist/AegisOperator-mac/uninstall.command
-- One Now line: uninstall removes the copied program folder; it does not delete $HOME/.aegis
-- Keep the unsigned / not App Store sentence from T149
+3) Operator page / status JSON
+- One English field: license_check = local_only | remote_ok | remote_unreachable | echo_limited
+- Do not print the raw URL on the operator HTML
+- Do not mention Stripe
 
 4) README Now
-- One sentence: uninstall script leaves $HOME/.aegis; installer app is still unsigned.
-- Do not claim the owner already ran uninstall on a stranger account.
+- One sentence: optional AEGIS_LICENSE_STATUS_URL is a labeled GET; default off; missing local file stays Echo-limited; no payments in core.
+- Do not claim a license server is deployed.
 
-5) tests/test_t150_icon_uninstall.py
-- test_app_bundle_has_icon_resource
-- test_plist_names_icon
-- test_uninstall_script_exists_and_executable
-- test_uninstall_script_does_not_delete_aegis_data_dir
-- test_install_md_says_uninstall_keeps_data
-- Do not start uvicorn as a subprocess.
-- Do not run uninstall against the builder home.
+5) tests/test_t151_license_status_client.py
+- test_unset_url_does_not_open_socket
+- test_unreachable_url_returns_echo_limited_or_unreachable
+- test_propose_and_execute_modules_do_not_import_status_client
+- test_remote_ok_cannot_unlock_without_local_file
+- test_readme_names_optional_license_url
+- Mock HTTP. Do not start uvicorn as a subprocess. Do not hit a public host.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   bash scripts/build_mac_installer.sh >/tmp/t150-build.out
-   ./.venv/bin/python -c "from pathlib import Path; r=Path('dist/AegisOperator-mac'); app=r/'Aegis Operator.app'; print((app/'Contents/Resources/AppIcon.png').is_file(), (r/'uninstall.command').is_file() or Path('scripts/uninstall_aegis_operator.sh').is_file(), 'aegis' in Path('scripts/uninstall_aegis_operator.sh').read_text().lower() if Path('scripts/uninstall_aegis_operator.sh').is_file() else False, (r/'_directive.txt').exists())"
-   Required: True True True False
+   ./.venv/bin/python -c "from pathlib import Path; import ast,sys; p=Path('app'); hits=[]
+for f in p.rglob('*.py'):
+    t=f.read_text(encoding='utf-8')
+    if 'AEGIS_LICENSE_STATUS_URL' in t and ('execute' in f.as_posix() or 'propose' in f.as_posix()):
+        hits.append(str(f))
+print(Path('app/licensing/status_client.py').is_file() or 'AEGIS_LICENSE_STATUS_URL' in Path('app').joinpath('entitlement.py').read_text() if Path('app/entitlement.py').is_file() else Path('app/licensing/status_client.py').is_file(), not hits)"
+   Required first token True, second token True
 4. ./.venv/bin/python -m pytest -q
    Required: 0 failed
 5. git add -A (do not force-add .kms/ or $HOME/.aegis/; do not delete _directive.txt)
-6. git commit -m "feat(t150): installer icon and data-preserving uninstall"
+6. git commit -m "feat(t151): optional license status GET outside execute"
 7. git push origin main
 8. Print new SHA, pytest count, and the proof line.
 

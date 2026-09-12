@@ -1537,10 +1537,29 @@ def create_app() -> FastAPI:
                             expires_at = ea
                 except (OSError, ValueError, TypeError):
                     pass
+        # T151 — optional labeled remote status check (default off).
+        # Local file still wins; remote can only confirm or report
+        # unreachable.  It must not unlock a tier when the local file
+        # is missing.
+        from app.licensing.status_client import check_remote_status
+
+        remote = check_remote_status()
+        license_check = remote.get("license_check", "local_only")
+        if license_check == "remote_ok" and reason is not None:
+            # Remote confirmed but local is Echo-limited — keep it.
+            license_check = "echo_limited"
+        elif license_check == "remote_ok":
+            license_check = "remote_ok"
+        elif license_check == "remote_unreachable":
+            license_check = "remote_unreachable"
+        else:
+            license_check = "local_only"
+
         return {
             "tier": tier,
             "reason": reason,
             "expires_at": expires_at,
+            "license_check": license_check,
         }
 
     # --- Serve the operator page on loopback (T107) --- #

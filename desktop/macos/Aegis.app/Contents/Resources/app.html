@@ -801,14 +801,19 @@
       var tier = data.tier || "echo";
       var reason = data.reason || null;
       var expires = data.expires_at || null;
+      var lc = data.license_check || "local_only";
+      var lcLabel = "";
+      if (lc === "remote_ok") { lcLabel = " — remote OK"; }
+      else if (lc === "remote_unreachable") { lcLabel = " — remote unreachable"; }
+      else if (lc === "echo_limited") { lcLabel = " — Echo-limited"; }
       if (reason) {
-        ln.textContent = "Echo-limited (" + reason + ")";
+        ln.textContent = "Echo-limited (" + reason + ")" + lcLabel;
         ln.className = "muted";
       } else if (expires) {
-        ln.textContent = "Tier: " + tier + " — expires " + expires;
+        ln.textContent = "Tier: " + tier + " — expires " + expires + lcLabel;
         ln.className = "muted";
       } else {
-        ln.textContent = "Tier: " + tier + " — no expiry";
+        ln.textContent = "Tier: " + tier + " — no expiry" + lcLabel;
         ln.className = "muted";
       }
     });
