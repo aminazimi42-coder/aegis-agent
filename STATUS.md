@@ -119,3 +119,5 @@ T169 remote status cannot unlock without local entitlement; Stripe and a deploye
 T170 external checkout URL is optional and outside execute; live Stripe shop and deployed license host remain locked.
 
 T171 notary submit path is wired; NOTARIZED prints only after stapler validate; live shop and stranger pack remain locked.
+
+T172 stranger pack rebuilds with home copy and optional venv; live shop remains locked.

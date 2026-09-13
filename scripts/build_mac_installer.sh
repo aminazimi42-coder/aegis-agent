@@ -37,6 +37,8 @@ cat > "$OUT/Install.command" <<'INSTALL_CMD_EOF'
 # Copies aegis-local-operator into $HOME/aegis-local-operator if that
 # home copy is missing.  Does not overwrite an existing home copy
 # unless the operator passes --replace.  Does not copy $HOME/.aegis.
+# If $HOME/aegis-local-operator/.venv is missing, creates it with
+# python3.11 -m venv and runs pip install -e . inside that folder.
 # Does not launch a browser.
 
 set -euo pipefail
@@ -56,7 +58,7 @@ if [ -d "$DEST" ]; then
     if [ "$REPLACE" -ne 1 ]; then
         echo "Install target: $DEST already exists — pass --replace to overwrite."
         echo "Data dir: $HOME/.aegis"
-        echo "Start: ./start_operator.sh after venv"
+        echo "Start: $DEST/start_operator.sh"
         exit 0
     fi
     rm -rf "$DEST"
@@ -64,9 +66,18 @@ fi
 
 cp -R "$SRC" "$DEST"
 
+# --- create venv when missing -----------------------------------------
+if [ ! -d "$DEST/.venv" ]; then
+    echo "Creating venv in $DEST/.venv with python3.11 ..."
+    (cd "$DEST" && python3.11 -m venv .venv)
+    echo "Installing dependencies with pip install -e . ..."
+    (cd "$DEST" && ./.venv/bin/python -m pip install -e .)
+fi
+
 echo "Install target: $DEST"
 echo "Data dir: $HOME/.aegis"
-echo "Start: ./start_operator.sh after venv"
+echo "Start: $DEST/start_operator.sh"
+echo "Open http://127.0.0.1:8741/ yourself in a browser."
 INSTALL_CMD_EOF
 chmod +x "$OUT/Install.command"
 
@@ -133,17 +144,18 @@ cat > "$OUT/INSTALL.md" <<'INSTALL_MD_EOF'
 
 ## Now
 
-1. Copy this folder (`AegisOperator-mac`) to the target Mac.
-2. Run `Install.command` — or manually copy `aegis-local-operator` into `$HOME`.
-3. `cd $HOME/aegis-local-operator`
-4. `python3.11 -m venv .venv`
-5. `pip install -e .`
-6. `./start_operator.sh`
-7. Open `http://127.0.0.1:8741/` yourself in a browser.
+1. Copy this folder (`AegisOperator-mac`) into the operator account `$HOME`. Do not use `/Users/Shared`.
+2. Run `Install.command`. Need Python 3.11 on the Mac.
+   - `Install.command` copies `aegis-local-operator` into `$HOME/aegis-local-operator` if missing.
+   - If `$HOME/aegis-local-operator/.venv` is missing, it creates the venv with `python3.11 -m venv` and runs `pip install -e .`.
+3. Start the engine: `$HOME/aegis-local-operator/start_operator.sh`
+4. Open `http://127.0.0.1:8741/` yourself in a browser — the script does not open Safari.
 
-Uninstall: run `uninstall.command` (or `scripts/uninstall_aegis_operator.sh`) — it removes the copied program folder `$HOME/aegis-local-operator`; it does not delete `$HOME/.aegis`.
+Data is `$HOME/.aegis` in that account. The script does not copy or touch `$HOME/.aegis`.
 
 This app is unsigned; macOS Gatekeeper may warn; this is not App Store and not notarized.
+
+Uninstall: run `uninstall.command` (or `scripts/uninstall_aegis_operator.sh`) — it removes the copied program folder `$HOME/aegis-local-operator`; it does not delete `$HOME/.aegis`.
 
 Data stays in that account `$HOME/.aegis` — profile, actions, and exports stay on that laptop after uninstall, and a later install reuses that data.
 INSTALL_MD_EOF

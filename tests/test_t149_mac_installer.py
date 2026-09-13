@@ -179,13 +179,22 @@ class TestT149MacInstaller(unittest.TestCase):
         lower = text.lower()
         self.assertIn("unsigned", lower, "INSTALL.md must say unsigned")
         self.assertIn("notarized", lower, "INSTALL.md must reference notarized")
-        # Install.command must not open a browser.
+        # Install.command must not call the open shell command to
+        # launch a browser.  It may print "open http://…" (an
+        # instruction to the operator) — filter to code lines and
+        # check for the open command, not the echo text.
         cmd_text = (out / "Install.command").read_text(encoding="utf-8")
-        cmd_lower = cmd_text.lower()
-        self.assertNotIn(
-            "open ",
-            cmd_lower,
-            "Install.command must not open a browser",
+        code_lines = [
+            line
+            for line in cmd_text.splitlines()
+            if line.strip()
+            and not line.strip().startswith("#")
+        ]
+        code_text = "\n".join(code_lines)
+        self.assertNotRegex(
+            code_text,
+            r"(^|\n|\s)open\s",
+            "Install.command must not call the open command to launch a browser",
         )
 
     # ------------------------------------------------------------------ #
