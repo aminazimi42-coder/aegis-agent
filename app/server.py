@@ -1376,6 +1376,21 @@ def create_app() -> FastAPI:
             confidence = row_payload.get("confidence", 0) if isinstance(
                 row_payload, dict
             ) else 0
+            # T161 — surface the conflict tag, prior action id, prior
+            # digest, and receipt-backed why line on the propose card.
+            row_conflict = bool(row.get("conflict", False))
+            row_prior_id = (
+                row_payload.get("prior_action_id")
+                if isinstance(row_payload, dict) else None
+            )
+            row_prior_digest = (
+                row_payload.get("prior_digest")
+                if isinstance(row_payload, dict) else None
+            )
+            row_why = (
+                row_payload.get("why")
+                if isinstance(row_payload, dict) else None
+            )
             proposals.append(
                 {
                     "action_id": row["action_id"],
@@ -1386,6 +1401,10 @@ def create_app() -> FastAPI:
                     "status": row["status"],
                     "batch_id": batch_id,
                     "confidence": confidence,
+                    "conflict": row_conflict,
+                    "prior_action_id": row_prior_id,
+                    "prior_digest": row_prior_digest,
+                    "why": row_why,
                 }
             )
         # T138 — surface the last reject reason on the next propose card.

@@ -937,6 +937,39 @@ def _has_pending_conflict(tenant_id: str, title: str, payload: Any) -> bool:
     return False
 
 
+def _prior_topic_conflict(
+    tenant_id: str, title: str
+) -> dict[str, Any] | None:
+    """T161 — return the prior approved/rejected action for the same topic.
+
+    Scan stored approved or rejected actions for *tenant_id* whose title
+    matches *title* (case-insensitive substring).  Return a dict with
+    ``action_id``, ``payload_sha256``, and ``why_text`` from the prior
+    receipt, or ``None`` when no conflict exists.  Neighbor tenants are
+    not scanned — the query is scoped to *tenant_id* only.
+    """
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT action_id, title, payload_sha256, why_text "
+            "FROM twin_actions "
+            "WHERE tenant_id = ? AND status IN ('approved', 'rejected') "
+            "ORDER BY created_at DESC",
+            (tenant_id,),
+        ).fetchall()
+    title_lower = (title or "").lower()
+    for r in rows:
+        r_title = (r["title"] or "").lower()
+        if title_lower and r_title and (
+            title_lower in r_title or r_title in title_lower
+        ):
+            return {
+                "action_id": r["action_id"],
+                "payload_sha256": r["payload_sha256"] or "",
+                "why_text": (r["why_text"] or ""),
+            }
+    return None
+
+
 def insert_specialist_proposal(
     tenant_id: str,
     agent_name: str,
@@ -1008,6 +1041,34 @@ def insert_specialist_proposal(
     risk_level = classify(title)
     if not conflict:
         conflict = 1 if _has_pending_conflict(tenant_id, title, payload) else 0
+    # T161 — conflict tag depth.  When the new propose topic collides
+    # with a stored approved or rejected action for the same tenant_id,
+    # set conflict=True and attach prior_action_id plus prior_digest.
+    prior_action_id: str | None = None
+    prior_digest: str | None = None
+    why_line: str | None = None
+    prior_topic = _prior_topic_conflict(tenant_id, title)
+    if prior_topic is not None:
+        conflict = 1
+        prior_action_id = prior_topic["action_id"]
+        prior_digest = prior_topic["payload_sha256"]
+        why_text = prior_topic.get("why_text", "") or ""
+        if why_text:
+            why_line = why_text.split("\n", 1)[0].strip()[:120]
+        else:
+            why_line = f"Prior action {prior_action_id} — same topic"
+        # T161 — embed the prior/conflict/why fields in the payload so
+        # they are persisted in the DB and surface through list_queue.
+        if isinstance(payload, dict):
+            payload["prior_action_id"] = prior_action_id
+            payload["prior_digest"] = prior_digest
+            payload["why"] = why_line
+    # Re-serialize the payload now that conflict fields may be embedded.
+    payload_json = (
+        json.dumps(payload, ensure_ascii=False)
+        if payload is not None
+        else None
+    )
     envelope = _canonical_envelope(
         action_id=insert_id,
         tenant_id=tenant_id,
@@ -1038,7 +1099,7 @@ def insert_specialist_proposal(
                     batch_id,
                 ),
             )
-    return {
+    result: dict[str, Any] = {
         "action_id": insert_id,
         "tenant_id": tenant_id,
         "kind": kind,
@@ -1050,3 +1111,12 @@ def insert_specialist_proposal(
         "conflict": bool(conflict),
         "batch_id": batch_id,
     }
+    # T161 — attach prior_action_id, prior_digest, and why_line when
+    # a prior-topic conflict was detected for the same tenant.
+    if prior_action_id is not None:
+        result["prior_action_id"] = prior_action_id
+    if prior_digest is not None:
+        result["prior_digest"] = prior_digest
+    if why_line is not None:
+        result["why"] = why_line
+    return result

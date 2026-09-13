@@ -74,6 +74,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Codesign script, unsigned without identity** — `scripts/codesign_operator.sh` signs only when a Developer ID identity is present; without it the Mac folder stays unsigned and is not store-distributed software.
 - **2026-09-13 hermesdev laptop smoke** — `start_operator.sh` with `AEGIS_DATA_DIR=$HOME/.aegis` on port 8741; session `twin-d6587b37304f`; Echo-limited `missing_file`; six distinct proposes; Approve Alina `act-ba2c8b6e1d3f` stayed on the Approved strip; signed export `$HOME/.aegis/export/local_20260913T122824Z.md` sha256 `51c0e5085d82`; Reveal in Finder showed that file.
 - **Propose confidence** — Propose cards show a local 0–100 confidence integer; scores below 40 ask a clarifying question and still require Approve.
+- **Conflict why line** — Propose cards surface a receipt-backed why line and a conflict tag when a new ask collides with a prior action for the same tenant; the why is receipt text, not a new model, and Approve is still required.
 
 ---
 

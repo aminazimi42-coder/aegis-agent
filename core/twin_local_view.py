@@ -236,6 +236,19 @@ def list_queue(tenant_id: str) -> dict[str, list[dict[str, Any]]]:
                 a["clarifying_question"] = payload["clarifying_question"]
         else:
             a["confidence"] = 0
+        # T161 — surface the conflict flag, prior action id, prior
+        # digest, and the receipt-backed why line on the operator card.
+        # The conflict flag is already on the row (column ``conflict``);
+        # the why / prior fields come from the payload when present.
+        if a.get("conflict"):
+            a["conflict"] = True
+        if isinstance(payload, dict):
+            if "prior_action_id" in payload:
+                a["prior_action_id"] = payload["prior_action_id"]
+            if "prior_digest" in payload:
+                a["prior_digest"] = payload["prior_digest"]
+            if "why" in payload:
+                a["why"] = payload["why"]
 
     # T120 — split proposed rows into latest vs archive by batch_id.
     newest_batch = _newest_batch_id(pending)

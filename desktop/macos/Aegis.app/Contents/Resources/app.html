@@ -459,11 +459,24 @@
     if (a.clarifying_question) {
       clarQ = '<div class="queue-body muted">? ' + esc(a.clarifying_question) + '</div>';
     }
+    // T161 — receipt-backed why line and conflict tag on the operator card.
+    var whyLine = "";
+    if (a.why) {
+      whyLine = '<div class="queue-body">Why: ' + esc(a.why) + '</div>';
+    }
+    var conflictTag = "";
+    if (a.conflict) {
+      conflictTag = ' <span class="risk-label">conflict</span>';
+      if (a.prior_action_id) {
+        conflictTag += ' <span class="muted">prior: ' + esc(a.prior_action_id) + '</span>';
+      }
+    }
     var html = '<div class="queue-item">'
       + '<div class="queue-title">' + esc(a.title || a.action_id) + '</div>'
       + '<div class="queue-body">' + esc(bodyText) + '</div>'
       + clarQ
-      + '<div class="queue-meta">' + esc(specialistName) + confLabel + ' · proposed · ' + esc(kindStr) + ' · ' + esc(a.action_id || "") + '</div>'
+      + whyLine
+      + '<div class="queue-meta">' + esc(specialistName) + confLabel + ' · proposed · ' + esc(kindStr) + ' · ' + esc(a.action_id || "") + conflictTag + '</div>'
       + '<div class="queue-meta">digest: <code>' + esc(digest) + '</code>'
         + (a.digest_label ? ' <span class="risk-label">' + esc(a.digest_label) + '</span>' : '') + '</div>';
     if (digest) {
