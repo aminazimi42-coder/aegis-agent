@@ -450,10 +450,20 @@
     var specialistName = kindStr.split(":")[0];
     var p = a.payload || {};
     var bodyText = (p && typeof p.body === "string") ? p.body : (a.title || "");
+    // T160 — deterministic confidence integer 0-100 next to the
+    // specialist name.  Below 40 the card body includes a short
+    // clarifying question and still requires Approve.
+    var conf = (typeof a.confidence === "number") ? a.confidence : 0;
+    var confLabel = ' · Confidence ' + conf;
+    var clarQ = "";
+    if (a.clarifying_question) {
+      clarQ = '<div class="queue-body muted">? ' + esc(a.clarifying_question) + '</div>';
+    }
     var html = '<div class="queue-item">'
       + '<div class="queue-title">' + esc(a.title || a.action_id) + '</div>'
       + '<div class="queue-body">' + esc(bodyText) + '</div>'
-      + '<div class="queue-meta">' + esc(specialistName) + ' · proposed · ' + esc(kindStr) + ' · ' + esc(a.action_id || "") + '</div>'
+      + clarQ
+      + '<div class="queue-meta">' + esc(specialistName) + confLabel + ' · proposed · ' + esc(kindStr) + ' · ' + esc(a.action_id || "") + '</div>'
       + '<div class="queue-meta">digest: <code>' + esc(digest) + '</code>'
         + (a.digest_label ? ' <span class="risk-label">' + esc(a.digest_label) + '</span>' : '') + '</div>';
     if (digest) {

@@ -1,42 +1,42 @@
-T159 — Tool-output path cage + no invented profile facts + one Now sentence. This is slice 1 of 4. Do ONLY this directive. Do not start T160. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a card form, a live license host, Grok bots, voice, Windows installer, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T158. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates.
+T160 — Confidence on propose card. This is slice 2 of 4. Do ONLY this directive. Do not start T161. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a card form, a live license host, Grok bots, voice, Windows installer, WebSockets, Playwright, OS cron, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T159. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates.
 
-Baseline: T158 live b5e7ce69b9a672f950ba1e352ed2584379ef75f6. pytest 871 passed 1 skipped.
+Baseline: T159 live 41e45b6f3045cf27b89472e93f0d90437d4525a6. pytest 875 passed 1 skipped.
 
-GOAL: Local tool writes stay under AEGIS_DATA_DIR. Propose text must not invent profile facts that the stored profile does not contain. README Now records the 2026-09-13 hermesdev laptop smoke as a proven fact, nothing more.
+GOAL: Every propose card carries a deterministic confidence integer 0–100. Below threshold the card asks a clarifying question and stays proposed. Confidence never executes, never bypasses Approve, never changes the digest bind.
 
 Implement:
 
-1) Tool-output path cage
-- Before any local file write from a tool or export helper, resolve the destination and reject it unless the resolved path is inside AEGIS_DATA_DIR (default $HOME/.aegis).
-- Rejection is typed English, no write, no execute of the rejected path.
-- Do not add a new shared blackboard. Reuse the existing allow-list / complete_safe / export helpers.
+1) Confidence field
+- Add confidence: int on the propose payload shown on the operator card.
+- Compute it locally from existing signals only: specialist match to the ask, presence of stored profile fields used in the body, and RISK_L*. No new model. Echo path included.
+- Threshold default 40. If confidence < 40, the card body must include one short English clarifying question. It must not invent an answer. It must not execute.
 
-2) No invented profile facts
-- When building a propose body, do not add name, role, goals, timezone, or other profile fields that are absent from the stored local profile.
-- If a field is missing, omit it. Do not guess. Echo path included.
+2) Operator page
+- Show the integer on the card next to the specialist name. Example: Confidence 72.
+- Do not add a new column. Do not add a SaaS meter. Do not auto-approve high scores.
 
-3) README Now — one sentence only, honest:
-- 2026-09-13 hermesdev laptop smoke: start_operator.sh with AEGIS_DATA_DIR=$HOME/.aegis on port 8741; session twin-d6587b37304f; Echo-limited missing_file; six distinct proposes; Approve Alina act-ba2c8b6e1d3f stayed on the Approved strip; signed export $HOME/.aegis/export/local_20260913T122824Z.md sha256 51c0e5085d82; Reveal in Finder showed that file.
-- Do not call this a stranger trial. Do not call the app notarized. Do not invent a third friend.
+3) README Now — one sentence only:
+- Propose cards show a local 0–100 confidence integer; scores below 40 ask a clarifying question and still require Approve.
 
-4) tests/test_t159_tool_path_and_profile.py
-- test_tool_write_outside_data_dir_rejected
-- test_tool_write_inside_data_dir_allowed_shape
-- test_propose_omits_absent_profile_fields
-- test_readme_records_hermesdev_20260913_smoke
-- Do not start uvicorn. Do not write into the developer's real $HOME/.aegis; use tmp_path.
+4) tests/test_t160_propose_confidence.py
+- test_propose_payload_includes_confidence_0_100
+- test_low_confidence_includes_clarifying_question
+- test_low_confidence_does_not_execute
+- test_high_confidence_still_requires_approve
+- test_readme_mentions_confidence
+- Do not start uvicorn. Use tmp_path. Do not write the developer's real $HOME/.aegis.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; r=Path('README.md').read_text(); print('twin-d6587b37304f' in r, '122824Z' in r, '51c0e5085d82' in r, Path('tests/test_t159_tool_path_and_profile.py').is_file())"
-   Required: True True True True
+   ./.venv/bin/python -c "from pathlib import Path; r=Path('README.md').read_text(); print('confidence' in r.lower(), Path('tests/test_t160_propose_confidence.py').is_file())"
+   Required: True True
 4. ./.venv/bin/python -m pytest -q
    Required: 0 failed
 5. git add -A (do not force-add .kms/ or $HOME/.aegis/; do not delete _directive.txt)
-6. git commit -m "feat(t159): cage tool paths and record 2026-09-13 laptop smoke"
+6. git commit -m "feat(t160): local propose confidence with ask-not-execute"
 7. git push origin main
 8. Print new SHA, pytest count, and the proof line.
 

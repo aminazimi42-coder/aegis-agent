@@ -220,6 +220,22 @@ def list_queue(tenant_id: str) -> dict[str, list[dict[str, Any]]]:
         a.setdefault("risk_level", attach_risk(a).get("risk_level", ""))
         a["digest_label"] = _risk_label(a.get("risk_level"))
         a["risk_warn"] = _risk_warn(a)
+        # T160 — surface the deterministic confidence integer on the
+        # card next to the specialist name.
+        payload = a.get("payload")
+        if isinstance(payload, str):
+            import json as _json
+
+            try:
+                payload = _json.loads(payload)
+            except (ValueError, TypeError):
+                payload = None
+        if isinstance(payload, dict):
+            a["confidence"] = payload.get("confidence", 0)
+            if "clarifying_question" in payload:
+                a["clarifying_question"] = payload["clarifying_question"]
+        else:
+            a["confidence"] = 0
 
     # T120 — split proposed rows into latest vs archive by batch_id.
     newest_batch = _newest_batch_id(pending)

@@ -1363,6 +1363,19 @@ def create_app() -> FastAPI:
         proposals: list[dict[str, Any]] = []
         for agent in specialists:
             row = agent.propose(request.tenant_id, text, batch_id=batch_id)
+            # T160 — surface the deterministic confidence integer on
+            # the card next to the specialist name.
+            row_payload = row.get("payload") or {}
+            if isinstance(row_payload, str):
+                import json as _json
+
+                try:
+                    row_payload = _json.loads(row_payload)
+                except (ValueError, TypeError):
+                    row_payload = {}
+            confidence = row_payload.get("confidence", 0) if isinstance(
+                row_payload, dict
+            ) else 0
             proposals.append(
                 {
                     "action_id": row["action_id"],
@@ -1372,6 +1385,7 @@ def create_app() -> FastAPI:
                     "payload_sha256": row.get("payload_sha256", ""),
                     "status": row["status"],
                     "batch_id": batch_id,
+                    "confidence": confidence,
                 }
             )
         # T138 — surface the last reject reason on the next propose card.
