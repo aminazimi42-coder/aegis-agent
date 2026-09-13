@@ -121,3 +121,5 @@ T170 external checkout URL is optional and outside execute; live Stripe shop and
 T171 notary submit path is wired; NOTARIZED prints only after stapler validate; live shop and stranger pack remain locked.
 
 T172 stranger pack rebuilds with home copy and optional venv; live shop remains locked.
+
+T173 local fulfill is grant-gated and outside execute; live Stripe shop remains locked.

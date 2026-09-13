@@ -84,6 +84,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Single-instance lock** — `start_operator.sh` writes a lock file under `AEGIS_DATA_DIR` recording pid and port; a second start on the same port exits non-zero with the typed English error `port 8741 already in use`; a stale lock from a dead pid is replaced.
 - **Status on page** — the Home / Status panel shows `duration_ms` and `http_token_cost` from the platform status JSON alongside the health check; Echo keeps `http_token_cost` at zero.
 - **External checkout URL (optional)** — `AEGIS_CHECKOUT_URL` is an optional external link surfaced on the operator status payload; when unset the state is `checkout_unset`; when set the operator sees a text link labeled "External checkout". No card form lives in the twin core; expiry still returns Echo-limited; no paid shop is deployed.
+- **Local fulfill outside execute** — `app/licensing/fulfill.py` writes `entitlement.json` only when a local grant (`AEGIS_FULFILL_GRANT`) and issuer key (`AEGIS_ENTITLEMENT_ISSUER_KEY` or key file) are present; a missing grant or key writes nothing. Execute does not take payment; no paid shop is deployed.
 
 ---
 
