@@ -1555,11 +1555,19 @@ def create_app() -> FastAPI:
         else:
             license_check = "local_only"
 
+        # T156 — local quota ledger (quota.json under AEGIS_DATA_DIR).
+        # Surface the monthly allowance remaining and a typed state label
+        # so the operator page can show the quota line.
+        from core.quota_ledger import quota_state as _quota_state
+        from core.quota_ledger import remaining as _quota_remaining
+
         return {
             "tier": tier,
             "reason": reason,
             "expires_at": expires_at,
             "license_check": license_check,
+            "quota_remaining": _quota_remaining(tenant_id),
+            "quota_state": _quota_state(tenant_id),
         }
 
     # --- Serve the operator page on loopback (T107) --- #

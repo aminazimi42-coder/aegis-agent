@@ -166,6 +166,19 @@ def complete_safe(
 
     force_echo = not quota_allows_http(tenant_id)
 
+    # T156 — local quota ledger (quota.json under AEGIS_DATA_DIR).
+    # When the ledger file exists and the allowance is exhausted
+    # (remaining == 0), force Echo even when AGENT_LLM_BASE_URL is set
+    # and label the result ``quota_exhausted``.  When the ledger file
+    # does not exist, the state is ``unset`` and the existing provider
+    # path is unchanged — the ledger does not weaken T56-T155.
+    from core.quota_ledger import quota_state as _quota_state
+
+    _q_state = _quota_state(tenant_id)
+    quota_exhausted = _q_state == "exhausted"
+    if quota_exhausted:
+        force_echo = True
+
     from core.llm_provider import EchoProvider
 
     provider = get_provider()
@@ -223,14 +236,27 @@ def complete_safe(
         "tool": tool,
         "ok": ok,
         "provider_kind": provider_kind,
+        "quota_state": "exhausted" if quota_exhausted else "ok",
     }
+    if quota_exhausted:
+        result["quota_label"] = "quota_exhausted"
     if provider_kind == "http":
         result["fallback_label"] = "http-fallback"
     elif fallback:
         result["fallback_label"] = "echo(fallback)"
 
     # HTTP-path completions consume one quota unit; Echo does not.
+    # T156 — increment the local quota ledger (quota.json) in addition
+    # to the legacy twin_quota consume so the monthly allowance is
+    # tracked outside execute.  Only increment after a successful
+    # non-Echo completion.
     if provider_kind == "http":
+        try:
+            from core.quota_ledger import increment as _quota_increment
+
+            _quota_increment(tenant_id)
+        except Exception:
+            pass
         try:
             from core.twin_quota import consume_quota
 
