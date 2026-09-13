@@ -149,28 +149,59 @@ class HttpProvider:
         }
 
 
+def load_llm_key() -> str | None:
+    """Load the LLM API key from the environment or the data-dir file.
+
+    Checks ``AEGIS_LLM_API_KEY`` first, then ``$AEGIS_DATA_DIR/llm_key``.
+    Returns the stripped key string or ``None`` when neither source has
+    a non-empty key.  This function never writes or creates the file —
+    it only reads.
+    """
+    key = os.getenv("AEGIS_LLM_API_KEY")
+    if key and key.strip():
+        return key.strip()
+    from core.twin_local_view import data_root
+
+    key_path = data_root() / "llm_key"
+    if key_path.is_file():
+        try:
+            raw = key_path.read_text(encoding="utf-8").strip()
+            if raw:
+                return raw
+        except OSError:
+            pass
+    return None
+
+
+def http_requested() -> bool:
+    """Return True when the HTTP provider path was requested (and not offline)."""
+    from core.twin_local_view import offline_mode
+
+    if offline_mode():
+        return False
+    kind = os.getenv("AEGIS_LLM_PROVIDER", "echo").lower()
+    if kind == "echo":
+        backend = os.getenv("AGENT_LLM_BACKEND", "").lower()
+        if backend == "ollama":
+            kind = "http"
+    return kind == "http"
+
+
 def get_provider() -> LLMProvider:
     """Return the configured LLM provider. Defaults to EchoProvider.
 
     When :func:`core.twin_local_view.offline_mode` is True the Echo
     provider is always returned, even when ``AEGIS_LLM_PROVIDER`` is
     ``http``.
-    """
-    from core.twin_local_view import offline_mode
 
-    if offline_mode():
-        return EchoProvider()
-    kind = os.getenv("AEGIS_LLM_PROVIDER", "echo").lower()
-    # T136 — AGENT_LLM_BACKEND=ollama is an alias label that activates
-    # the same HTTP complete path as AEGIS_LLM_PROVIDER=http.  No new
-    # gateway, no vendored binary — the same HttpProvider is reused.
-    if kind == "echo":
-        backend = os.getenv("AGENT_LLM_BACKEND", "").lower()
-        if backend == "ollama":
-            kind = "http"
-    if kind == "http":
+    T157 — the API key is loaded from ``AEGIS_LLM_API_KEY`` or
+    ``$AEGIS_DATA_DIR/llm_key`` via :func:`load_llm_key`.  When both
+    are missing, ``HttpProvider`` is not constructed and EchoProvider
+    is returned — no socket is opened.
+    """
+    if http_requested():
         base_url = os.getenv("AEGIS_LLM_BASE_URL")
-        api_key = os.getenv("AEGIS_LLM_API_KEY")
+        api_key = load_llm_key()
         if base_url and api_key:
             return HttpProvider(base_url, api_key)
     return EchoProvider()

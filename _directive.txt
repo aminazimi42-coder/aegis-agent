@@ -1,52 +1,46 @@
-T156 — Quota ledger outside execute. This is pack instruction 4 of 6. Do ONLY this directive. Do not start T157. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a card form, a live license host, Apple notarization, Grok bots, voice, Windows installer, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T155. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates. Do not claim a paid shop or a deployed license server.
+T157 — Labeled paid-adapter path, no key in core. This is pack instruction 5 of 6. Do ONLY this directive. Do not start T158. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a card form, a live license host, Apple notarization, Grok bots, voice, Windows installer, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T156. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates. Do not claim a paid shop or that a cloud model is the default.
 
-Baseline: T155 live 4764361fef04138857e0651aa687f8709489d6e. pytest 857 passed 1 skipped. Entitlement is a local signed file. Remote status cannot unlock without that file. There is no tenant quota ledger that forces Echo when a local allowance is exhausted.
+Baseline: T156 live 013d7c8a5c25749aa8bc1f1a66b28407b14826d8. pytest 862 passed 1 skipped. Echo is default. AGENT_LLM_BASE_URL is an optional labeled HTTP adapter. Quota exhaustion already forces Echo. API keys must not land in git or inside execute.
 
-GOAL: One local quota ledger lives under AEGIS_DATA_DIR. Counting happens outside execute. When the remaining allowance is zero, complete_safe stays on Echo and the operator status says quota_exhausted. Propose and execute do not talk to a billing host.
+GOAL: The optional HTTP path is explicitly labeled paid-or-remote. A missing key or missing base URL stays Echo. The key is read only from the environment or from $AEGIS_DATA_DIR, never from the repo. Propose templates do not mention a live paid model.
 
 Implement:
 
-1) core/quota_ledger.py (or extend an existing local budget module — do not fork a second counter)
-- File: $AEGIS_DATA_DIR/quota.json scoped by tenant_id.
-- Fields: tenant_id, period (calendar month UTC), allowance (int), used (int), updated_at UTC.
-- remaining = max(allowance - used, 0).
-- increment(tenant_id) adds one used unit only when remaining > 0 and returns the new remaining.
-- exhausted(tenant_id) is True when remaining == 0.
-- Default allowance for a missing file is 0 (Echo-limited, not an implicit paid pool).
-- Never open a socket. Never import Stripe.
+1) Adapter labeling (extend the existing HTTP provider — do not add a second client)
+- complete_safe provider kind stays echo | http.
+- When HTTP is selected, the status payload includes llm_path = http_labeled and llm_key_present = true|false.
+- If AEGIS_LLM_API_KEY and the data-dir key file are both missing: do not open a socket; return Echo and llm_path = echo_missing_key.
+- Never write the key into receipts, audit JSONL, operator HTML, or README.
+- Never commit a .env with a real key.
 
-2) Wire only at complete_safe / operator status
-- If exhausted: complete_safe uses EchoProvider even when AGENT_LLM_BASE_URL is set; label the result echo and quota_exhausted.
-- If remaining > 0: existing provider path is unchanged; increment happens after a successful non-Echo completion only.
-- Execute and approve do not increment the ledger.
-- Do not block local file outbox execute because quota is exhausted.
+2) Key location
+- Allowed: environment AEGIS_LLM_API_KEY, or file $AEGIS_DATA_DIR/llm_key (mode 0600 if created by a helper).
+- Forbidden: core/, app/, scripts/ committed secrets, entitlement.json, quota.json.
+- Helper may exist only as a documented path; do not create a key in the developer's real home during tests.
 
-3) Operator status JSON
-- One English field: quota_remaining (int) and quota_state = ok | exhausted | unset.
-- Do not print secrets.
+3) README Now
+- One sentence: optional HTTP adapter is labeled; missing key or missing base URL stays Echo; keys live in the environment or AEGIS_DATA_DIR, never in the git tree.
+- Do not claim a paid model is bundled.
 
-4) README Now
-- One sentence: a local quota.json under AEGIS_DATA_DIR tracks a monthly allowance; remaining zero keeps complete_safe on Echo; execute still writes local receipts; no payments in core.
-
-5) tests/test_t156_quota_ledger.py
-- test_missing_file_remaining_is_zero
-- test_increment_stops_at_zero
-- test_exhausted_forces_echo_even_if_http_configured
-- test_execute_does_not_increment_quota
-- test_quota_module_does_not_import_stripe
-- Use tmp_path. Do not write the developer's real $HOME/.aegis. Do not start uvicorn.
+4) tests/test_t157_labeled_paid_adapter.py
+- test_missing_key_does_not_open_socket
+- test_http_status_does_not_echo_key_material
+- test_repo_tree_has_no_committed_llm_key_file
+- test_quota_exhausted_still_wins_over_http
+- test_readme_says_echo_when_key_missing
+- Use tmp_path. Do not start uvicorn. Do not hit a public host.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; p=Path('core/quota_ledger.py'); t=p.read_text() if p.is_file() else ''; r=Path('README.md').read_text(); print(p.is_file() or 'quota.json' in r, 'stripe' not in (t+r).lower(), 'quota_exhausted' in r or 'quota.json' in r)"
-   Required: True True True
+   ./.venv/bin/python -c "from pathlib import Path; r=Path('README.md').read_text(); keys=list(Path('.').rglob('*llm_key*')); tracked=[p for p in keys if '.git' not in p.parts and '.venv' not in p.parts and 'AEGIS_DATA_DIR' not in str(p)]; print('Echo' in r and ('key' in r.lower()), not any(p.suffix in {'.txt','.json','.pem',''} and p.is_file() and 'test' not in p.as_posix() for p in tracked if p.name=='llm_key'))"
+   Required: True True
 4. ./.venv/bin/python -m pytest -q
    Required: 0 failed
 5. git add -A (do not force-add .kms/ or $HOME/.aegis/; do not delete _directive.txt)
-6. git commit -m "feat(t156): local quota ledger outside execute"
+6. git commit -m "feat(t157): labeled HTTP adapter without key in core"
 7. git push origin main
 8. Print new SHA, pytest count, and the proof line.
 

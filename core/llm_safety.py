@@ -179,7 +179,33 @@ def complete_safe(
     if quota_exhausted:
         force_echo = True
 
-    from core.llm_provider import EchoProvider
+    from core.llm_provider import EchoProvider, http_requested, load_llm_key
+
+    _http_requested = http_requested()
+    _llm_key = load_llm_key()
+    _llm_key_present = _llm_key is not None
+
+    # T157 — when HTTP is requested but the key is missing (both env
+    # and data-dir file), do not open a socket; return Echo and label
+    # the path ``echo_missing_key``.
+    if _http_requested and not _llm_key_present:
+        result = {
+            "text": "echo: no llm key configured",
+            "model": model,
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+            "tool": "",
+            "ok": True,
+            "provider_kind": "echo",
+            "llm_path": "echo_missing_key",
+            "llm_key_present": False,
+            "quota_state": "ok" if not quota_exhausted else "exhausted",
+        }
+        if quota_exhausted:
+            result["quota_label"] = "quota_exhausted"
+        _ledger_best_effort(tenant_id, result)
+        return result
 
     provider = get_provider()
     if force_echo:
@@ -237,6 +263,8 @@ def complete_safe(
         "ok": ok,
         "provider_kind": provider_kind,
         "quota_state": "exhausted" if quota_exhausted else "ok",
+        "llm_path": "http_labeled" if provider_kind == "http" else "echo",
+        "llm_key_present": _llm_key_present,
     }
     if quota_exhausted:
         result["quota_label"] = "quota_exhausted"

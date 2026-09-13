@@ -70,6 +70,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Local signed entitlement issuer CLI** — `scripts/issue_entitlement.py` writes a signed local `entitlement.json` under `AEGIS_DATA_DIR`; the default remains Echo-limited when the file is missing; no payments in core.
 - **Remote cannot unlock without local file** — a remote license-status body cannot unlock a tier when the local entitlement file is missing, expired, mutated, or bound to another tenant; the remote may only confirm or report unreachable.
 - **Local quota ledger** — a local `quota.json` under `AEGIS_DATA_DIR` tracks a monthly allowance; remaining zero keeps `complete_safe` on Echo; execute still writes local receipts; no payments in core.
+- **Labeled HTTP adapter, no key in core** — the optional HTTP adapter is labeled; a missing key or missing base URL stays Echo; keys live in the environment or `AEGIS_DATA_DIR`, never in the git tree.
 
 ---
 
