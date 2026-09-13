@@ -1,40 +1,53 @@
-T163 — Single-instance lock + Status HTML duration and token cost. This is slice 1 of 4. Do ONLY this directive. Do not start T164. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not strip CTO in this slice. Do not rebuild the Mac pack. Do not add Stripe, a card form, a live license host, Grok bots, voice, Windows, WebSockets, Playwright, OS cron, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T162. English only in repo files. Do not copy $HOME/.aegis.
+T164 — Strip CTO from operator copy AND rebuild the giveable local pack. This is the last Hermes slice before the amin account trial. Do ONLY this directive. Do not start T166. Do not read task_instruction.txt. Do not rewrite LICENSE. Do not rewrite the README Author paragraph. Do not add Stripe, a card form, a live license host, Grok bots, voice, Windows, WebSockets, Playwright, OS cron, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T163. English only in repo files. Do not copy $HOME/.aegis. Do not copy owner PII into the pack.
 
-Baseline: T162 live ceea3bbf301ad187a0c994146c2619114597067f. pytest 891 passed 1 skipped.
+Baseline: T163 live ebe8fda. pytest 896 passed 1 skipped.
 
-GOAL: A second start_operator.sh on the same port must fail with a typed English error. The Home/Status panel on the operator page must show duration_ms and http_token_cost from the existing status JSON.
+GOAL: Operator-facing strings and specialist templates have no word CTO. Then one giveable pack is rebuilt from this same commit so a stranger folder can start without the git repo.
 
-Implement both. Do not split. Commit and push in this same session before you stop.
+Implement both parts in this session. Commit the code first, then build the pack from that commit, then push. Dist artifacts stay gitignored.
 
-1) Single-instance lock
-- When the engine binds 127.0.0.1:8741, write a lock file under AEGIS_DATA_DIR that records pid and port.
-- A second process that finds that port already bound must exit non-zero and print typed English: port 8741 already in use.
-- Do not kill the first process. Do not bind another port. Stale lock from a dead pid may be replaced.
+PART A — operator copy
+1) Operator HTML and any checked-in app.html / desktop operator page: remove the word CTO from visible labels, placeholders, sample goals, and helper text. Keep role default as AI Architect or Operator.
+2) Specialist templates: if a propose template or sample brief still says CTO, replace with operator or architect wording. Six specialists stay six.
+3) New profile saves: if the commit-profile path writes a default goals string that contains CTO, change only that default. Do not migrate the live $HOME/.aegis profile.
 
-2) Status HTML
-- The Home/Status panel that today shows the health JSON must also show duration_ms and http_token_cost.
-- Echo keeps http_token_cost at 0. Do not invent billing.
+PART B — giveable pack
+4) Rebuild the existing pack builder so dist output includes:
+   - start_operator.sh at the pack root
+   - operator page / app bundle already used by T149–T150
+   - INSTALL.md that says copy the pack to the operator $HOME, not /Users/Shared
+   - entitlement.example.json only; never a live entitlement with owner data
+   - AEGIS_DATA_DIR=$HOME/.aegis and port 8741
+   - script does not open Safari or any browser
+5) Pack proof test in tests/test_t164_pack_root.py:
+   - pack root contains start_operator.sh
+   - INSTALL.md tells the operator to copy into $HOME
+   - start_operator.sh does not call open or xdg-open
+   - pack does not contain .git, _directive.txt, or $HOME/.aegis
+6) Do not run the pack as the live operator on hermesdev data. Build only. Owner copies later on the amin account.
 
-3) tests/test_t163_single_instance_status_html.py
-- test_second_bind_on_same_port_fails_typed
-- test_stale_lock_from_dead_pid_is_replaced
-- test_status_html_or_json_includes_duration_ms
-- test_status_html_or_json_includes_http_token_cost
-- test_echo_http_token_cost_is_zero
-- Do not start a second live uvicorn in CI if a socket fixture can prove the lock. Use tmp_path. Do not write the developer's real $HOME/.aegis.
+PART C — tests for copy
+7) tests/test_t164_no_cto_operator_copy.py
+   - test_operator_html_has_no_cto
+   - test_specialist_templates_have_no_cto
+   - test_default_goals_string_has_no_cto
+   - test_license_file_not_rewritten
+   - test_readme_author_paragraph_still_present
+   Scan operator HTML and specialist template sources only. Do not fail on historical STATUS notes or this directive file.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. If the tool budget is low after pytest, skip commentary and do git commit + push immediately.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; t=Path('tests/test_t163_single_instance_status_html.py'); html=Path('app/static/index.html') if Path('app/static/index.html').exists() else Path('app.html'); print(t.is_file(), html.exists())"
+   ./.venv/bin/python -c "from pathlib import Path; print(Path('tests/test_t164_no_cto_operator_copy.py').is_file(), Path('tests/test_t164_pack_root.py').is_file())"
    Required: True True
 4. ./.venv/bin/python -m pytest -q
    Required: 0 failed
-5. git add -A (do not force-add .kms/ or $HOME/.aegis/; do not delete _directive.txt)
-6. git commit -m "feat(t163): single-instance lock and status duration on page"
-7. git push origin main
-8. Print new SHA, pytest count, and the proof line.
+5. Build the pack with the existing builder script if present. Do not commit dist/.
+6. git add -A (do not force-add dist/, .kms/, or $HOME/.aegis/; do not delete _directive.txt)
+7. git commit -m "feat(t164): strip CTO from operator copy and rebuild local pack"
+8. git push origin main
+9. Print new SHA, pytest count, and the proof line.
 
 Stop only after a successful push. Do nothing else.
