@@ -123,3 +123,5 @@ T171 notary submit path is wired; NOTARIZED prints only after stapler validate; 
 T172 stranger pack rebuilds with home copy and optional venv; live shop remains locked.
 
 T173 local fulfill is grant-gated and outside execute; live Stripe shop remains locked.
+
+T174 loop depth uses durable notes and profile; multi-month twin remains locked.

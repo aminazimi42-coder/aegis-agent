@@ -85,6 +85,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Status on page** — the Home / Status panel shows `duration_ms` and `http_token_cost` from the platform status JSON alongside the health check; Echo keeps `http_token_cost` at zero.
 - **External checkout URL (optional)** — `AEGIS_CHECKOUT_URL` is an optional external link surfaced on the operator status payload; when unset the state is `checkout_unset`; when set the operator sees a text link labeled "External checkout". No card form lives in the twin core; expiry still returns Echo-limited; no paid shop is deployed.
 - **Local fulfill outside execute** — `app/licensing/fulfill.py` writes `entitlement.json` only when a local grant (`AEGIS_FULFILL_GRANT`) and issuer key (`AEGIS_ENTITLEMENT_ISSUER_KEY` or key file) are present; a missing grant or key writes nothing. Execute does not take payment; no paid shop is deployed.
+- **Loop depth from durable notes and profile** — the next propose response reads the last reject reason and last approve note from the durable feedback store and includes both when present; the weekly brief uses the saved profile name, role, goals, and timezone; the Approved strip stays. This is Echo, not a multi-month behavioral twin.
 
 ---
 

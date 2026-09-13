@@ -1408,23 +1408,27 @@ def create_app() -> FastAPI:
                 }
             )
         # T138 — surface the last reject reason on the next propose card.
-        # If the tenant has a stored reject note, include it in the response
-        # so the next card shows why the previous proposal was rejected.
-        # Approve notes do not replace the reject reason.  When no reject
-        # exists the field is omitted entirely.
+        # T174 — also surface the last approve note so the next card carries
+        # both the prior reject reason and the prior approve note from the
+        # durable feedback store.  When no reject or approve note exists the
+        # respective field is omitted entirely.
         from core.twin_actions import list_recent_notes
 
         notes = list_recent_notes(request.tenant_id, n=10)
         last_reject_reason: str | None = None
+        last_approve_note: str | None = None
         for note in notes:
-            if note.get("decision") == "reject":
+            if note.get("decision") == "reject" and last_reject_reason is None:
                 reason_text = note.get("why_text", "") or ""
                 reason_enum = note.get("reason") or ""
                 if reason_text:
                     last_reject_reason = reason_text
                 elif reason_enum:
                     last_reject_reason = reason_enum
-                break
+            elif note.get("decision") == "approve" and last_approve_note is None:
+                approve_text = note.get("why_text", "") or ""
+                if approve_text:
+                    last_approve_note = approve_text
         result: dict[str, Any] = {
             "tenant_id": request.tenant_id,
             "proposals": proposals,
@@ -1433,6 +1437,8 @@ def create_app() -> FastAPI:
         }
         if last_reject_reason is not None:
             result["last_reject_reason"] = last_reject_reason
+        if last_approve_note is not None:
+            result["last_approve_note"] = last_approve_note
         return result
 
     # --- Local buyer one-pager export (T136) ---
