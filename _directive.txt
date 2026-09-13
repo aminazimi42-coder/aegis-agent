@@ -1,48 +1,46 @@
-T154 — Local signed entitlement issuer CLI. This is pack instruction 2 of 6. Do ONLY this directive. Do not start T155. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a card form, a live license host, Apple notarization, Grok bots, voice, Windows installer, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T153. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates. Do not claim a paid shop or a deployed license server.
+T155 — Remote cannot unlock without a local file. This is pack instruction 3 of 6. Do ONLY this directive. Do not start T156. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a card form, a live license host, Apple notarization, Grok bots, voice, Windows installer, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T154. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates. Do not claim a paid shop or a deployed license server.
 
-Baseline: T153 live 0cc3b17ec77969686a04734b158317185176cf30. pytest 845 passed 1 skipped. Live entitlement is only $AEGIS_DATA_DIR/entitlement.json. Missing file is Echo-limited. Pack ships entitlement.example.json. Optional AEGIS_LICENSE_STATUS_URL cannot unlock without the local file. There is no repo command that issues a signed local entitlement.
+Baseline: T154 live feb4c7. pytest 850 passed 1 skipped. Local issuer writes signed entitlement.json under AEGIS_DATA_DIR. Optional AEGIS_LICENSE_STATUS_URL is a labeled GET default off. T151 already says remote must not unlock when the local file is missing. This slice hardens that rule against a lying remote body.
 
-GOAL: One local CLI writes a signed entitlement.json under AEGIS_DATA_DIR. Signing stays on the laptop. Propose and execute do not call the issuer. No HTTP. No Stripe.
+GOAL: A remote JSON that says professional or valid must leave the tenant Echo-limited when entitlement.json is missing, expired, mutated, foreign-tenant, or has a broken signature. Propose and execute still do not call the status client.
 
 Implement:
 
-1) scripts/issue_entitlement.py (or extend the existing entitlement module — do not fork a second schema)
-- Reads AEGIS_DATA_DIR (default $HOME/.aegis) and writes entitlement.json there only.
-- Arguments: --tenant (required), --tier (echo|professional), --days (int, default 30), --key-file (optional path to a local issuer secret).
-- Canonical JSON payload: tenant_id, tier, issued_at (UTC), expires_at (UTC), issuer=local-cli.
-- Signature: HMAC-SHA256 hex over the canonical UTF-8 payload using the issuer secret.
-- If --key-file is omitted, read AEGIS_ENTITLEMENT_ISSUER_KEY from the environment. If both missing, refuse with a typed English error and write nothing.
-- Never print the secret. Never write the secret into entitlement.json.
-- Never POST. Never import Stripe. Never open a socket.
+1) Entitlement resolve path (extend the existing reader — do not add a second source of truth)
+- Resolve order stays: local file first, remote never grants.
+- If local file is absent: result is Echo-limited even when a mocked remote body is {tier: professional, status: ok, expires_at: far future}.
+- If local file is expired, mutated, foreign tenant, or bad HMAC: same Echo-limited result; ignore remote tier.
+- If local file is valid and unexpired: local tier wins; remote may only confirm or report unreachable.
+- Do not write a remote body onto disk. Do not merge remote fields into entitlement.json.
 
-2) Verification of the file stays in the existing entitlement reader
-- A file issued by this CLI must be accepted when tenant matches and expiry is in the future.
-- A file with a broken signature or a foreign tenant stays Echo-limited.
-- Do not change propose or execute to call the CLI.
+2) Operator status payload
+- Keep license_check values from T151.
+- When remote claims a higher tier than the local file allows, do not display that higher tier.
 
 3) README Now
-- One sentence: scripts/issue_entitlement.py writes a signed local entitlement.json under AEGIS_DATA_DIR; default remains Echo-limited when the file is missing; no payments in core.
+- One sentence: a remote license-status body cannot unlock a tier when the local entitlement file is missing, expired, mutated, or bound to another tenant.
 - Do not claim a license server is deployed.
 
-4) tests/test_t154_issue_entitlement.py
-- test_cli_writes_signed_file_under_data_dir
-- test_cli_refuses_without_key
-- test_broken_signature_stays_echo_limited
-- test_foreign_tenant_file_does_not_apply
-- test_issue_module_does_not_import_stripe_or_open_socket
-- Use tmp_path. Do not write into the developer's real $HOME/.aegis. Do not start uvicorn.
+4) tests/test_t155_remote_cannot_unlock.py
+- test_missing_local_file_ignores_professional_remote_body
+- test_expired_local_file_ignores_remote_ok
+- test_foreign_tenant_local_file_ignores_remote_ok
+- test_broken_hmac_ignores_remote_ok
+- test_valid_local_file_keeps_local_tier_if_remote_disagrees
+- test_propose_execute_still_do_not_import_status_client
+- Mock HTTP. Use tmp_path. Do not start uvicorn. Do not hit a public host.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; p=Path('scripts/issue_entitlement.py'); t=p.read_text() if p.is_file() else ''; print(p.is_file(), 'stripe' not in t.lower(), 'socket' not in t.lower() or 'opensocket' not in t.lower())"
-   Required: True True True
+   ./.venv/bin/python -c "from pathlib import Path; r=Path('README.md').read_text(); print('cannot unlock' in r.lower() or 'missing' in r.lower() and 'remote' in r.lower(), 'stripe' not in r.lower())"
+   Required: True True
 4. ./.venv/bin/python -m pytest -q
    Required: 0 failed
 5. git add -A (do not force-add .kms/ or $HOME/.aegis/; do not delete _directive.txt)
-6. git commit -m "feat(t154): local signed entitlement issuer CLI"
+6. git commit -m "fix(t155): remote status cannot unlock without local file"
 7. git push origin main
 8. Print new SHA, pytest count, and the proof line.
 
