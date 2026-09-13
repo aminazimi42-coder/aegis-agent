@@ -82,7 +82,7 @@ checks. The latest verification result is:
 - Finalized branding and ownership attribution for Azimi Innovation Lab and
   AI Architect Amin Azimi.
 - Added deployment configuration for Render and Docker-based hosting.
-- hermesdev has a valid Developer ID Application identity (Team ID 3J54UZPZW3); the codesign script signs when that identity and the app bundle exist; the shipped tree has no notarize ticket. Apple-accepted notarize, live Stripe, and a real cloud license host remain locked — Planned, not shipped.
+- T168 notary path landed: the codesign script submits to notarytool only when AEGIS_NOTARY_PROFILE is set; NOTARIZED prints only after stapler validate exits 0; without the profile it prints NOTARY_SKIPPED. Live Stripe and a real cloud license host remain locked — Planned, not shipped.
 
 ## Safe handoff state
 

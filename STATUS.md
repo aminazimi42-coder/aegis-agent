@@ -112,4 +112,4 @@ T159–T162 local hardening pack landed: tool writes caged to `AEGIS_DATA_DIR`; 
 
 T163 single-instance lock and status-on-page landed: `start_operator.sh` writes a lock file under `AEGIS_DATA_DIR` recording pid and port; a second start on the same port exits non-zero with the typed English error `port 8741 already in use`; a stale lock from a dead pid is replaced; the Home / Status panel shows `duration_ms` and `http_token_cost` from the platform status JSON; Echo keeps `http_token_cost` at zero.
 
-T167 Apple Developer ID signing landed on hermesdev: the machine has a valid Developer ID Application identity (Team ID 3J54UZPZW3), and the codesign script signs when that identity and the app bundle exist; the shipped tree has no notarize ticket. Apple-accepted notarize, live Stripe, and a real cloud license host remain locked — Planned, not shipped.
+T168 notary path landed: the codesign script submits to notarytool only when AEGIS_NOTARY_PROFILE is set; NOTARIZED prints only after stapler validate exits 0; without the profile it prints NOTARY_SKIPPED. Live Stripe and a real cloud license host remain locked — Planned, not shipped.

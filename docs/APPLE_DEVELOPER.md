@@ -31,11 +31,18 @@ Keychain on hermesdev.  They are never copied into the git repository.
 
 ## Notarize
 
-Notarize is a later owner action after a signed app exists.  No notarize
-ticket exists yet.  The codesign script prints `NOTARY_LOCKED_UNTIL_TICKET`
-and does not invoke notarytool or stapler.
+On **hermesdev** only, the owner creates a notarytool keychain profile with
+`xcrun notarytool store-credentials` and exports the profile name as
+`AEGIS_NOTARY_PROFILE` in the environment.  The codesign script submits to
+notarytool with that keychain profile only — no Apple ID or password flags
+are passed.  After notarytool reports Accepted, the script runs
+`stapler staple` then `stapler validate`; it prints `NOTARIZED` only if
+`stapler validate` exits 0.  Without the profile the script prints
+`NOTARY_SKIPPED` and exits 0.
 
-## What this does not do
+The profile name stays in the environment, never in git.
 
-- No Stripe. No payment processing in this repository.
-- No license host URL is required for this slice.
+Signing and notarizing happen on **hermesdev**, never on the **amin** account.
+
+No dollar amount or payment date is recorded in this repository.  No Stripe
+and no license host URL are required for this slice.

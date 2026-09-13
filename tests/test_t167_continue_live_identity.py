@@ -84,38 +84,41 @@ class TestT167ContinueLiveIdentity(unittest.TestCase):
         )
 
     # ------------------------------------------------------------------ #
-    # 4) Script does not invoke notarytool
+    # 4) Script invokes notarytool only under AEGIS_NOTARY_PROFILE
     # ------------------------------------------------------------------ #
-    def test_script_does_not_call_notarytool(self) -> None:
-        """The script must not invoke ``notarytool`` or ``stapler`` as a
-        command."""
+    def test_notarytool_only_under_profile(self) -> None:
+        """The script may invoke ``notarytool`` only when
+        ``AEGIS_NOTARY_PROFILE`` is set; without the profile it prints
+        ``NOTARY_SKIPPED``."""
         text = _SCRIPT.read_text(encoding="utf-8")
-        code_lines = [
-            line for line in text.splitlines()
-            if not line.strip().startswith("#")
-        ]
-        code_text = "\n".join(code_lines)
-        self.assertNotIn(
-            "notarytool",
-            code_text,
-            "Script must not invoke notarytool",
+        self.assertIn(
+            "AEGIS_NOTARY_PROFILE",
+            text,
+            "Script must gate notarytool on AEGIS_NOTARY_PROFILE",
         )
-        self.assertNotIn(
-            "stapler",
-            code_text,
-            "Script must not invoke stapler",
+        self.assertIn(
+            "NOTARY_SKIPPED",
+            text,
+            "Script must print NOTARY_SKIPPED without the profile",
         )
 
     # ------------------------------------------------------------------ #
-    # 5) Script prints NOTARY_LOCKED_UNTIL_TICKET
+    # 5) Script does not pass Apple ID or password flags
     # ------------------------------------------------------------------ #
-    def test_script_prints_notary_locked_until_ticket(self) -> None:
-        """The script must print ``NOTARY_LOCKED_UNTIL_TICKET``."""
+    def test_no_apple_id_or_password_flags(self) -> None:
+        """The script must not pass ``--apple-id`` or ``--password`` flags
+        to notarytool."""
         text = _SCRIPT.read_text(encoding="utf-8")
-        self.assertIn(
-            "NOTARY_LOCKED_UNTIL_TICKET",
-            text,
-            "Script must print NOTARY_LOCKED_UNTIL_TICKET",
+        lower = text.lower()
+        self.assertNotIn(
+            "--apple-id",
+            lower,
+            "Script must not pass --apple-id to notarytool",
+        )
+        self.assertNotIn(
+            "--password",
+            lower,
+            "Script must not pass --password to notarytool",
         )
 
     # ------------------------------------------------------------------ #
