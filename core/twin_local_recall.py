@@ -27,7 +27,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from core.twin_local_view import data_root
+from core.twin_local_view import cage_path, data_root
 
 # ---------------------------------------------------------------------------#
 # Tenant directory discovery
@@ -209,7 +209,7 @@ def signed_export(tenant_id: str, name: str | None = None) -> dict[str, Any]:
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     fname = name if name else f"{tenant_id}_{stamp}.md"
-    out_path = export_dir / fname
+    out_path = cage_path(export_dir / fname)
 
     lines: list[str] = [
         f"# Export — {tenant_id}",

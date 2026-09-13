@@ -106,6 +106,34 @@ def data_root() -> Path:
     return root
 
 
+def cage_path(path: str | Path) -> Path:
+    """Resolve *path* and return it only when it stays inside the data root.
+
+    T159 — tool-output path cage.  Before any local file write from a
+    tool or export helper, the destination must be resolved and checked
+    against ``data_root()``.  When the resolved path escapes the data
+    root, ``ValueError("path outside AEGIS_DATA_DIR")`` is raised — a
+    typed English rejection with no write and no execute of the
+    rejected path.
+
+    Relative paths are resolved against the data root so that a bare
+    filename lands inside the root by default.  The returned path is
+    the original (un-resolved) path so callers that string-compare
+    against ``AEGIS_DATA_DIR`` keep working.
+    """
+    root = data_root()
+    dest = Path(path)
+    if not dest.is_absolute():
+        dest = root / dest
+    root_resolved = root.resolve()
+    dest_resolved = dest.resolve()
+    try:
+        dest_resolved.relative_to(root_resolved)
+    except ValueError:
+        raise ValueError("path outside AEGIS_DATA_DIR") from None
+    return dest
+
+
 def provider_status() -> dict[str, Any]:
     """Return a dict describing which LLM path is active.
 

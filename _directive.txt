@@ -1,44 +1,42 @@
-T158 — Codesign script, no notarized claim. This is pack instruction 6 of 6. Do ONLY this directive. Do not start T159. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a card form, a live license host, Grok bots, voice, Windows installer, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T157. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates. Do not claim the app is notarized, in the App Store, or signed with a Developer ID that this machine does not have.
+T159 — Tool-output path cage + no invented profile facts + one Now sentence. This is slice 1 of 4. Do ONLY this directive. Do not start T160. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a card form, a live license host, Grok bots, voice, Windows installer, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T158. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates.
 
-Baseline: T157 live 982958b274c9b2bef5a0ee0aa2532bce2c1c3ca3. pytest 867 passed 1 skipped. dist/AegisOperator-mac is an unsigned installer folder. There is no Apple Developer ID on this pack. Notarization stays locked until the owner says start Developer ID.
+Baseline: T158 live b5e7ce69b9a672f950ba1e352ed2584379ef75f6. pytest 871 passed 1 skipped.
 
-GOAL: One local script documents and attempts codesign/notarytool only when a Developer ID identity exists. If no identity is found, the script prints UNSIGNED and exits 0 for the dry path. README still says unsigned.
+GOAL: Local tool writes stay under AEGIS_DATA_DIR. Propose text must not invent profile facts that the stored profile does not contain. README Now records the 2026-09-13 hermesdev laptop smoke as a proven fact, nothing more.
 
 Implement:
 
-1) scripts/codesign_operator.sh
-- Accepts the path to Aegis Operator.app (default dist/AegisOperator-mac/Aegis Operator.app if present).
-- If codesign is missing or no Developer ID Application identity is in the keychain: print one English block UNSIGNED: no Developer ID identity; do not call notarytool; exit 0.
-- If an identity exists: run codesign --force --deep --options runtime --sign "$IDENTITY" on the app; do not invent an identity string.
-- Notary submit only when AEGIS_NOTARY_PROFILE is set; otherwise skip notary and print NOTARY_SKIPPED.
-- Never claim success as notarized unless stapler validate would pass. This slice does not require stapler to pass.
-- Do not open Safari. Do not upload the app anywhere except notarytool when the profile is set.
+1) Tool-output path cage
+- Before any local file write from a tool or export helper, resolve the destination and reject it unless the resolved path is inside AEGIS_DATA_DIR (default $HOME/.aegis).
+- Rejection is typed English, no write, no execute of the rejected path.
+- Do not add a new shared blackboard. Reuse the existing allow-list / complete_safe / export helpers.
 
-2) README Now
-- One sentence: scripts/codesign_operator.sh signs only when a Developer ID identity is present; without it the Mac folder stays unsigned and is not App Store software.
-- Do not move Developer ID into Now as completed.
+2) No invented profile facts
+- When building a propose body, do not add name, role, goals, timezone, or other profile fields that are absent from the stored local profile.
+- If a field is missing, omit it. Do not guess. Echo path included.
 
-3) STATUS.md
-- One line: T153–T158 local commercialization pack landed; Apple-accepted notarize, live Stripe, and a real cloud license host remain locked.
+3) README Now — one sentence only, honest:
+- 2026-09-13 hermesdev laptop smoke: start_operator.sh with AEGIS_DATA_DIR=$HOME/.aegis on port 8741; session twin-d6587b37304f; Echo-limited missing_file; six distinct proposes; Approve Alina act-ba2c8b6e1d3f stayed on the Approved strip; signed export $HOME/.aegis/export/local_20260913T122824Z.md sha256 51c0e5085d82; Reveal in Finder showed that file.
+- Do not call this a stranger trial. Do not call the app notarized. Do not invent a third friend.
 
-4) tests/test_t158_codesign_script.py
-- test_script_exists_and_mentions_unsigned
-- test_readme_does_not_claim_notarized_or_app_store
-- test_status_says_notarize_still_locked
-- test_script_dry_path_does_not_require_apple_id
-- Do not run notarytool against Apple in CI. Do not start uvicorn.
+4) tests/test_t159_tool_path_and_profile.py
+- test_tool_write_outside_data_dir_rejected
+- test_tool_write_inside_data_dir_allowed_shape
+- test_propose_omits_absent_profile_fields
+- test_readme_records_hermesdev_20260913_smoke
+- Do not start uvicorn. Do not write into the developer's real $HOME/.aegis; use tmp_path.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; s=Path('scripts/codesign_operator.sh').read_text() if Path('scripts/codesign_operator.sh').is_file() else ''; r=Path('README.md').read_text(); st=Path('STATUS.md').read_text() if Path('STATUS.md').is_file() else ''; print(Path('scripts/codesign_operator.sh').is_file(), 'UNSIGNED' in s, 'notarized' not in r.lower() and 'App Store' not in r, 'locked' in st.lower() or 'notarize' in st.lower())"
+   ./.venv/bin/python -c "from pathlib import Path; r=Path('README.md').read_text(); print('twin-d6587b37304f' in r, '122824Z' in r, '51c0e5085d82' in r, Path('tests/test_t159_tool_path_and_profile.py').is_file())"
    Required: True True True True
 4. ./.venv/bin/python -m pytest -q
    Required: 0 failed
 5. git add -A (do not force-add .kms/ or $HOME/.aegis/; do not delete _directive.txt)
-6. git commit -m "chore(t158): codesign script without notarized claim"
+6. git commit -m "feat(t159): cage tool paths and record 2026-09-13 laptop smoke"
 7. git push origin main
 8. Print new SHA, pytest count, and the proof line.
 

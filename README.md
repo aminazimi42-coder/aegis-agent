@@ -72,6 +72,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Local quota ledger** — a local `quota.json` under `AEGIS_DATA_DIR` tracks a monthly allowance; remaining zero keeps `complete_safe` on Echo; execute still writes local receipts; no payments in core.
 - **Labeled HTTP adapter, no key in core** — the optional HTTP adapter is labeled; a missing key or missing base URL stays Echo; keys live in the environment or `AEGIS_DATA_DIR`, never in the git tree.
 - **Codesign script, unsigned without identity** — `scripts/codesign_operator.sh` signs only when a Developer ID identity is present; without it the Mac folder stays unsigned and is not store-distributed software.
+- **2026-09-13 hermesdev laptop smoke** — `start_operator.sh` with `AEGIS_DATA_DIR=$HOME/.aegis` on port 8741; session `twin-d6587b37304f`; Echo-limited `missing_file`; six distinct proposes; Approve Alina `act-ba2c8b6e1d3f` stayed on the Approved strip; signed export `$HOME/.aegis/export/local_20260913T122824Z.md` sha256 `51c0e5085d82`; Reveal in Finder showed that file.
 
 ---
 

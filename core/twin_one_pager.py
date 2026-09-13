@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from core.twin_interview import get_latest_profile
-from core.twin_local_view import data_root
+from core.twin_local_view import cage_path, data_root
 
 
 def _exports_dir() -> Path:
@@ -69,7 +69,7 @@ def render_buyer_one_pager(tenant_id: str) -> dict[str, Any]:
 
     slug = _safe_filename_component(display_name)
     filename = f"buyer_one_pager_{slug}.md"
-    out_path = _exports_dir() / filename
+    out_path = cage_path(_exports_dir() / filename)
 
     now = datetime.now(timezone.utc).isoformat()
 

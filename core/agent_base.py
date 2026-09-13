@@ -5,6 +5,38 @@ from typing import Any
 
 from core.agent_registry import AGENT_REGISTRY
 
+# T159 — profile fields that may appear in a propose body when present
+# in the stored profile.  Only non-empty values are included; absent
+# fields are omitted rather than invented.
+_PROFILE_FIELDS: tuple[str, ...] = (
+    "role",
+    "decision_style",
+    "tools",
+    "risk_posture",
+    "work_ethics",
+    "repositories",
+)
+
+
+def propose_profile_fields(profile: dict[str, Any] | None) -> dict[str, Any]:
+    """Return only the profile fields that are present and non-empty.
+
+    T159 — when building a propose body, do not add name, role, goals,
+    timezone, or other profile fields that are absent from the stored
+    local profile.  If a field is missing or empty, omit it.  Do not
+    guess.  Echo path included (the ``repositories`` field is the
+    display name).
+    """
+    if profile is None:
+        return {}
+    fields: dict[str, Any] = {}
+    for key in _PROFILE_FIELDS:
+        val = profile.get(key)
+        if val is not None and str(val).strip():
+            fields[key] = val
+    return fields
+
+
 
 class BaseAgent(ABC):
     """Base abstraction for all specialist agents in the platform."""
@@ -61,6 +93,14 @@ class BaseAgent(ABC):
             payload = {"text": text, "body": self._propose_body(text)}
         # T130 — attach the last N local feedback notes to the brief.
         payload["recent_notes"] = list_recent_notes(tenant_id)
+        # T159 — attach only the profile fields that are present in the
+        # stored local profile; do not invent name, role, goals,
+        # timezone, or any field the stored profile does not contain.
+        from core.twin_interview import get_latest_profile
+
+        payload["profile_fields"] = propose_profile_fields(
+            get_latest_profile(tenant_id)
+        )
         return insert_specialist_proposal(
             tenant_id, self.name, title, payload, batch_id=batch_id
         )
