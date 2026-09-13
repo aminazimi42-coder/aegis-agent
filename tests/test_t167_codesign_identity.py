@@ -56,32 +56,18 @@ class TestT167CodesignIdentity(unittest.TestCase):
         )
 
     # ------------------------------------------------------------------ #
-    # 3) Script does not call notarytool in T167
+    # 3) Script does not contain the T167 lock marker
     # ------------------------------------------------------------------ #
-    def test_script_does_not_call_notarytool_in_t167(self) -> None:
-        """The source must contain ``NOTARY_LOCKED_UNTIL_T168`` and must
-        not invoke ``notarytool`` as an unguarded command."""
+    def test_script_does_not_contain_t167_lock_marker(self) -> None:
+        """The source must not contain ``NOTARY_LOCKED_UNTIL_T168`` —
+        T168 replaced the lock marker with skip/pending/notarized
+        states.  notarytool may appear as a guarded command only when
+        AEGIS_NOTARY_PROFILE is set."""
         text = _SCRIPT.read_text(encoding="utf-8")
-        self.assertIn(
+        self.assertNotIn(
             "NOTARY_LOCKED_UNTIL_T168",
             text,
-            "Script must contain NOTARY_LOCKED_UNTIL_T168",
-        )
-        # Filter to non-comment, non-echo lines and check that 'notarytool'
-        # does not appear as an actual command invocation.
-        code_lines = []
-        for line in text.splitlines():
-            stripped = line.strip()
-            if stripped.startswith("#"):
-                continue
-            if stripped.startswith("echo "):
-                continue
-            code_lines.append(line)
-        code_text = "\n".join(code_lines)
-        self.assertNotIn(
-            "notarytool",
-            code_text,
-            "Script must not invoke notarytool as an unguarded command in T167",
+            "Script must not contain NOTARY_LOCKED_UNTIL_T168 after T168",
         )
 
     # ------------------------------------------------------------------ #
