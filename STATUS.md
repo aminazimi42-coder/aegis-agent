@@ -117,3 +117,5 @@ T168 notary path landed: the codesign script submits to notarytool only when AEG
 T169 remote status cannot unlock without local entitlement; Stripe and a deployed host remain locked.
 
 T170 external checkout URL is optional and outside execute; live Stripe shop and deployed license host remain locked.
+
+T171 notary submit path is wired; NOTARIZED prints only after stapler validate; live shop and stranger pack remain locked.

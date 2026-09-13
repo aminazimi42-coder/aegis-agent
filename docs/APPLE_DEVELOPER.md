@@ -29,20 +29,27 @@ Signing does not happen on the amin operator account.
 Raw `.cer`, `.csr`, `.p12`, and `.p8` files stay in Downloads or the
 Keychain on hermesdev.  They are never copied into the git repository.
 
-## Notarize
+## Notarize — hermesdev-only steps
 
-On **hermesdev** only, the owner creates a notarytool keychain profile with
-`xcrun notarytool store-credentials` and exports the profile name as
-`AEGIS_NOTARY_PROFILE` in the environment.  The codesign script submits to
-notarytool with that keychain profile only — no Apple ID or password flags
-are passed.  After notarytool reports Accepted, the script runs
-`stapler staple` then `stapler validate`; it prints `NOTARIZED` only if
-`stapler validate` exits 0.  Without the profile the script prints
-`NOTARY_SKIPPED` and exits 0.
+1. On **hermesdev** only, the owner creates a notarytool keychain profile:
+   `xcrun notarytool store-credentials` — the profile stays on the keychain.
+2. Export the profile name as `AEGIS_NOTARY_PROFILE` in the environment.
+3. Rerun `scripts/codesign_operator.sh` — it submits to notarytool with
+   `--keychain-profile` only (no `--apple-id`, no `--password`, no API-key
+   file path committed).
+4. Wait for Apple to report Accepted, then the script runs
+   `stapler staple` and `stapler validate`.
+5. `NOTARIZED` prints only if `stapler validate` exits 0; otherwise the
+   script prints `NOTARY_PENDING` or `NOTARY_FAILED` and exits 0.
 
-The profile name stays in the environment, never in git.
+The profile name is an environment variable — never a committed secret.
 
-Signing and notarizing happen on **hermesdev**, never on the **amin** account.
+Never run this on the **amin** operator account.
+
+## Raw certificate files (repeated)
+
+Raw `.cer`, `.csr`, `.p12`, and `.p8` files stay in Downloads or the
+Keychain on hermesdev.  They are never copied into the git repository.
 
 No dollar amount or payment date is recorded in this repository.  No Stripe
 and no license host URL are required for this slice.

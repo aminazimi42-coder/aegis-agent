@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# T158/T167/T167_CONTINUE/T168_CONTINUE — Codesign the Aegis Operator.app
+# T158/T167/T167_CONTINUE/T168_CONTINUE/T171 — Codesign the Aegis Operator.app
 # only when a Developer ID Application identity exists in the keychain.
 #
 # If no Developer ID identity is found the script prints UNSIGNED and exits 0
