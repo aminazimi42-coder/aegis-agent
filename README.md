@@ -83,6 +83,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Banner reason** — the Echo-limited banner text includes the existing reason token (`missing_file` or `expired`).
 - **Single-instance lock** — `start_operator.sh` writes a lock file under `AEGIS_DATA_DIR` recording pid and port; a second start on the same port exits non-zero with the typed English error `port 8741 already in use`; a stale lock from a dead pid is replaced.
 - **Status on page** — the Home / Status panel shows `duration_ms` and `http_token_cost` from the platform status JSON alongside the health check; Echo keeps `http_token_cost` at zero.
+- **External checkout URL (optional)** — `AEGIS_CHECKOUT_URL` is an optional external link surfaced on the operator status payload; when unset the state is `checkout_unset`; when set the operator sees a text link labeled "External checkout". No card form lives in the twin core; expiry still returns Echo-limited; no paid shop is deployed.
 
 ---
 
@@ -98,7 +99,7 @@ The road ahead, not yet shipped:
 - **Professional, then Executive, then Engineering** — tier rollout in that order; each tier is a local entitlement file, not a card charge.
 - **Payments never enter core** — billing, if any, lives outside this repository; `core/` stays free of payment logic.
 - **Mac installer trial and Developer ID** — the Mac installer folder will be trialed on owner and amin accounts; signing requires a Developer ID, and the license host remains outside this repo.
-- **Planned: Apple-accepted notarize, live Stripe, cloud license host** — Apple-accepted notarize, a live Stripe payment integration, and a real cloud license host are planned, not shipped; they remain locked until their respective slices land.
+- **Planned: live Stripe account, deployed license host, giveable signed installer** — a live Stripe account, a deployed license host, and a giveable signed installer are planned, not shipped; they remain locked until their respective slices land.
 
 ---
 

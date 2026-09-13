@@ -191,6 +191,7 @@
     <div class="row">
       <span id="entitlement-line" class="muted">Loading entitlement…</span>
     </div>
+    <div id="checkout-offer" style="display:none;"></div>
   </div>
 
   <!-- ── Home / Status ───────────────────────────────────────────── --> -->
@@ -875,6 +876,21 @@
       } else {
         ln.textContent = "Tier: " + tier + " — no expiry" + lcLabel;
         ln.className = "muted";
+      }
+      // T170 — optional external checkout link (default off).
+      // Show a text link only when checkout_offered is true and a
+      // checkout_url is present.  No card form, no payment embed.
+      var co = el("checkout-offer");
+      if (co) {
+        var offered = data.checkout_offered === true;
+        var coUrl = data.checkout_url || "";
+        if (offered && coUrl) {
+          co.innerHTML = '<a href="' + esc(coUrl) + '" target="_blank" rel="noopener noreferrer">External checkout</a>';
+          co.style.display = "block";
+        } else {
+          co.innerHTML = "";
+          co.style.display = "none";
+        }
       }
     });
   }

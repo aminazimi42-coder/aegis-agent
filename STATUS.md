@@ -115,3 +115,5 @@ T163 single-instance lock and status-on-page landed: `start_operator.sh` writes 
 T168 notary path landed: the codesign script submits to notarytool only when AEGIS_NOTARY_PROFILE is set; NOTARIZED prints only after stapler validate exits 0; without the profile it prints NOTARY_SKIPPED. Live Stripe and a real cloud license host remain locked — Planned, not shipped.
 
 T169 remote status cannot unlock without local entitlement; Stripe and a deployed host remain locked.
+
+T170 external checkout URL is optional and outside execute; live Stripe shop and deployed license host remain locked.

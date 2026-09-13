@@ -1612,6 +1612,17 @@ def create_app() -> FastAPI:
         except Exception:
             pass
 
+        # T170 — optional external checkout URL (default off).
+        # When AEGIS_CHECKOUT_URL is set, checkout_state is "url_ready"
+        # and checkout_offered is True; the operator page shows a text
+        # link labeled "External checkout".  No card form is rendered.
+        from app.licensing.checkout import checkout_url as _checkout_url
+
+        checkout = _checkout_url()
+        checkout_state = checkout.get("checkout_state", "checkout_unset")
+        checkout_offered = checkout_state == "url_ready"
+        checkout_url_val = checkout.get("checkout_url") if checkout_offered else None
+
         # T156 — local quota ledger (quota.json under AEGIS_DATA_DIR).
         # Surface the monthly allowance remaining and a typed state label
         # so the operator page can show the quota line.
@@ -1626,6 +1637,9 @@ def create_app() -> FastAPI:
             "license_source": license_source,
             "quota_remaining": _quota_remaining(tenant_id),
             "quota_state": _quota_state(tenant_id),
+            "checkout_state": checkout_state,
+            "checkout_offered": checkout_offered,
+            "checkout_url": checkout_url_val,
         }
 
     # --- Serve the operator page on loopback (T107) --- #
