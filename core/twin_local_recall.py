@@ -224,6 +224,10 @@ def signed_export(tenant_id: str, name: str | None = None) -> dict[str, Any]:
         lines.append(f"- {d.relative_to(root)}")
     lines.append("")
     body = "\n".join(lines)
+    # T162 — redact secret-shaped substrings from the export body.
+    from core.redact import redact as _redact
+
+    body = _redact(body)
     sha = hashlib.sha256(body.encode("utf-8")).hexdigest()
     full = body + f"sha256: {sha}\n"
     out_path.write_text(full, encoding="utf-8")

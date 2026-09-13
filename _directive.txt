@@ -1,17 +1,52 @@
-T161 CONTINUE — finish only. Do not start T162. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not change product behavior beyond what T161 already implemented. English only.
+T162 — Status cost + adapter timeout + banner reason + extra redact + honest Now lines. This is slice 4 of 4. LAST slice. Do ONLY this directive. Do not start T163. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a card form, a live license host, Grok bots, voice, Windows, WebSockets, Playwright, OS cron, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T161. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates.
 
-The five tests in tests/test_t161_conflict_why.py already passed. Finish verification and publish.
+Baseline: T161 live 1822d4d0fca51475e9dd34a2572fc031b2b4dc08. pytest 885 passed 1 skipped.
+
+GOAL: Close the four-slice pack in this one commit. Status shows duration and HTTP-token cost. HTTP adapter times out. Banner names missing_file or expired. Extra secret shapes redact. README Now and STATUS.md record T159–T162 as shipped facts only.
+
+Implement all of the following. Do not split. Commit and push in this same session before you stop.
+
+1) Status cost
+- Home/Status JSON includes duration_ms for the local process window already measured, and http_token_cost as an integer that is 0 on Echo.
+- Do not invent cloud billing. Do not add a payment field.
+
+2) HTTP adapter timeout
+- Any labeled HTTP adapter call has a finite timeout (default 8 seconds). On timeout return Echo-limited typed English. Do not hang a worker. No key in git.
+
+3) Banner reason
+- Echo-limited banner text includes the existing reason token: missing_file or expired.
+
+4) Extra redact
+- Extend the existing secret-shape redactor with bearer tokens and PEM private-key begin markers. Apply on propose body and audit/export text.
+
+5) Honest Now — add these facts to README.md Now and to STATUS.md shipped list. Do not invent friends or notarization.
+- Tool writes are rejected unless the resolved path is inside AEGIS_DATA_DIR.
+- Propose cards show a local 0–100 confidence integer; below 40 they ask and still require Approve.
+- Propose cards surface a receipt-backed why line and a same-tenant conflict tag.
+- Status reports duration_ms and http_token_cost (zero on Echo).
+- Local entitlement file under AEGIS_DATA_DIR and signed brief export with path plus sha256 are shipped; missing or expired entitlement returns Echo-limited.
+
+6) tests/test_t162_status_timeout_banner_redact.py
+- test_status_includes_duration_ms_and_http_token_cost
+- test_echo_http_token_cost_is_zero
+- test_http_adapter_timeout_returns_echo_limited
+- test_banner_reason_missing_file_or_expired
+- test_redact_bearer_and_pem_markers
+- test_readme_and_status_mention_entitlement_and_signed_export
+- Do not start uvicorn. Use tmp_path. Do not write the developer's real $HOME/.aegis.
+
+Verification, exact order. If a proof fails, fix only that failure and restart from 1. If the tool budget is low after pytest, skip commentary and do git commit + push immediately.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
-3. ./.venv/bin/python -m pytest -q
-   Required: 0 failed. Expected about 888 passed 1 skipped if the five T161 tests are included.
-4. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; r=Path('README.md').read_text(); print('conflict' in r.lower() and 'why' in r.lower(), Path('tests/test_t161_conflict_why.py').is_file())"
-   Required: True True
+3. Proof:
+   ./.venv/bin/python -c "from pathlib import Path; r=Path('README.md').read_text(); s=Path('STATUS.md').read_text() if Path('STATUS.md').exists() else ''; print('confidence' in r.lower(), 'conflict' in r.lower(), 'entitlement' in r.lower() and 'export' in r.lower(), Path('tests/test_t162_status_timeout_banner_redact.py').is_file())"
+   Required: True True True True
+4. ./.venv/bin/python -m pytest -q
+   Required: 0 failed
 5. git add -A (do not force-add .kms/ or $HOME/.aegis/; do not delete _directive.txt)
-6. git commit -m "feat(t161): receipt-backed why line and conflict tag depth"
+6. git commit -m "feat(t162): status cost, adapter timeout, banner reason, extra redact"
 7. git push origin main
 8. Print new SHA, pytest count, and the proof line.
 
-If already committed, print the existing SHA and stop. Do not invent a second commit. Stop after push.
+Stop only after a successful push. Do nothing else.

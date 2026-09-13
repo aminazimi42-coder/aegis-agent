@@ -127,6 +127,7 @@
     <div class="queue-body">The local twin at <code>http://127.0.0.1:8741</code> is not reachable.
     Start the local server (<code>scripts/run_local.sh</code>), then refresh this page.
     Your committed profile is preserved — nothing is cleared while the engine is down.</div>
+    <div id="banner-reason" class="queue-meta" style="display:none;"></div>
   </div>
 
   <p class="muted">
@@ -277,6 +278,7 @@
 
   // ── Health / status ──
   var engineOnline = false;
+  var bannerReasonToken = null;
   function setOffline() {
     engineOnline = false;
     el("offline-banner").style.display = "block";
@@ -286,6 +288,17 @@
     if (text) { text.textContent = "Local twin unreachable on 127.0.0.1:8741"; }
     var box = el("health-json");
     if (box) { box.textContent = ""; }
+    // T162 — banner reason: when the Echo-limited reason is known
+    // (missing_file or expired), show it inside the offline banner.
+    var br = el("banner-reason");
+    if (br) {
+      if (bannerReasonToken === "missing_file" || bannerReasonToken === "expired") {
+        br.textContent = "Echo-limited (" + bannerReasonToken + ")";
+        br.style.display = "block";
+      } else {
+        br.style.display = "none";
+      }
+    }
     // Disable propose and approve controls while offline.
     var bp = el("btn-propose");
     if (bp) { bp.disabled = true; }
@@ -832,6 +845,12 @@
       if (reason) {
         ln.textContent = "Echo-limited (" + reason + ")" + lcLabel;
         ln.className = "muted";
+        // T162 — store the reason token for the offline banner.
+        if (reason === "missing_file" || reason === "expired") {
+          bannerReasonToken = reason;
+        } else {
+          bannerReasonToken = null;
+        }
       } else if (expires) {
         ln.textContent = "Tier: " + tier + " — expires " + expires + lcLabel;
         ln.className = "muted";

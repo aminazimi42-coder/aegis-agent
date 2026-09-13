@@ -15,9 +15,13 @@ Keys:
 
 from __future__ import annotations
 
+import time
+
 from core.agent_registry import AGENT_REGISTRY
 from core.config import load_config
-from core.llm_provider import get_provider
+from core.llm_provider import HttpProvider, get_provider
+
+_PROCESS_START: float = time.monotonic()
 
 
 def _twin_routes_available() -> bool:
@@ -33,12 +37,35 @@ def _twin_routes_available() -> bool:
         return False
 
 
+def _http_token_cost() -> int:
+    """Return the cumulative HTTP token cost as an integer.
+
+    On Echo (the default provider) this is always 0 — no paid LLM is
+    wired.  When an :class:`HttpProvider` is active the cost is the
+    total tokens from the last completion, read from the twin_persist
+    spend ledger.  No cloud billing is invented.
+    """
+    provider = get_provider()
+    if not isinstance(provider, HttpProvider):
+        return 0
+    try:
+        from core.twin_persist import get_budget
+
+        budget = get_budget("aegis-status")
+        if budget is None:
+            return 0
+        return int(budget.get("spent", 0))
+    except Exception:
+        return 0
+
+
 def platform_status() -> dict:
     """Return an honest, verifiable platform status dict."""
     from core.entitlement import current_tier
 
     config = load_config()
     provider = get_provider()
+    duration_ms = int((time.monotonic() - _PROCESS_START) * 1000)
     return {
         "version": config.version,
         "agent_count": len(AGENT_REGISTRY),
@@ -47,4 +74,6 @@ def platform_status() -> dict:
         "twin_routes": _twin_routes_available(),
         "persistence": "sqlite",
         "tier": current_tier(),
+        "duration_ms": duration_ms,
+        "http_token_cost": _http_token_cost(),
     }

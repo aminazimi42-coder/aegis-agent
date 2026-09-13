@@ -107,3 +107,5 @@ Honest lock of what is actually shipped in this tree as of T70. See the **Now** 
 Layer 3 git slices T149–T152 landed; amin 2026-09-13 installer-path trial recorded (Install.command + venv + start_operator.sh + signed export); Aegis Operator.app not opened; installer is not one-click.
 
 T153–T158 local commercialization pack landed; Apple-accepted notarize, live Stripe, and a real cloud license host remain locked.
+
+T159–T162 local hardening pack landed: tool writes caged to `AEGIS_DATA_DIR`; propose cards show confidence (0–100) and a receipt-backed why line with a same-tenant conflict tag; status reports `duration_ms` and `http_token_cost` (zero on Echo); local entitlement file and signed brief export with path plus sha256 shipped; missing or expired entitlement returns Echo-limited; the secret-shape redactor covers bearer tokens and PEM private-key begin markers on propose body and audit/export text; HTTP adapter calls time out at 8 seconds and return Echo-limited typed English; the Echo-limited banner text includes the existing reason token (`missing_file` or `expired`).

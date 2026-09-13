@@ -73,10 +73,24 @@ class HttpProvider:
 
     name: str = "http"
 
-    def __init__(self, base_url: str, api_key: str) -> None:
+    #: Default request timeout (seconds).  Override via the
+    #: ``AEGIS_HTTP_TIMEOUT`` env var or the *timeout* constructor arg.
+    DEFAULT_TIMEOUT: float = 8.0
+
+    def __init__(self, base_url: str, api_key: str, timeout: float | None = None) -> None:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self._last_probe_ok: bool = True
+        if timeout is not None:
+            self._timeout = float(timeout)
+        else:
+            import os as _os
+
+            raw = _os.getenv("AEGIS_HTTP_TIMEOUT", "")
+            try:
+                self._timeout = float(raw) if raw else self.DEFAULT_TIMEOUT
+            except (TypeError, ValueError):
+                self._timeout = self.DEFAULT_TIMEOUT
 
     def is_available(self) -> bool:
         """Return False when base URL is missing or the last probe failed.
@@ -116,7 +130,7 @@ class HttpProvider:
             },
         )
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            with urllib.request.urlopen(req, timeout=self._timeout) as resp:
                 body = json.loads(resp.read().decode("utf-8"))
         except (OSError, ValueError, RuntimeError):
             self._last_probe_ok = False

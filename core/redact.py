@@ -56,12 +56,20 @@ _BEARER_RE = re.compile(
     r"(?i)Bearer\s+[A-Za-z0-9_\-\.]{8,}",
 )
 
+# T162 — PEM private-key begin markers.  ``-----BEGIN <TYPE> PRIVATE KEY-----``
+# is the start of every PEM-encoded private key (RSA, EC, OPENSSH, …).
+# Redact the marker so the private-key block is never persisted verbatim.
+_PEM_BEGIN_RE = re.compile(
+    r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----",
+)
+
 _SECRET_SHAPES: tuple[re.Pattern[str], ...] = (
     _SK_RE,
     _GH_RE,
     _AWS_RE,
     _JWT_RE,
     _BEARER_RE,
+    _PEM_BEGIN_RE,
 )
 
 _REPLACEMENT = "[REDACTED]"
