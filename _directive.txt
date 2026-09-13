@@ -1,46 +1,44 @@
-T157 — Labeled paid-adapter path, no key in core. This is pack instruction 5 of 6. Do ONLY this directive. Do not start T158. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a card form, a live license host, Apple notarization, Grok bots, voice, Windows installer, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T156. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates. Do not claim a paid shop or that a cloud model is the default.
+T158 — Codesign script, no notarized claim. This is pack instruction 6 of 6. Do ONLY this directive. Do not start T159. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a card form, a live license host, Grok bots, voice, Windows installer, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T157. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates. Do not claim the app is notarized, in the App Store, or signed with a Developer ID that this machine does not have.
 
-Baseline: T156 live 013d7c8a5c25749aa8bc1f1a66b28407b14826d8. pytest 862 passed 1 skipped. Echo is default. AGENT_LLM_BASE_URL is an optional labeled HTTP adapter. Quota exhaustion already forces Echo. API keys must not land in git or inside execute.
+Baseline: T157 live 982958b274c9b2bef5a0ee0aa2532bce2c1c3ca3. pytest 867 passed 1 skipped. dist/AegisOperator-mac is an unsigned installer folder. There is no Apple Developer ID on this pack. Notarization stays locked until the owner says start Developer ID.
 
-GOAL: The optional HTTP path is explicitly labeled paid-or-remote. A missing key or missing base URL stays Echo. The key is read only from the environment or from $AEGIS_DATA_DIR, never from the repo. Propose templates do not mention a live paid model.
+GOAL: One local script documents and attempts codesign/notarytool only when a Developer ID identity exists. If no identity is found, the script prints UNSIGNED and exits 0 for the dry path. README still says unsigned.
 
 Implement:
 
-1) Adapter labeling (extend the existing HTTP provider — do not add a second client)
-- complete_safe provider kind stays echo | http.
-- When HTTP is selected, the status payload includes llm_path = http_labeled and llm_key_present = true|false.
-- If AEGIS_LLM_API_KEY and the data-dir key file are both missing: do not open a socket; return Echo and llm_path = echo_missing_key.
-- Never write the key into receipts, audit JSONL, operator HTML, or README.
-- Never commit a .env with a real key.
+1) scripts/codesign_operator.sh
+- Accepts the path to Aegis Operator.app (default dist/AegisOperator-mac/Aegis Operator.app if present).
+- If codesign is missing or no Developer ID Application identity is in the keychain: print one English block UNSIGNED: no Developer ID identity; do not call notarytool; exit 0.
+- If an identity exists: run codesign --force --deep --options runtime --sign "$IDENTITY" on the app; do not invent an identity string.
+- Notary submit only when AEGIS_NOTARY_PROFILE is set; otherwise skip notary and print NOTARY_SKIPPED.
+- Never claim success as notarized unless stapler validate would pass. This slice does not require stapler to pass.
+- Do not open Safari. Do not upload the app anywhere except notarytool when the profile is set.
 
-2) Key location
-- Allowed: environment AEGIS_LLM_API_KEY, or file $AEGIS_DATA_DIR/llm_key (mode 0600 if created by a helper).
-- Forbidden: core/, app/, scripts/ committed secrets, entitlement.json, quota.json.
-- Helper may exist only as a documented path; do not create a key in the developer's real home during tests.
+2) README Now
+- One sentence: scripts/codesign_operator.sh signs only when a Developer ID identity is present; without it the Mac folder stays unsigned and is not App Store software.
+- Do not move Developer ID into Now as completed.
 
-3) README Now
-- One sentence: optional HTTP adapter is labeled; missing key or missing base URL stays Echo; keys live in the environment or AEGIS_DATA_DIR, never in the git tree.
-- Do not claim a paid model is bundled.
+3) STATUS.md
+- One line: T153–T158 local commercialization pack landed; Apple-accepted notarize, live Stripe, and a real cloud license host remain locked.
 
-4) tests/test_t157_labeled_paid_adapter.py
-- test_missing_key_does_not_open_socket
-- test_http_status_does_not_echo_key_material
-- test_repo_tree_has_no_committed_llm_key_file
-- test_quota_exhausted_still_wins_over_http
-- test_readme_says_echo_when_key_missing
-- Use tmp_path. Do not start uvicorn. Do not hit a public host.
+4) tests/test_t158_codesign_script.py
+- test_script_exists_and_mentions_unsigned
+- test_readme_does_not_claim_notarized_or_app_store
+- test_status_says_notarize_still_locked
+- test_script_dry_path_does_not_require_apple_id
+- Do not run notarytool against Apple in CI. Do not start uvicorn.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; r=Path('README.md').read_text(); keys=list(Path('.').rglob('*llm_key*')); tracked=[p for p in keys if '.git' not in p.parts and '.venv' not in p.parts and 'AEGIS_DATA_DIR' not in str(p)]; print('Echo' in r and ('key' in r.lower()), not any(p.suffix in {'.txt','.json','.pem',''} and p.is_file() and 'test' not in p.as_posix() for p in tracked if p.name=='llm_key'))"
-   Required: True True
+   ./.venv/bin/python -c "from pathlib import Path; s=Path('scripts/codesign_operator.sh').read_text() if Path('scripts/codesign_operator.sh').is_file() else ''; r=Path('README.md').read_text(); st=Path('STATUS.md').read_text() if Path('STATUS.md').is_file() else ''; print(Path('scripts/codesign_operator.sh').is_file(), 'UNSIGNED' in s, 'notarized' not in r.lower() and 'App Store' not in r, 'locked' in st.lower() or 'notarize' in st.lower())"
+   Required: True True True True
 4. ./.venv/bin/python -m pytest -q
    Required: 0 failed
 5. git add -A (do not force-add .kms/ or $HOME/.aegis/; do not delete _directive.txt)
-6. git commit -m "feat(t157): labeled HTTP adapter without key in core"
+6. git commit -m "chore(t158): codesign script without notarized claim"
 7. git push origin main
 8. Print new SHA, pytest count, and the proof line.
 

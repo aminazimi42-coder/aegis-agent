@@ -105,3 +105,5 @@ Honest lock of what is actually shipped in this tree as of T70. See the **Now** 
 ## Layer 3
 
 Layer 3 git slices T149–T152 landed; amin 2026-09-13 installer-path trial recorded (Install.command + venv + start_operator.sh + signed export); Aegis Operator.app not opened; installer is not one-click.
+
+T153–T158 local commercialization pack landed; Apple-accepted notarize, live Stripe, and a real cloud license host remain locked.
