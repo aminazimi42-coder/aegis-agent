@@ -1,53 +1,56 @@
-T164 — Strip CTO from operator copy AND rebuild the giveable local pack. This is the last Hermes slice before the amin account trial. Do ONLY this directive. Do not start T166. Do not read task_instruction.txt. Do not rewrite LICENSE. Do not rewrite the README Author paragraph. Do not add Stripe, a card form, a live license host, Grok bots, voice, Windows, WebSockets, Playwright, OS cron, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T163. English only in repo files. Do not copy $HOME/.aegis. Do not copy owner PII into the pack.
+T167 — Apple Developer ID wiring only. This is 1 of 4 money-layer slices. Do ONLY this directive. Do not start T168. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a card form, a live license host, Grok bots, voice, Windows, WebSockets, Playwright, OS cron, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T166. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates. Do not store an Apple password, App Store Connect key, or payment date in the repo.
 
-Baseline: T163 live ebe8fda. pytest 896 passed 1 skipped.
+Baseline: T164 live 81c1e7e8f9f6b588da7a9b3c2d8f04212151bd32. pytest 905 passed 1 skipped. T166 amin stranger trial passed 2026-09-13. Owner said start Developer ID. This machine may still have no Developer ID identity. That is allowed.
 
-GOAL: Operator-facing strings and specialist templates have no word CTO. Then one giveable pack is rebuilt from this same commit so a stranger folder can start without the git repo.
+GOAL: The repo can detect a Developer ID Application identity and sign only when that identity exists. Without it the script still prints UNSIGNED and exits 0. Nothing claims notarized, App Store, or paid. Enrollment itself stays an owner browser action outside Hermes.
 
-Implement both parts in this session. Commit the code first, then build the pack from that commit, then push. Dist artifacts stay gitignored.
+Implement:
 
-PART A — operator copy
-1) Operator HTML and any checked-in app.html / desktop operator page: remove the word CTO from visible labels, placeholders, sample goals, and helper text. Keep role default as AI Architect or Operator.
-2) Specialist templates: if a propose template or sample brief still says CTO, replace with operator or architect wording. Six specialists stay six.
-3) New profile saves: if the commit-profile path writes a default goals string that contains CTO, change only that default. Do not migrate the live $HOME/.aegis profile.
+1) scripts/codesign_operator.sh (edit in place if it exists)
+- Default app path: dist/AegisOperator-mac/Aegis Operator.app if present, else print APP_MISSING and exit 0.
+- Run `security find-identity -v -p codesigning` when the security tool exists.
+- If no line contains "Developer ID Application": print UNSIGNED: no Developer ID identity; do not call codesign --sign with a guessed name; do not call notarytool; exit 0.
+- If an identity exists: codesign --force --deep --options runtime --sign "$IDENTITY" --timestamp on the app. Use the first Developer ID Application identity found, or AEGIS_CODESIGN_IDENTITY if that env is set and non-empty.
+- Do not submit to notarytool in T167. Print NOTARY_LOCKED_UNTIL_T168.
+- Never write "notarized" as success. Never write App Store.
 
-PART B — giveable pack
-4) Rebuild the existing pack builder so dist output includes:
-   - start_operator.sh at the pack root
-   - operator page / app bundle already used by T149–T150
-   - INSTALL.md that says copy the pack to the operator $HOME, not /Users/Shared
-   - entitlement.example.json only; never a live entitlement with owner data
-   - AEGIS_DATA_DIR=$HOME/.aegis and port 8741
-   - script does not open Safari or any browser
-5) Pack proof test in tests/test_t164_pack_root.py:
-   - pack root contains start_operator.sh
-   - INSTALL.md tells the operator to copy into $HOME
-   - start_operator.sh does not call open or xdg-open
-   - pack does not contain .git, _directive.txt, or $HOME/.aegis
-6) Do not run the pack as the live operator on hermesdev data. Build only. Owner copies later on the amin account.
+2) docs/APPLE_DEVELOPER.md (new, short, English)
+- Owner enrolls at https://developer.apple.com/programs/ on the hermesdev account, not amin.
+- Annual fee exists; do not write a dollar amount or a pay date.
+- After enrollment the owner creates a Developer ID Application certificate in the Apple account and installs it in the hermesdev keychain.
+- Then rerun scripts/codesign_operator.sh from the repo on hermesdev.
+- Signing does not happen on the amin operator account.
+- No Stripe. No license host URL required for this slice.
 
-PART C — tests for copy
-7) tests/test_t164_no_cto_operator_copy.py
-   - test_operator_html_has_no_cto
-   - test_specialist_templates_have_no_cto
-   - test_default_goals_string_has_no_cto
-   - test_license_file_not_rewritten
-   - test_readme_author_paragraph_still_present
-   Scan operator HTML and specialist template sources only. Do not fail on historical STATUS notes or this directive file.
+3) README Now vs Planned
+- Now: codesign script prints UNSIGNED when no Developer ID identity is in the keychain.
+- Planned, labeled Planned: Apple-accepted notarize, live Stripe, cloud license host.
+- Do not move notarize or Stripe into Now.
+
+4) STATUS.md
+- One line: T167 Apple Developer ID wiring started after T166 amin trial; notarize and Stripe still locked.
+
+5) tests/test_t167_codesign_identity.py
+- test_script_exists
+- test_script_mentions_unsigned
+- test_script_does_not_call_notarytool_in_t167 (source must contain NOTARY_LOCKED_UNTIL_T168 and must not invoke notarytool as an unguarded command)
+- test_docs_say_enroll_on_hermesdev_not_amin
+- test_readme_does_not_claim_notarized_or_app_store
+- test_repo_has_no_apple_password_files (fail if a file named *AuthKey_*.p8 or *apple-id*password* is tracked)
+- Do not run notarytool against Apple. Do not start uvicorn. Do not require a real certificate in CI.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. If the tool budget is low after pytest, skip commentary and do git commit + push immediately.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; print(Path('tests/test_t164_no_cto_operator_copy.py').is_file(), Path('tests/test_t164_pack_root.py').is_file())"
-   Required: True True
+   ./.venv/bin/python -c "from pathlib import Path; s=Path('scripts/codesign_operator.sh').read_text() if Path('scripts/codesign_operator.sh').is_file() else ''; d=Path('docs/APPLE_DEVELOPER.md').read_text() if Path('docs/APPLE_DEVELOPER.md').is_file() else ''; r=Path('README.md').read_text(); print(Path('scripts/codesign_operator.sh').is_file(), Path('docs/APPLE_DEVELOPER.md').is_file(), 'UNSIGNED' in s, 'NOTARY_LOCKED_UNTIL_T168' in s, 'hermesdev' in d.lower(), 'notarized' not in r.lower())"
+   Required: True True True True True True
 4. ./.venv/bin/python -m pytest -q
    Required: 0 failed
-5. Build the pack with the existing builder script if present. Do not commit dist/.
-6. git add -A (do not force-add dist/, .kms/, or $HOME/.aegis/; do not delete _directive.txt)
-7. git commit -m "feat(t164): strip CTO from operator copy and rebuild local pack"
-8. git push origin main
-9. Print new SHA, pytest count, and the proof line.
+5. git add -A (do not force-add dist/, .kms/, *.p8, or $HOME/.aegis/; do not delete _directive.txt)
+6. git commit -m "feat(t167): wire Developer ID codesign without notarize claim"
+7. git push origin main
+8. Print new SHA, pytest count, and the proof line.
 
 Stop only after a successful push. Do nothing else.

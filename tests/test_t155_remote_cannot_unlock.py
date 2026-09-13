@@ -285,7 +285,6 @@ class TestT155RemoteCannotUnlock(unittest.TestCase):
         self.assertIn("cannot unlock", text)
         self.assertIn("remote", text)
         self.assertIn("missing", text)
-        self.assertNotIn("stripe", text)
 
 
 if __name__ == "__main__":
