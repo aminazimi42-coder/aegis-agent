@@ -1,55 +1,62 @@
-T168 — Notarize only with a real ticket. This is 2 of 4 money-layer slices. Do ONLY this directive. Do not start T169. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a card form, a live license host, Grok bots, voice, Windows, WebSockets, Playwright, OS cron, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T167. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates. Do not store an Apple password, App Store Connect API key, notary password, or payment date in the repo.
+T167_CONTINUE — Sign the Mac operator with the live Developer ID identity. This is 1 of 4 remaining money-layer slices after the identity landed on hermesdev. Do ONLY this directive. Do not start T168. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a card form, a live license host, Grok bots, voice, Windows, WebSockets, Playwright, OS cron, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T166. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates. Do not store an Apple password, App Store Connect key, .p8, .p12, .cer, .csr, or payment date in the repo. Do not call notarytool. Do not print notarized. Do not write App Store as shipped.
 
-Baseline: T167 live 08c225731f7bbc625f47f3516d3514cb555b8c9f. pytest 911 passed 1 skipped. codesign_operator.sh prints UNSIGNED with no Developer ID identity and NOTARY_LOCKED_UNTIL_T168. Owner enrollment is still a browser action on hermesdev. CI has no Apple identity. That is allowed.
+Baseline: T168 script scaffolding already exists from an earlier slice. hermesdev keychain now has 1 valid identity: Developer ID Application: Amin Azimi (3J54UZPZW3). Team ID 3J54UZPZW3. Certificate expires 2031-09-14. CI runners still have no identity. That is allowed.
 
-GOAL: The codesign script may call notarytool only when AEGIS_NOTARY_PROFILE is set and non-empty. It may print NOTARIZED only after stapler validate succeeds. Without profile or without a staple ticket it prints NOTARY_SKIPPED or NOTARY_PENDING and never lies. T169 and T170 stay locked.
+GOAL: On a machine that has the identity, scripts/codesign_operator.sh signs dist/AegisOperator-mac/Aegis Operator.app when that app exists, prints SIGNED plus the identity name, and never claims notarized. On CI or a machine without the identity it still prints UNSIGNED and exits 0. Public facts only (Team ID, identity name, expiry year) may appear in STATUS.md and RELEASES.md. Raw certificate files stay out of git.
 
 Implement:
 
 1) scripts/codesign_operator.sh
-- Keep the T167 UNSIGNED path when no Developer ID Application identity exists. Do not call notarytool on that path.
-- After a successful codesign, if AEGIS_NOTARY_PROFILE is unset or empty: print NOTARY_SKIPPED and exit 0.
-- If AEGIS_NOTARY_PROFILE is set: submit with notarytool using that keychain profile only. Do not invent Apple ID or password flags.
-- After submit, wait/check status. Run stapler staple on the app only when Apple reports Accepted.
-- Print NOTARIZED only if `stapler validate` on the app exits 0. Otherwise print NOTARY_PENDING or NOTARY_FAILED and exit 0 for the dry operator path (do not fail the script with 1 just because this machine has no ticket).
-- Remove the T167 marker NOTARY_LOCKED_UNTIL_T168 from the script. Replace with the skip/pending/notarized states above.
-- Do not open Safari. Do not upload anywhere except notarytool when the profile is set.
+- Keep the UNSIGNED path when security find-identity -v -p codesigning has no "Developer ID Application" line.
+- When an identity exists, sign with:
+  codesign --force --deep --options runtime --timestamp --sign "$IDENTITY"
+  on dist/AegisOperator-mac/Aegis Operator.app if present, else print APP_MISSING and exit 0.
+- Prefer AEGIS_CODESIGN_IDENTITY when that env is set and non-empty; otherwise use the first Developer ID Application identity.
+- After sign, run codesign --verify --deep --strict on the app. Print SIGNED: <identity> only if verify exits 0.
+- Do not invoke notarytool. Do not invoke stapler. Print NOTARY_LOCKED_UNTIL_TICKET.
+- Never write the word notarized as a success state.
 
 2) docs/APPLE_DEVELOPER.md
-- Add a short Notarize section: owner creates a notarytool keychain profile on hermesdev; export AEGIS_NOTARY_PROFILE; rerun the script.
-- Still enroll and sign on hermesdev, not amin.
-- Still no dollar amount and no pay date.
-- Still no Stripe and no license host.
+- State Team ID 3J54UZPZW3 and identity name Developer ID Application: Amin Azimi.
+- State signing happens only on hermesdev, never on amin.
+- State raw .cer/.csr/.p12/.p8 stay in Downloads or Keychain, never in git.
+- State notarize is a later owner action after a signed app exists; no ticket exists yet.
+- No dollar amount. No pay date.
 
-3) README Now vs Planned
-- Now: codesign script can submit to notarytool when AEGIS_NOTARY_PROFILE is set; without a staple ticket the app is not claimed notarized.
-- Planned stays: live Stripe, cloud license host.
-- Do not write that the shipped app is notarized. Do not write App Store.
+3) STATUS.md and RELEASES.md
+- One Now sentence: hermesdev has a valid Developer ID Application identity; the codesign script signs when that identity and the app bundle exist; the shipped tree is not notarized.
+- Planned stays labeled Planned: Apple-accepted notarize, live Stripe, cloud license host.
+- Do not move notarize into Now.
 
-4) STATUS.md
-- One line: T168 notary path landed; live Stripe and cloud license host remain locked.
+4) README Now vs Planned
+- Now: Developer ID signing is wired; without the identity the script prints UNSIGNED.
+- Do not claim the public download is notarized or on the App Store.
+- Leave the Author paragraph untouched.
 
-5) tests/test_t168_notary_guard.py
+5) tests/test_t167_continue_live_identity.py
 - test_script_exists
 - test_unsigned_path_still_present
-- test_notary_skipped_without_profile
-- test_notarized_string_only_after_stapler (script source must condition NOTARIZED on stapler validate, not on mere submit)
-- test_readme_does_not_claim_app_is_notarized
-- test_status_keeps_stripe_and_host_locked
-- test_no_apple_secrets_tracked (fail if *AuthKey_*.p8 or *notary*password* is tracked)
-- Do not run notarytool against Apple in CI. Do not start uvicorn. Do not require a real certificate.
+- test_signed_print_requires_verify
+- test_script_does_not_call_notarytool
+- test_script_prints_notary_locked_until_ticket
+- test_docs_name_team_id_3J54UZPZW3
+- test_docs_say_hermesdev_not_amin
+- test_readme_author_untouched
+- test_readme_does_not_claim_notarized_or_app_store
+- test_repo_tracks_no_cer_csr_p8_p12
+- Do not run codesign against a missing app as a failing test. Do not run notarytool. Do not start uvicorn. Do not require the identity in CI.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. If the tool budget is low after pytest, skip commentary and do git commit + push immediately.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; s=Path('scripts/codesign_operator.sh').read_text() if Path('scripts/codesign_operator.sh').is_file() else ''; r=Path('README.md').read_text(); st=Path('STATUS.md').read_text() if Path('STATUS.md').is_file() else ''; print(Path('scripts/codesign_operator.sh').is_file(), 'UNSIGNED' in s, 'NOTARY_SKIPPED' in s, 'NOTARY_LOCKED_UNTIL_T168' not in s, 'stapler' in s, 'App Store' not in r, 'locked' in st.lower())"
+   ./.venv/bin/python -c "from pathlib import Path; s=Path('scripts/codesign_operator.sh').read_text() if Path('scripts/codesign_operator.sh').is_file() else ''; d=Path('docs/APPLE_DEVELOPER.md').read_text() if Path('docs/APPLE_DEVELOPER.md').is_file() else ''; r=Path('README.md').read_text(); print(Path('scripts/codesign_operator.sh').is_file(), 'UNSIGNED' in s, 'SIGNED' in s, 'notarytool' not in s.lower() or 'NOTARY_LOCKED_UNTIL_TICKET' in s, '3J54UZPZW3' in d, 'hermesdev' in d.lower(), 'notarized' not in r.lower())"
    Required: True True True True True True True
 4. ./.venv/bin/python -m pytest -q
    Required: 0 failed
-5. git add -A (do not force-add dist/, .kms/, *.p8, or $HOME/.aegis/; do not delete _directive.txt)
-6. git commit -m "feat(t168): notarytool path without notarized lie"
+5. git add -A (do not force-add dist/, .kms/, *.cer, *.csr, *.p8, *.p12, or $HOME/.aegis/; do not delete _directive.txt)
+6. git commit -m "feat(t167): sign operator with live Developer ID identity"
 7. git push origin main
 8. Print new SHA, pytest count, and the proof line.
 

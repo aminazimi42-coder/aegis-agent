@@ -1,21 +1,21 @@
-"""T168 — Notary guard: notarytool only with a real ticket.
+"""T168 — Notary guard: notarytool locked until a real ticket exists.
 
 Covers:
 
 * ``test_script_exists`` — ``scripts/codesign_operator.sh`` exists.
 * ``test_unsigned_path_still_present`` — the script still prints
   ``UNSIGNED`` when no Developer ID identity is found.
-* ``test_notary_skipped_without_profile`` — the script source prints
-  ``NOTARY_SKIPPED`` when ``AEGIS_NOTARY_PROFILE`` is unset or empty.
-* ``test_notarized_string_only_after_stapler`` — the script source
-  conditions ``NOTARIZED`` on ``stapler validate`` succeeding, not on
-  mere submission.
+* ``test_signed_print_requires_verify`` — the script prints
+  ``SIGNED`` only after ``codesign --verify --deep --strict`` succeeds.
+* ``test_script_does_not_call_notarytool`` — the script does not invoke
+  ``notarytool`` as a command.
+* ``test_script_prints_notary_locked_until_ticket`` — the script prints
+  ``NOTARY_LOCKED_UNTIL_TICKET`` and does not contain
+  ``NOTARY_LOCKED_UNTIL_T168``.
 * ``test_readme_does_not_claim_app_is_notarized`` — README does not
   contain ``notarized``.
 * ``test_status_keeps_stripe_and_host_locked`` — STATUS.md mentions
   ``locked``.
-* ``test_no_apple_secrets_tracked`` — no ``AuthKey_*.p8`` or
-  ``*notary*password*`` file is tracked.
 
 No uvicorn subprocess.  No network.  Does not run notarytool against
 Apple.  Does not require a real certificate in CI.
@@ -23,7 +23,6 @@ Apple.  Does not require a real certificate in CI.
 
 from __future__ import annotations
 
-import subprocess
 import unittest
 from pathlib import Path
 
@@ -34,7 +33,7 @@ _STATUS = REPO_ROOT / "STATUS.md"
 
 
 class TestT168NotaryGuard(unittest.TestCase):
-    """T168 — notarytool path without a notarized lie."""
+    """T168 — notarytool locked until a real ticket exists."""
 
     # ------------------------------------------------------------------ #
     # 1) Script exists
@@ -51,7 +50,7 @@ class TestT168NotaryGuard(unittest.TestCase):
     # ------------------------------------------------------------------ #
     def test_unsigned_path_still_present(self) -> None:
         """The script must still mention ``UNSIGNED`` for the no-identity
-        path — T168 does not weaken the T167/T158 unsigned guard."""
+        path — T167_CONTINUE does not weaken the unsigned guard."""
         text = _SCRIPT.read_text(encoding="utf-8")
         self.assertIn(
             "UNSIGNED",
@@ -60,83 +59,88 @@ class TestT168NotaryGuard(unittest.TestCase):
         )
 
     # ------------------------------------------------------------------ #
-    # 3) NOTARY_SKIPPED without profile
+    # 3) SIGNED print requires verify
     # ------------------------------------------------------------------ #
-    def test_notary_skipped_without_profile(self) -> None:
-        """The script source must print ``NOTARY_SKIPPED`` when
-        ``AEGIS_NOTARY_PROFILE`` is unset or empty — and the
-        ``NOTARY_LOCKED_UNTIL_T168`` marker must be gone."""
+    def test_signed_print_requires_verify(self) -> None:
+        """The script must print ``SIGNED`` only after
+        ``codesign --verify --deep --strict`` succeeds."""
         text = _SCRIPT.read_text(encoding="utf-8")
         self.assertIn(
-            "NOTARY_SKIPPED",
+            "codesign --verify --deep --strict",
             text,
-            "Script must print NOTARY_SKIPPED when no notary profile is set",
+            "Script must run codesign --verify --deep --strict",
+        )
+        self.assertIn(
+            "SIGNED",
+            text,
+            "Script must print SIGNED when verify succeeds",
+        )
+        # The SIGNED echo must appear after the verify call.
+        lines = text.splitlines()
+        verify_line: int | None = None
+        for i, line in enumerate(lines):
+            if "codesign --verify --deep --strict" in line:
+                verify_line = i
+                break
+        signed_line: int | None = None
+        for i, line in enumerate(lines):
+            if "SIGNED" in line and "echo" in line:
+                signed_line = i
+                break
+        self.assertIsNotNone(verify_line, "Script must have a verify line")
+        self.assertIsNotNone(signed_line, "Script must have a SIGNED echo line")
+        assert verify_line is not None
+        assert signed_line is not None
+        self.assertGreater(
+            signed_line,
+            verify_line,
+            "SIGNED must appear after codesign --verify, not before",
+        )
+
+    # ------------------------------------------------------------------ #
+    # 4) Script does not invoke notarytool
+    # ------------------------------------------------------------------ #
+    def test_script_does_not_call_notarytool(self) -> None:
+        """The script must not invoke ``notarytool`` as a command."""
+        text = _SCRIPT.read_text(encoding="utf-8")
+        # Filter to non-comment lines and check that no line runs
+        # notarytool as a shell command.
+        code_lines = [
+            line for line in text.splitlines()
+            if not line.strip().startswith("#")
+        ]
+        code_text = "\n".join(code_lines)
+        self.assertNotIn(
+            "notarytool",
+            code_text,
+            "Script must not invoke notarytool",
+        )
+        self.assertNotIn(
+            "stapler",
+            code_text,
+            "Script must not invoke stapler",
+        )
+
+    # ------------------------------------------------------------------ #
+    # 5) Script prints NOTARY_LOCKED_UNTIL_TICKET
+    # ------------------------------------------------------------------ #
+    def test_script_prints_notary_locked_until_ticket(self) -> None:
+        """The script must print ``NOTARY_LOCKED_UNTIL_TICKET`` and
+        must not contain ``NOTARY_LOCKED_UNTIL_T168``."""
+        text = _SCRIPT.read_text(encoding="utf-8")
+        self.assertIn(
+            "NOTARY_LOCKED_UNTIL_TICKET",
+            text,
+            "Script must print NOTARY_LOCKED_UNTIL_TICKET",
         )
         self.assertNotIn(
             "NOTARY_LOCKED_UNTIL_T168",
             text,
-            "Script must not contain NOTARY_LOCKED_UNTIL_T168 after T168",
+            "Script must not contain NOTARY_LOCKED_UNTIL_T168",
         )
 
     # ------------------------------------------------------------------ #
-    # 4) NOTARIZED only after stapler validate
-    # ------------------------------------------------------------------ #
-    def test_notarized_string_only_after_stapler(self) -> None:
-        """The script must condition ``NOTARIZED`` on
-        ``stapler validate`` succeeding — not on mere submission."""
-        text = _SCRIPT.read_text(encoding="utf-8")
-        # The NOTARIZED echo must appear only inside the branch that
-        # checks stapler validate, not before the submit call.
-        self.assertIn(
-            "stapler validate",
-            text,
-            "Script must call stapler validate",
-        )
-        # Find the NOTARIZED echo and confirm it is in the same block
-        # as stapler validate, not in the submit block.
-        lines = text.splitlines()
-        notarized_line: int | None = None
-        for i, line in enumerate(lines):
-            if "NOTARIZED" in line and "echo" in line:
-                notarized_line = i
-                break
-        self.assertIsNotNone(
-            notarized_line,
-            "Script must have an echo NOTARIZED line",
-        )
-        # Check that the NOTARIZED line appears after stapler validate,
-        # not before the notarytool submit.
-        validate_line: int | None = None
-        for i, line in enumerate(lines):
-            if "stapler validate" in line:
-                validate_line = i
-                break
-        self.assertIsNotNone(
-            validate_line,
-            "Script must have a stapler validate line",
-        )
-        assert notarized_line is not None
-        assert validate_line is not None
-        self.assertGreater(
-            notarized_line,
-            validate_line,
-            "NOTARIZED must appear after stapler validate, not before submit",
-        )
-        # Also confirm the NOTARIZED line is inside a conditional that
-        # checks the validate exit code (the ``if stapler validate`` line
-        # must come before the echo NOTARIZED line).
-        block_start: int | None = None
-        for i in range(notarized_line - 1, -1, -1):
-            if "if stapler validate" in lines[i]:
-                block_start = i
-                break
-        self.assertIsNotNone(
-            block_start,
-            "NOTARIZED must be inside an if-stapler-validate block",
-        )
-
-    # ------------------------------------------------------------------ #
-    # 5) README does not claim the app is notarized
+    # 6) README does not claim the app is notarized
     # ------------------------------------------------------------------ #
     def test_readme_does_not_claim_app_is_notarized(self) -> None:
         """README must not contain ``notarized`` — the shipped app is
@@ -150,7 +154,7 @@ class TestT168NotaryGuard(unittest.TestCase):
         )
 
     # ------------------------------------------------------------------ #
-    # 6) STATUS keeps Stripe and host locked
+    # 7) STATUS keeps Stripe and host locked
     # ------------------------------------------------------------------ #
     def test_status_keeps_stripe_and_host_locked(self) -> None:
         """STATUS.md must mention ``locked`` — Stripe and the cloud
@@ -163,39 +167,3 @@ class TestT168NotaryGuard(unittest.TestCase):
             lower,
             "STATUS.md must mention locked — Stripe and host remain locked",
         )
-
-    # ------------------------------------------------------------------ #
-    # 7) No Apple secrets tracked
-    # ------------------------------------------------------------------ #
-    def test_no_apple_secrets_tracked(self) -> None:
-        """No tracked file is named ``AuthKey_*.p8`` or
-        ``*notary*password*``."""
-        result = subprocess.run(
-            ["git", "ls-files"],
-            capture_output=True,
-            text=True,
-            cwd=str(REPO_ROOT),
-            timeout=30,
-        )
-        self.assertEqual(
-            result.returncode,
-            0,
-            f"git ls-files must succeed (got {result.returncode})",
-        )
-        files = result.stdout.splitlines()
-        for f in files:
-            lower = f.lower()
-            if lower.endswith(".p8") and "authkey_" in lower:
-                self.fail(
-                    f"Tracked file {f!r} looks like an Apple AuthKey .p8 — "
-                    "remove it from version control",
-                )
-            if "notary" in lower and "password" in lower:
-                self.fail(
-                    f"Tracked file {f!r} looks like a notary password "
-                    "file — remove it from version control",
-                )
-
-
-if __name__ == "__main__":
-    unittest.main()
