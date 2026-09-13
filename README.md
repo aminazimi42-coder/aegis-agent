@@ -81,6 +81,8 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Extra secret redaction** — the secret-shape redactor covers bearer tokens and PEM private-key begin markers; it applies on propose body and audit/export text.
 - **HTTP adapter timeout** — any labeled HTTP adapter call has a finite timeout (default 8 seconds); on timeout it returns Echo-limited typed English; no worker hangs.
 - **Banner reason** — the Echo-limited banner text includes the existing reason token (`missing_file` or `expired`).
+- **Single-instance lock** — `start_operator.sh` writes a lock file under `AEGIS_DATA_DIR` recording pid and port; a second start on the same port exits non-zero with the typed English error `port 8741 already in use`; a stale lock from a dead pid is replaced.
+- **Status on page** — the Home / Status panel shows `duration_ms` and `http_token_cost` from the platform status JSON alongside the health check; Echo keeps `http_token_cost` at zero.
 
 ---
 
