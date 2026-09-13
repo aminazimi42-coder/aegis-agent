@@ -1,62 +1,58 @@
-T168_CONTINUE — Notary path only with a real profile or ticket. This is 2 of 4 remaining money-layer slices. Do ONLY this directive. Do not start T169. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a card form, a live license host, Grok bots, voice, Windows, WebSockets, Playwright, OS cron, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T167. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates. Do not store an Apple password, App Store Connect API key, .p8, .p12, .cer, .csr, notary password, or payment date in the repo. Do not open Safari. Do not claim App Store. Do not print notarized unless stapler validate would pass.
+T169 — Remote license status outside execute, no unlock without local file. This is 3 of 4 remaining money-layer slices. Do ONLY this directive. Do not start T170. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a card form, a live license host process, Grok bots, voice, Windows, WebSockets, Playwright, OS cron, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T168. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates. Do not store Apple secrets or a payment date. Do not claim a license server is deployed.
 
-Baseline: T167_CONTINUE live 6ccd070a2a83c586e303fe034769257d15387e1e. pytest 928 passed 1 skipped. hermesdev has Developer ID Application: Amin Azimi (3J54UZPZW3). codesign_operator.sh can print SIGNED after verify and prints NOTARY_LOCKED_UNTIL_TICKET. No notary ticket exists yet. CI has no identity and no notary profile. That is allowed.
+Baseline: T168_CONTINUE live 9fade42486c0ea09e2cddae72bb3198cc3ff7662. pytest 939 passed 1 skipped. T151 optional GET and T155 no-unlock-without-local-file already exist. Propose and execute must still not call the status client. No live host is deployed.
 
-GOAL: After a successful local sign, the script may call notarytool only when AEGIS_NOTARY_PROFILE is set and non-empty. Without that profile it prints NOTARY_SKIPPED and exits 0. It may print NOTARIZED only after stapler validate succeeds. Otherwise NOTARY_PENDING or NOTARY_FAILED. Never lie. T169 and T170 stay locked.
+GOAL: Harden the existing license-status client so a remote body can only confirm a valid local entitlement. Missing, expired, mutated, foreign-tenant, or bad-signature local files stay Echo-limited even when the remote says professional. Persist a typed last check on the operator status payload. Do not stand up a server.
 
 Implement:
 
-1) scripts/codesign_operator.sh
-- Keep UNSIGNED when no Developer ID Application identity exists. Do not call notarytool on that path.
-- Keep APP_MISSING when the app bundle is absent.
-- After SIGNED verify succeeds: if AEGIS_NOTARY_PROFILE is unset or empty, print NOTARY_SKIPPED and exit 0.
-- If AEGIS_NOTARY_PROFILE is set: submit with notarytool using that keychain profile only. Do not pass Apple ID or password flags. Do not invent credentials.
-- After submit, check status. Run stapler staple only when Apple reports Accepted.
-- Print NOTARIZED only if stapler validate on the app exits 0. Otherwise print NOTARY_PENDING or NOTARY_FAILED and exit 0 (do not fail CI because this machine has no ticket).
-- Remove any leftover NOTARY_LOCKED_UNTIL_T168 marker. NOTARY_LOCKED_UNTIL_TICKET may remain only as a comment that a ticket is still required for the NOTARIZED print. The live skip path must print NOTARY_SKIPPED when the profile is absent.
-- Do not upload anywhere except notarytool when the profile is set.
+1) Extend the existing status client / entitlement resolver only
+- Keep AEGIS_LICENSE_STATUS_URL default off. Unset URL must not open a socket.
+- GET only, timeout <= 2 seconds. No POST. No cookies. No request body. No entitlement.json on the wire. No profile fields on the wire.
+- Authorization header only when AEGIS_LICENSE_BEARER is set and non-empty.
+- Parse only {tier, expires_at, status}. Ignore unknown fields.
+- On timeout, DNS, TLS, or non-200: typed unreachable; never raise into execute or propose.
+- Resolve order: local file first. Remote never grants a higher tier. Remote never writes entitlement.json.
 
-2) docs/APPLE_DEVELOPER.md
-- Add a short Notarize section: on hermesdev only, owner creates a notarytool keychain profile with store-credentials; export AEGIS_NOTARY_PROFILE; rerun the script.
-- Profile name stays in the environment, never in git.
-- Still sign and notarize on hermesdev, never on amin.
-- Still no dollar amount and no pay date.
-- Still no Stripe and no license host.
+2) Operator status payload
+- license_check stays: local_only | remote_ok | remote_unreachable | echo_limited
+- Add license_source = local_file | remote_confirm | none
+- Do not print the raw URL on operator HTML.
+- Do not mention Stripe on the operator page.
 
-3) README Now vs Planned
-- Now: the codesign script can submit to notarytool when AEGIS_NOTARY_PROFILE is set; without a staple ticket the shipped tree is not claimed notarized.
-- Planned stays labeled Planned: live Stripe, cloud license host.
-- Do not write that the public app is notarized. Do not write App Store as shipped.
+3) Optional local audit line
+- If the existing local JSONL audit writer exists, append one English event license_check with status and source only. No email, no bearer, no URL.
+- If no audit writer exists, skip this item. Do not invent a new log stack.
+
+4) README Now vs Planned
+- Now: optional license-status GET is labeled and off by default; a remote body cannot unlock without a valid local entitlement file; no license host is deployed.
+- Planned, labeled Planned: live Stripe, deployed cloud license host.
 - Leave the Author paragraph untouched.
 
-4) STATUS.md and RELEASES.md
-- One Now line: T168 notary path landed; NOTARIZED prints only after stapler validate; live Stripe and cloud license host remain locked.
-- Do not move Stripe or the license host into Now.
+5) STATUS.md
+- One line: T169 remote status cannot unlock without local entitlement; Stripe and a deployed host remain locked.
 
-5) tests/test_t168_continue_notary_guard.py
-- test_script_exists
-- test_unsigned_path_still_present
-- test_notary_skipped_without_profile
-- test_notarized_string_only_after_stapler
-- test_no_apple_id_or_password_flags_in_script
-- test_docs_say_hermesdev_not_amin
+6) tests/test_t169_license_status_outside_execute.py
+- test_unset_url_does_not_open_socket
+- test_missing_local_file_ignores_professional_remote_body
+- test_expired_local_file_ignores_remote_ok
+- test_propose_and_execute_modules_do_not_import_status_client
+- test_status_payload_has_license_check
+- test_readme_does_not_claim_host_deployed
 - test_readme_author_untouched
-- test_readme_does_not_claim_app_is_notarized
-- test_status_keeps_stripe_and_host_locked
-- test_no_apple_secrets_tracked (fail if *AuthKey_*.p8 or *notary*password* or *.cer or *.p12 is tracked)
-- Do not run notarytool against Apple in CI. Do not start uvicorn. Do not require a real profile.
+- Mock HTTP. Use tmp_path. Do not start uvicorn. Do not hit a public host.
 
 Verification, exact order. If a proof fails, fix only that failure and restart from 1. If the tool budget is low after pytest, skip commentary and do git commit + push immediately.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; s=Path('scripts/codesign_operator.sh').read_text() if Path('scripts/codesign_operator.sh').is_file() else ''; d=Path('docs/APPLE_DEVELOPER.md').read_text() if Path('docs/APPLE_DEVELOPER.md').is_file() else ''; r=Path('README.md').read_text(); st=Path('STATUS.md').read_text() if Path('STATUS.md').is_file() else ''; print(Path('scripts/codesign_operator.sh').is_file(), 'UNSIGNED' in s, 'NOTARY_SKIPPED' in s, 'stapler' in s.lower(), 'hermesdev' in d.lower(), 'notarized' not in r.lower(), 'locked' in st.lower() or 'Stripe' in st)"
-   Required: True True True True True True True
+   ./.venv/bin/python -c "from pathlib import Path; r=Path('README.md').read_text(); st=Path('STATUS.md').read_text() if Path('STATUS.md').is_file() else ''; print(('cannot unlock' in r.lower()) or ('echo-limited' in r.lower() and 'remote' in r.lower()), 'stripe' not in r.lower() or 'Planned' in r, 'T169' in st or 'unlock' in st.lower())"
+   Required: True True True
 4. ./.venv/bin/python -m pytest -q
    Required: 0 failed
 5. git add -A (do not force-add dist/, .kms/, *.cer, *.csr, *.p8, *.p12, or $HOME/.aegis/; do not delete _directive.txt)
-6. git commit -m "feat(t168): notary path only with profile and staple ticket"
+6. git commit -m "feat(t169): remote license status cannot unlock without local file"
 7. git push origin main
 8. Print new SHA, pytest count, and the proof line.
 

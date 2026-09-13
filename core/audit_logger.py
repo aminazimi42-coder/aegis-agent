@@ -20,7 +20,7 @@ from uuid import uuid4
 _audit_lock = threading.Lock()
 
 _VALID_KINDS: frozenset[str] = frozenset(
-    {"propose", "approve", "reject", "execute", "purge", "replay"}
+    {"propose", "approve", "reject", "execute", "purge", "replay", "license_check"}
 )
 
 # Map action_id → correlation_id so all events for one action share a

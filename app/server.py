@@ -1578,15 +1578,39 @@ def create_app() -> FastAPI:
 
         remote = check_remote_status()
         license_check = remote.get("license_check", "local_only")
+        # T169 — license_source tracks where the effective tier came from.
+        # local_file  — a valid local entitlement file determined the tier.
+        # remote_confirm — the remote host confirmed a valid local file.
+        # none         — no valid local file; tier is Echo-limited.
+        license_source = "none"
         if license_check == "remote_ok" and reason is not None:
             # Remote confirmed but local is Echo-limited — keep it.
             license_check = "echo_limited"
         elif license_check == "remote_ok":
             license_check = "remote_ok"
+            license_source = "remote_confirm"
         elif license_check == "remote_unreachable":
             license_check = "remote_unreachable"
         else:
             license_check = "local_only"
+
+        # When the local file is valid (no reason), the local file is the
+        # source — even if the remote also confirmed.
+        if reason is None:
+            license_source = "local_file"
+
+        # T169 — optional local audit line: append a license_check event
+        # with status and source only.  No email, no bearer, no URL.
+        try:
+            from core.audit_logger import log_event
+
+            log_event(
+                "license_check",
+                f"entitlement-{tenant_id}",
+                extra={"status": license_check, "source": license_source},
+            )
+        except Exception:
+            pass
 
         # T156 — local quota ledger (quota.json under AEGIS_DATA_DIR).
         # Surface the monthly allowance remaining and a typed state label
@@ -1599,6 +1623,7 @@ def create_app() -> FastAPI:
             "reason": reason,
             "expires_at": expires_at,
             "license_check": license_check,
+            "license_source": license_source,
             "quota_remaining": _quota_remaining(tenant_id),
             "quota_state": _quota_state(tenant_id),
         }
