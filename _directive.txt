@@ -1,25 +1,55 @@
-T175_CONTINUE — Finish T175 only. Do not start T176. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, voice, Windows, a seventh agent, or a signed-app claim. English only in repo files. Do not copy $HOME/.aegis.
+T177 — Honest start and adapter timeout. This is 3 of 4 depth slices after T174. Do ONLY this directive. Do not start T178. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a live shop, a public license host, Grok bots, voice, Windows, WebSockets, Playwright, OS cron, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T176. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates. Do not claim notarized or signed-app. Codesign stays paused. start_operator.sh stays the only operator start path.
 
-HARD STOP: pytest then commit then push. After push, stop.
+HARD STOP RULE: pytest then commit then push are the last three actions. After push, stop. Do not start T178.
 
-Fix only this:
+Baseline: T176 must be live first. T122 and T137 already show an engine-offline banner. T131/T151 already Echo-limit missing or expired entitlement. Depth missing: missing-file vs expired as two typed banners, HTTP adapter timeout, and start_operator preflight for python3 plus port 8741.
 
-1) tests/test_t175_receipt_depth.py
-- Repair the syntax error. tearDown must be valid Python, for example:
-  def tearDown(self) -> None:
-- Do not delete the nine tests. Do not invent extra product.
+GOAL: Operator page and start script tell the truth. Missing entitlement is not the same sentence as expired entitlement. HTTP adapter calls time out and fall back to labeled Echo. start_operator.sh checks python3 and that port 8741 is free or already this engine before bind. Script still does not open Safari.
 
-2) Then run this exact order. If a proof fails, fix only that failure and restart from 1.
+Implement:
+
+1) Missing vs expired
+- Banner or status line uses missing_file when the local entitlement file is absent.
+- Banner or status line uses expired when the file exists and the expiry is in the past.
+- Both stay Echo-limited. Do not unlock without the file.
+
+2) HTTP adapter timeout
+- If AGENT_LLM_BASE_URL is set, the HTTP call has a finite timeout.
+- On timeout, use Echo and label the fallback. Do not hang the operator page.
+
+3) start_operator.sh preflight
+- Require a usable python3 (prefer 3.11 when present).
+- If port 8741 is taken by something that is not this engine, print a typed line and exit non-zero.
+- Do not open Safari. Do not merge Grok Bot. AEGIS_DATA_DIR stays $HOME/.aegis unless already set.
+
+4) README Now vs Planned
+- Now: missing vs expired banners; HTTP adapter timeout to Echo; start_operator preflight python3 and port 8741.
+- Planned stays labeled Planned: live Stripe shop, deployed public license host, Developer ID staple.
+- Leave the Author paragraph untouched.
+
+5) STATUS.md
+- One line: T177 honest start distinguishes missing vs expired and times out HTTP. Codesign paused.
+
+6) tests/test_t177_honest_start.py
+- test_missing_file_banner_differs_from_expired
+- test_expired_stays_echo_limited
+- test_http_adapter_timeout_falls_back_to_echo
+- test_start_operator_mentions_python_or_8741
+- test_start_operator_does_not_open_safari
+- test_readme_author_untouched
+- Use tmp_path. Do not write the live $HOME/.aegis. Do not start uvicorn.
+
+Verification, exact order. If a proof fails, fix only that failure and restart from 1.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; r=Path('README.md').read_text(); print('correlation' in r.lower() or 'Intact' in r, 'Author' in r, 'notarized' not in r.lower() or 'not notarized' in r.lower())"
+   ./.venv/bin/python -c "from pathlib import Path; t=Path('scripts/start_operator.sh').read_text(); r=Path('README.md').read_text(); print('8741' in t, 'Safari' not in t and 'open -a' not in t, 'Author' in r)"
    Required: True True True
 4. ./.venv/bin/python -m pytest -q
    Required: 0 failed
 5. git add -A (do not force-add dist/, .kms/, *.cer, *.p8, *.p12, or $HOME/.aegis/; do not delete _directive.txt)
-6. git commit -m "feat(t175): correlation id, note hash, digest preview, Intact/Tampered"
+6. git commit -m "feat(t177): missing vs expired banner, HTTP timeout, start preflight"
 7. git push origin main
 8. Print new SHA, pytest count, and the proof line.
 

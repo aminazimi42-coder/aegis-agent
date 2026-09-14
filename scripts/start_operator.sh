@@ -16,6 +16,19 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 cd "$REPO_ROOT"
 
+# --- python3 preflight (T177) -------------------------------------------
+# Require a usable python3 on PATH (prefer 3.11 when present).
+PY3=""
+if command -v python3.11 >/dev/null 2>&1; then
+    PY3="$(command -v python3.11)"
+elif command -v python3 >/dev/null 2>&1; then
+    PY3="$(command -v python3)"
+fi
+if [ -z "$PY3" ]; then
+    echo "start_operator: python3 not found — install Python 3.11 first."
+    exit 1
+fi
+
 # --- prerequisites -------------------------------------------------------
 PY="$REPO_ROOT/.venv/bin/python"
 if [ ! -x "$PY" ]; then
@@ -85,6 +98,5 @@ echo "port=$PORT" >> "$LOCK_FILE"
 # --- engine start --------------------------------------------------------
 echo "Aegis engine — data dir: $AEGIS_DATA_DIR"
 echo "Aegis engine — URL: http://127.0.0.1:8741/"
-echo "Aegis engine — Safari is opened by the operator, not by this script."
 
 exec "$PY" -m uvicorn app.server:create_app --factory --host "$HOST" --port "$PORT"

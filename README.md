@@ -88,6 +88,9 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Loop depth from durable notes and profile** — the next propose response reads the last reject reason and last approve note from the durable feedback store and includes both when present; the weekly brief uses the saved profile name, role, goals, and timezone; the Approved strip stays. This is Echo, not a multi-month behavioral twin.
 - **Receipt depth: correlation id, note hash, digest preview, Intact/Tampered** — one local correlation id ties propose, approve, receipt, and audit for the same action; the receipt chain includes a hash of the operator note when a note exists; the operator page shows a digest preview before Approve; a local verify-chain helper reports Intact or Tampered.
 - **Path cage and extra redact** — every operator file write is caged to `AEGIS_DATA_DIR`; a path outside that dir returns a typed `path_denied_outside_data_dir` deny and does not write; bearer tokens, webhook query secrets, and SSH private-key blocks are redacted on propose, execute logs, and audit.
+- **Missing vs expired banners** — the operator page shows a distinct `Echo-limited (missing_file)` banner when the local entitlement file is absent and `Echo-limited (expired)` when the file exists but the expiry is in the past; both stay Echo-limited; the file is not unlocked without the local file.
+- **HTTP adapter timeout to Echo** — when `AGENT_LLM_BASE_URL` is set, the HTTP call has a finite timeout (default 8 seconds); on timeout it falls back to Echo and labels the fallback `adapter_timeout`; the operator page does not hang.
+- **start_operator preflight** — `scripts/start_operator.sh` checks for a usable `python3` (prefers 3.11) and verifies that port 8741 is free or already this engine before bind; it exits non-zero with a typed English line when either check fails; it does not open Safari.
 
 ---
 
@@ -103,7 +106,7 @@ The road ahead, not yet shipped:
 - **Professional, then Executive, then Engineering** — tier rollout in that order; each tier is a local entitlement file, not a card charge.
 - **Payments never enter core** — billing, if any, lives outside this repository; `core/` stays free of payment logic.
 - **Mac installer trial and Developer ID** — the Mac installer folder will be trialed on owner and amin accounts; signing requires a Developer ID, and the license host remains outside this repo.
-- **Planned: live Stripe shop, deployed license host** — a live Stripe account and a deployed license host are planned, not shipped; they remain locked.
+- **Planned: live Stripe shop, deployed license host, Developer ID staple** — a live Stripe account, a deployed license host, and a Developer ID staple for the installer are planned, not shipped; they remain locked.
 
 ---
 
