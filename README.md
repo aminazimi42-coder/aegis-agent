@@ -91,6 +91,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Missing vs expired banners** — the operator page shows a distinct `Echo-limited (missing_file)` banner when the local entitlement file is absent and `Echo-limited (expired)` when the file exists but the expiry is in the past; both stay Echo-limited; the file is not unlocked without the local file.
 - **HTTP adapter timeout to Echo** — when `AGENT_LLM_BASE_URL` is set, the HTTP call has a finite timeout (default 8 seconds); on timeout it falls back to Echo and labels the fallback `adapter_timeout`; the operator page does not hang.
 - **start_operator preflight** — `scripts/start_operator.sh` checks for a usable `python3` (prefers 3.11) and verifies that port 8741 is free or already this engine before bind; it exits non-zero with a typed English line when either check fails; it does not open Safari.
+- **Profile schema on load and detached brief signature** — loading a profile that fails schema validation returns a typed `profile_invalid` error and does not crash the operator page; a valid profile still prefills. Signed export writes the markdown brief and a sibling `.sig` file under `AEGIS_DATA_DIR/export`; a local verify helper reports Intact or Tampered.
 
 ---
 

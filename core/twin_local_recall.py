@@ -199,7 +199,12 @@ def signed_export(tenant_id: str, name: str | None = None) -> dict[str, Any]:
     A ``sha256`` signature line is appended.  No email, no cloud upload —
     the file stays local under the data root.
 
-    Returns ``{tenant_id, path, sha256}``.
+    T178 — also writes a detached ``.sig`` sibling file containing the
+    sha256 of the brief bytes plus the local signer label.  If the brief
+    file is missing after the write, raises ``ValueError("missing_file")``
+    so the route can surface ``export_failed: missing_file``.
+
+    Returns ``{tenant_id, path, sha256, sig_path}``.
     """
     import hashlib
 
@@ -231,11 +236,66 @@ def signed_export(tenant_id: str, name: str | None = None) -> dict[str, Any]:
     sha = hashlib.sha256(body.encode("utf-8")).hexdigest()
     full = body + f"sha256: {sha}\n"
     out_path.write_text(full, encoding="utf-8")
+
+    # T178 — detached signature sibling.
+    if not out_path.is_file():
+        raise ValueError("missing_file")
+    sig_path = out_path.with_suffix(out_path.suffix + ".sig")
+    sig_content = f"sha256: {sha}\nsigner: aegis-local\n"
+    sig_path.write_text(sig_content, encoding="utf-8")
+
     return {
         "tenant_id": tenant_id,
         "path": str(out_path),
         "sha256": sha,
+        "sig_path": str(sig_path),
     }
+
+
+# ---------------------------------------------------------------------------#
+# Local verify (T178)
+# ---------------------------------------------------------------------------#
+
+
+def verify_local_sig(brief_path: str) -> str:
+    """Verify a brief against its detached ``.sig`` sibling.
+
+    Reads the brief file at *brief_path* and the ``.sig`` file beside it
+    (``brief_path + ".sig"``).  Reports ``"Intact"`` when the sha256 in
+    the ``.sig`` matches a recomputed sha256 of the brief body (the body
+    is the full file minus the trailing ``sha256:`` line), ``"Tampered"``
+    when it does not, and ``"Missing"`` when either file is absent.
+
+    No network — purely local file reads.
+    """
+    import hashlib
+
+    bpath = Path(brief_path)
+    spath = bpath.with_suffix(bpath.suffix + ".sig")
+    if not bpath.is_file() or not spath.is_file():
+        return "Missing"
+
+    raw = bpath.read_text(encoding="utf-8")
+    lines = raw.splitlines()
+    stored_sha: str | None = None
+    body_lines: list[str] = []
+    for line in lines:
+        if line.startswith("sha256:"):
+            stored_sha = line.split("sha256:", 1)[1].strip()
+        else:
+            body_lines.append(line)
+    body = "\n".join(body_lines) + "\n"
+    recomputed = hashlib.sha256(body.encode("utf-8")).hexdigest()
+
+    sig_raw = spath.read_text(encoding="utf-8")
+    sig_sha: str | None = None
+    for sline in sig_raw.splitlines():
+        if sline.startswith("sha256:"):
+            sig_sha = sline.split("sha256:", 1)[1].strip()
+
+    if sig_sha is not None and sig_sha == recomputed == stored_sha:
+        return "Intact"
+    return "Tampered"
 
 
 # ---------------------------------------------------------------------------#

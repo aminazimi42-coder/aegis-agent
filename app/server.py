@@ -94,6 +94,7 @@ from core.twin_pr_review import review_diff as twin_review_diff
 from core.twin_resume_pack import render_resume as twin_render_resume
 from core.twin_scheduler import schedule as twin_schedule
 from core.twin_scheduler import tick as twin_tick
+from core.twin_schema import validate_profile as twin_validate_profile
 from core.twin_style_lock import lock_style as twin_lock_style
 from core.twin_team_inbox import triage as twin_team_inbox_triage
 from core.twin_transcript_task import from_transcript as twin_from_transcript
@@ -904,6 +905,14 @@ def create_app() -> FastAPI:
         profile = twin_get_latest(tenant_id)
         if profile is None:
             return {"tenant_id": tenant_id, "profile_id": None, "version": 0}
+        # T178 — validate schema on load; invalid returns a typed error
+        # without crashing the operator page.
+        err = twin_validate_profile(profile)
+        if err is not None:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": err},
+            )
         return profile
 
     # --- Twin evolution (T04) ---

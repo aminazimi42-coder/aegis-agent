@@ -103,3 +103,37 @@ def compute_fingerprint(layers: dict[str, Any]) -> str:
     """Standalone helper: SHA-256 over canonical JSON of ``layers``."""
     canonical = json.dumps(layers, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode()).hexdigest()
+
+
+# T178 — profile schema validation on load.
+# The operator-page prefill maps four fields: name (repositories),
+# role, goals (decision_style), timezone (tools).  All must be strings;
+# name must be non-empty.
+
+_PROFILE_STRING_FIELDS: tuple[str, ...] = (
+    "role",
+    "decision_style",
+    "tools",
+    "repositories",
+)
+
+
+def validate_profile(profile: dict[str, Any] | None) -> str | None:
+    """Validate a loaded profile dict.
+
+    Returns ``None`` when the profile is valid, or the typed string
+    ``"profile_invalid"`` when any required field has the wrong type
+    or the name (``repositories``) is empty.
+
+    A ``None`` profile (no profile found) is treated as valid — the
+    caller already handles the missing-profile case separately.
+    """
+    if profile is None:
+        return None
+    for field in _PROFILE_STRING_FIELDS:
+        val = profile.get(field)
+        if not isinstance(val, str):
+            return "profile_invalid"
+    if not profile.get("repositories"):
+        return "profile_invalid"
+    return None
