@@ -215,6 +215,28 @@ def _ensure_schema() -> None:
                 conn.execute(f"ALTER TABLE twin_feedback ADD COLUMN {col}")
             except sqlite3.OperationalError:
                 pass
+        # T175 — correlation_id column so one local id ties propose,
+        # approve, receipt, and audit for the same action.
+        try:
+            conn.execute(
+                "ALTER TABLE twin_actions ADD COLUMN correlation_id TEXT"
+            )
+        except sqlite3.OperationalError:
+            pass
+        # T175 — note_hash column so the receipt chain includes the
+        # SHA-256 of the operator note when one exists.
+        try:
+            conn.execute(
+                "ALTER TABLE twin_actions ADD COLUMN note_hash TEXT"
+            )
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute(
+                "ALTER TABLE twin_feedback ADD COLUMN correlation_id TEXT"
+            )
+        except sqlite3.OperationalError:
+            pass
 
 
 # ---------------------------------------------------------------------------#
@@ -261,6 +283,12 @@ def _row_to_dict(row: sqlite3.Row | dict[str, Any]) -> dict[str, Any]:
     # T120 — batch_id (may be NULL on older rows).
     if "batch_id" in keys:
         result["batch_id"] = row["batch_id"]
+    # T175 — correlation_id (may be NULL on older rows).
+    if "correlation_id" in keys:
+        result["correlation_id"] = row["correlation_id"]
+    # T175 — note_hash (may be NULL when no approve note exists).
+    if "note_hash" in keys:
+        result["note_hash"] = row["note_hash"]
     return result
 
 
@@ -281,7 +309,8 @@ def _load_action(action_id: str) -> dict[str, Any] | None:
         row = conn.execute(
             "SELECT action_id, tenant_id, kind, title, status, created_at, "
             "payload, payload_sha256, approved_payload_sha256, approved_by, approved_at, "
-            "why_text, reject_reason, reject_reason_enum, conflict, batch_id "
+            "why_text, reject_reason, reject_reason_enum, conflict, batch_id, "
+            "correlation_id, note_hash "
             "FROM twin_actions WHERE action_id = ?",
             (action_id,),
         ).fetchone()
@@ -467,12 +496,32 @@ def approve(
             action_dict["approved_by"] = actor_id
             action_dict["approved_at"] = now
             action_dict["why_text"] = why or ""
+            # T175 — when a note exists, hash the note bytes and attach
+            # the digest to the action dict so it enters the receipt
+            # chain.  Empty note is valid — no hash line.
+            note_text = (why or "").strip()
+            if note_text:
+                action_dict["note_hash"] = hashlib.sha256(
+                    note_text.encode("utf-8")
+                ).hexdigest()
+                conn.execute(
+                    "UPDATE twin_actions SET note_hash = ? WHERE action_id = ?",
+                    (action_dict["note_hash"], action_id),
+                )
+            # T175 — read the correlation_id from the action row.
+            corr_row = conn.execute(
+                "SELECT correlation_id FROM twin_actions WHERE action_id = ?",
+                (action_id,),
+            ).fetchone()
+            corr = corr_row["correlation_id"] if corr_row else None
             # T65 — durable feedback row.
             # T130 — include agent (actor_id) and ts (now).
+            # T175 — include correlation_id.
             conn.execute(
                 "INSERT INTO twin_feedback "
-                "(action_id, tenant_id, decision, why_text, created_at, agent) "
-                "VALUES (?, ?, ?, ?, ?, ?)",
+                "(action_id, tenant_id, decision, why_text, created_at, "
+                " agent, correlation_id) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (
                     action_id,
                     action_dict["tenant_id"],
@@ -480,8 +529,22 @@ def approve(
                     why or "",
                     now,
                     actor_id,
+                    corr,
                 ),
             )
+            # T175 — approve audit line sharing the correlation_id.
+            if corr is not None:
+                try:
+                    from core.audit_logger import log_event
+
+                    log_event(
+                        "approve",
+                        action_id,
+                        extra={"tenant_id": action_dict["tenant_id"]},
+                        correlation_id=corr,
+                    )
+                except Exception:
+                    pass
             return action_dict
 
 
@@ -548,12 +611,18 @@ def reject(
             )
             # T65 — durable feedback row.
             # T130 — include reason (from T117 reason_enum) and ts.
+            # T175 — include correlation_id.
             now = _now()
+            corr_row = conn.execute(
+                "SELECT correlation_id FROM twin_actions WHERE action_id = ?",
+                (action_id,),
+            ).fetchone()
+            corr = corr_row["correlation_id"] if corr_row else None
             conn.execute(
                 "INSERT INTO twin_feedback "
                 "(action_id, tenant_id, decision, why_text, created_at, "
-                " agent, reason) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                " agent, reason, correlation_id) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     action_id,
                     action["tenant_id"],
@@ -562,8 +631,22 @@ def reject(
                     now,
                     actor_id,
                     reason_enum,
+                    corr,
                 ),
             )
+        # T175 — reject audit line sharing the correlation_id.
+        if corr is not None:
+            try:
+                from core.audit_logger import log_event
+
+                log_event(
+                    "reject",
+                    action_id,
+                    extra={"tenant_id": action["tenant_id"]},
+                    correlation_id=corr,
+                )
+            except Exception:
+                pass
         action["status"] = "rejected"
         action["why_text"] = why or ""
         action["reject_reason"] = reason
@@ -687,6 +770,11 @@ def _receipt_body(action: dict[str, Any], prev_receipt_sha: str) -> str:
     trailing newline.  ``receipt_sha`` is computed over this exact string
     and appended separately by :func:`_write_receipt` /
     :func:`_dry_run_receipt_bytes`.
+
+    T175 — when *action* carries a ``note_hash`` key (the SHA-256 of the
+    operator note bytes), a ``note_hash: <hex>`` line is included in the
+    body so the note digest enters the receipt chain.  An empty or
+    missing note produces no ``note_hash`` line — empty note is valid.
     """
     lines = [
         f"action_id: {action['action_id']}",
@@ -695,6 +783,10 @@ def _receipt_body(action: dict[str, Any], prev_receipt_sha: str) -> str:
         f"tenant_id: {action['tenant_id']}",
         f"prev_receipt_sha: {prev_receipt_sha}",
     ]
+    # T175 — include note_hash in the chain when a note exists.
+    note_hash = action.get("note_hash")
+    if note_hash:
+        lines.append(f"note_hash: {note_hash}")
     return "\n".join(lines) + "\n"
 
 
@@ -875,6 +967,25 @@ def execute(
     except Exception:
         pass
 
+    # T175 — write an execute audit line sharing the correlation_id.
+    corr = action.get("correlation_id") or None
+    if corr is None:
+        from core.audit_logger import get_correlation_id
+
+        corr = get_correlation_id(action_id)
+    if corr is not None:
+        try:
+            from core.audit_logger import log_event
+
+            log_event(
+                "execute",
+                action_id,
+                extra={"tenant_id": action["tenant_id"]},
+                correlation_id=corr,
+            )
+        except Exception:
+            pass
+
     return action
 
 
@@ -885,7 +996,8 @@ def list_actions(tenant_id: str) -> list[dict[str, Any]]:
         rows = conn.execute(
             "SELECT action_id, tenant_id, kind, title, status, created_at, "
             "payload, payload_sha256, approved_payload_sha256, approved_by, approved_at, "
-            "reject_reason, reject_reason_enum, conflict, batch_id "
+            "reject_reason, reject_reason_enum, conflict, batch_id, correlation_id, "
+            "note_hash "
             "FROM twin_actions WHERE tenant_id = ? "
             "ORDER BY created_at ASC",
             (tenant_id,),
@@ -893,9 +1005,38 @@ def list_actions(tenant_id: str) -> list[dict[str, Any]]:
     return [_row_to_dict(r) for r in rows]
 
 
-# ---------------------------------------------------------------------------#
-# Specialist proposals (T60)
-# ---------------------------------------------------------------------------#
+def verify_chain(tenant_id: str, action_id: str) -> str:
+    """Walk the receipt chain for *action_id* and report integrity.
+
+    T175 — reads the receipt file for *action_id* under
+    ``work_products/{tenant_id}/receipts/{action_id}.md`` and verifies
+    that its ``receipt_sha`` matches a recomputed SHA-256 of the body
+    (excluding the ``receipt_sha`` line).  Returns ``"Intact"`` when the
+    hash matches, ``"Tampered"`` when it does not, and ``"Missing"``
+    when the receipt file does not exist.
+
+    Does not repair a tampered chain — typed result only.
+    """
+    receipts_dir = _work_products_dir(tenant_id) / "receipts"
+    md_path = receipts_dir / f"{action_id}.md"
+    if not md_path.is_file():
+        return "Missing"
+    raw = md_path.read_text(encoding="utf-8")
+    lines = raw.splitlines()
+    stored_sha: str | None = None
+    body_lines: list[str] = []
+    for line in lines:
+        if line.startswith("receipt_sha:"):
+            stored_sha = line.split("receipt_sha:", 1)[1].strip()
+        else:
+            body_lines.append(line)
+    # Reconstruct the body exactly as _receipt_body produces it:
+    # the body is the lines joined by "\n" plus a trailing "\n".
+    body = "\n".join(body_lines) + "\n"
+    recomputed = _compute_receipt_sha(body)
+    if stored_sha is not None and recomputed == stored_sha:
+        return "Intact"
+    return "Tampered"
 
 def _utc_today() -> str:
     """Return the current UTC date as ``YYYY-MM-DD``."""
@@ -1079,13 +1220,19 @@ def insert_specialist_proposal(
         risk_level=risk_level,
     )
     digest = _envelope_digest(envelope)
+    # T175 — mint one local correlation_id so propose, approve, receipt,
+    # and audit for this action all share the same id.
+    from core.audit_logger import mint_correlation_id
+
+    correlation_id = mint_correlation_id(insert_id)
     with _action_lock:
         with get_connection() as conn:
             conn.execute(
                 "INSERT INTO twin_actions "
                 "(action_id, tenant_id, kind, title, status, "
-                "created_at, payload, payload_sha256, conflict, batch_id) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "created_at, payload, payload_sha256, conflict, batch_id, "
+                "correlation_id) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     insert_id,
                     tenant_id,
@@ -1097,8 +1244,21 @@ def insert_specialist_proposal(
                     digest,
                     conflict,
                     batch_id,
+                    correlation_id,
                 ),
             )
+    # T175 — write a propose audit line sharing the correlation_id.
+    try:
+        from core.audit_logger import log_event
+
+        log_event(
+            "propose",
+            insert_id,
+            extra={"tenant_id": tenant_id, "action_kind": kind},
+            correlation_id=correlation_id,
+        )
+    except Exception:
+        pass
     result: dict[str, Any] = {
         "action_id": insert_id,
         "tenant_id": tenant_id,
@@ -1110,6 +1270,7 @@ def insert_specialist_proposal(
         "payload_sha256": digest,
         "conflict": bool(conflict),
         "batch_id": batch_id,
+        "correlation_id": correlation_id,
     }
     # T161 — attach prior_action_id, prior_digest, and why_line when
     # a prior-topic conflict was detected for the same tenant.

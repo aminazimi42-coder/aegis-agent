@@ -1248,6 +1248,20 @@ def create_app() -> FastAPI:
         actions = twin_action_list(tenant_id)
         return {"actions": actions, "count": len(actions)}
 
+    # T175 — verify receipt chain for one action_id.
+    @app.get(
+        "/api/v1/twin/actions/{action_id}/verify-chain",
+        tags=["twin"],
+    )
+    def twin_actions_verify_chain(action_id: str, tenant_id: str = "") -> Any:
+        from core.twin_actions import verify_chain
+
+        return {
+            "action_id": action_id,
+            "tenant_id": tenant_id,
+            "result": verify_chain(tenant_id, action_id),
+        }
+
     # --- Production integrity (T07) --- #
 
     @app.get("/api/v1/platform/status", tags=["twin"])
@@ -1405,6 +1419,10 @@ def create_app() -> FastAPI:
                     "prior_action_id": row_prior_id,
                     "prior_digest": row_prior_digest,
                     "why": row_why,
+                    # T175 — one local correlation id per propose.
+                    "correlation_id": row.get("correlation_id"),
+                    # T175 — payload digest prefix shown before Approve.
+                    "digest_preview": (row.get("payload_sha256", "") or "")[:12],
                 }
             )
         # T138 — surface the last reject reason on the next propose card.

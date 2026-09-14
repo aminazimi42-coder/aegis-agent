@@ -511,6 +511,11 @@
       + '<div class="queue-meta">' + esc(specialistName) + confLabel + ' · proposed · ' + esc(kindStr) + ' · ' + esc(a.action_id || "") + conflictTag + '</div>'
       + '<div class="queue-meta">digest: <code>' + esc(digest) + '</code>'
         + (a.digest_label ? ' <span class="risk-label">' + esc(a.digest_label) + '</span>' : '') + '</div>';
+    // T175 — digest preview before Approve.
+    var digestPreview = a.digest_preview || '';
+    if (digestPreview) {
+      html += '<div class="queue-meta">digest preview: <code>' + esc(digestPreview) + '</code></div>';
+    }
     if (digest) {
       html += '<div class="row">'
         + '<button onclick="approveAction(\'' + esc(a.action_id) + '\',\'' + esc(digest) + '\')">Approve</button>'

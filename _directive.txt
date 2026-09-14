@@ -1,59 +1,26 @@
-T169 — Remote license status outside execute, no unlock without local file. This is 3 of 4 remaining money-layer slices. Do ONLY this directive. Do not start T170. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a card form, a live license host process, Grok bots, voice, Windows, WebSockets, Playwright, OS cron, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T168. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates. Do not store Apple secrets or a payment date. Do not claim a license server is deployed.
+T175_CONTINUE — Finish T175 only. Do not start T176. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, voice, Windows, a seventh agent, or a signed-app claim. English only in repo files. Do not copy $HOME/.aegis.
 
-Baseline: T168_CONTINUE live 9fade42486c0ea09e2cddae72bb3198cc3ff7662. pytest 939 passed 1 skipped. T151 optional GET and T155 no-unlock-without-local-file already exist. Propose and execute must still not call the status client. No live host is deployed.
+HARD STOP: pytest then commit then push. After push, stop.
 
-GOAL: Harden the existing license-status client so a remote body can only confirm a valid local entitlement. Missing, expired, mutated, foreign-tenant, or bad-signature local files stay Echo-limited even when the remote says professional. Persist a typed last check on the operator status payload. Do not stand up a server.
+Fix only this:
 
-Implement:
+1) tests/test_t175_receipt_depth.py
+- Repair the syntax error. tearDown must be valid Python, for example:
+  def tearDown(self) -> None:
+- Do not delete the nine tests. Do not invent extra product.
 
-1) Extend the existing status client / entitlement resolver only
-- Keep AEGIS_LICENSE_STATUS_URL default off. Unset URL must not open a socket.
-- GET only, timeout <= 2 seconds. No POST. No cookies. No request body. No entitlement.json on the wire. No profile fields on the wire.
-- Authorization header only when AEGIS_LICENSE_BEARER is set and non-empty.
-- Parse only {tier, expires_at, status}. Ignore unknown fields.
-- On timeout, DNS, TLS, or non-200: typed unreachable; never raise into execute or propose.
-- Resolve order: local file first. Remote never grants a higher tier. Remote never writes entitlement.json.
-
-2) Operator status payload
-- license_check stays: local_only | remote_ok | remote_unreachable | echo_limited
-- Add license_source = local_file | remote_confirm | none
-- Do not print the raw URL on operator HTML.
-- Do not mention Stripe on the operator page.
-
-3) Optional local audit line
-- If the existing local JSONL audit writer exists, append one English event license_check with status and source only. No email, no bearer, no URL.
-- If no audit writer exists, skip this item. Do not invent a new log stack.
-
-4) README Now vs Planned
-- Now: optional license-status GET is labeled and off by default; a remote body cannot unlock without a valid local entitlement file; no license host is deployed.
-- Planned, labeled Planned: live Stripe, deployed cloud license host.
-- Leave the Author paragraph untouched.
-
-5) STATUS.md
-- One line: T169 remote status cannot unlock without local entitlement; Stripe and a deployed host remain locked.
-
-6) tests/test_t169_license_status_outside_execute.py
-- test_unset_url_does_not_open_socket
-- test_missing_local_file_ignores_professional_remote_body
-- test_expired_local_file_ignores_remote_ok
-- test_propose_and_execute_modules_do_not_import_status_client
-- test_status_payload_has_license_check
-- test_readme_does_not_claim_host_deployed
-- test_readme_author_untouched
-- Mock HTTP. Use tmp_path. Do not start uvicorn. Do not hit a public host.
-
-Verification, exact order. If a proof fails, fix only that failure and restart from 1. If the tool budget is low after pytest, skip commentary and do git commit + push immediately.
+2) Then run this exact order. If a proof fails, fix only that failure and restart from 1.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; r=Path('README.md').read_text(); st=Path('STATUS.md').read_text() if Path('STATUS.md').is_file() else ''; print(('cannot unlock' in r.lower()) or ('echo-limited' in r.lower() and 'remote' in r.lower()), 'stripe' not in r.lower() or 'Planned' in r, 'T169' in st or 'unlock' in st.lower())"
+   ./.venv/bin/python -c "from pathlib import Path; r=Path('README.md').read_text(); print('correlation' in r.lower() or 'Intact' in r, 'Author' in r, 'notarized' not in r.lower() or 'not notarized' in r.lower())"
    Required: True True True
 4. ./.venv/bin/python -m pytest -q
    Required: 0 failed
-5. git add -A (do not force-add dist/, .kms/, *.cer, *.csr, *.p8, *.p12, or $HOME/.aegis/; do not delete _directive.txt)
-6. git commit -m "feat(t169): remote license status cannot unlock without local file"
+5. git add -A (do not force-add dist/, .kms/, *.cer, *.p8, *.p12, or $HOME/.aegis/; do not delete _directive.txt)
+6. git commit -m "feat(t175): correlation id, note hash, digest preview, Intact/Tampered"
 7. git push origin main
 8. Print new SHA, pytest count, and the proof line.
 
-Stop only after a successful push. Do nothing else.
+After step 4 you MUST run steps 5–8 in the same turn. Stop only after a successful push. Do nothing else.

@@ -53,23 +53,32 @@ def log_event(
     action_id: str,
     *,
     extra: dict[str, Any] | None = None,
+    correlation_id: str | None = None,
 ) -> dict[str, Any]:
     """Append one JSONL audit line and return the event dict.
 
     ``kind`` must be one of ``propose``, ``approve``, ``reject``,
     ``execute``, ``purge``, ``replay``.  The line contains:
     ``ts``, ``kind``, ``action_id``, ``correlation_id``.
+
+    T175 — when *correlation_id* is supplied it is used directly and
+    cached in the process map so subsequent calls for the same
+    *action_id* share it.
     """
     if kind not in _VALID_KINDS:
         raise ValueError(f"invalid audit kind: {kind}")
 
     ts = datetime.now(timezone.utc).isoformat()
-    correlation_id = _get_or_create_correlation(action_id)
+    if correlation_id is not None:
+        _correlation_map[action_id] = correlation_id
+        cid = correlation_id
+    else:
+        cid = _get_or_create_correlation(action_id)
     event: dict[str, Any] = {
         "ts": ts,
         "kind": kind,
         "action_id": action_id,
-        "correlation_id": correlation_id,
+        "correlation_id": cid,
     }
     if extra:
         # T124 — redact secret-shaped strings from audit extra values.
@@ -111,3 +120,15 @@ def read_events(path: str | None = None) -> list[dict[str, Any]]:
 def get_correlation_id(action_id: str) -> str | None:
     """Return the correlation_id for *action_id* or ``None`` if unset."""
     return _correlation_map.get(action_id)
+
+
+def mint_correlation_id(action_id: str) -> str:
+    """Mint and cache a new correlation_id for *action_id*.
+
+    T175 — one local correlation id ties propose, approve, receipt, and
+    audit for the same action.  Overwrites any prior mapping so the
+    freshest propose call wins.
+    """
+    cid = uuid4().hex
+    _correlation_map[action_id] = cid
+    return cid
