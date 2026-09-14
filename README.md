@@ -92,6 +92,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **HTTP adapter timeout to Echo** — when `AGENT_LLM_BASE_URL` is set, the HTTP call has a finite timeout (default 8 seconds); on timeout it falls back to Echo and labels the fallback `adapter_timeout`; the operator page does not hang.
 - **start_operator preflight** — `scripts/start_operator.sh` checks for a usable `python3` (prefers 3.11) and verifies that port 8741 is free or already this engine before bind; it exits non-zero with a typed English line when either check fails; it does not open Safari.
 - **Profile schema on load and detached brief signature** — loading a profile that fails schema validation returns a typed `profile_invalid` error and does not crash the operator page; a valid profile still prefills. Signed export writes the markdown brief and a sibling `.sig` file under `AEGIS_DATA_DIR/export`; a local verify helper reports Intact or Tampered.
+- **Stripe checkout sidecar outside execute** — `app/licensing/billing_checkout.py` `create_checkout_intent()` returns `not_configured` when `STRIPE_SECRET_KEY` is unset (default in tests and CI) and never calls the network; a local issuer writes `entitlement.json` with `source` under `AEGIS_DATA_DIR`; execute and propose read the file only; a forged header or remote 200 without the file cannot raise the tier. Payment is outside this page. No paid shop is deployed.
 
 ---
 

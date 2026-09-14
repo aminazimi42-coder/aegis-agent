@@ -86,5 +86,5 @@ def fulfill_local(
     # Call the existing local issuer — do not fork a second issuer.
     from scripts.issue_entitlement import issue
 
-    payload = issue(tenant_id, tier, days, key)
+    payload = issue(tenant_id, tier, days, key, source="external_checkout")
     return {"fulfill_state": "fulfilled", "payload": payload}

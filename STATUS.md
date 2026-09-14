@@ -133,3 +133,5 @@ T176 cages writes to AEGIS_DATA_DIR and extends redact. Codesign paused.
 T177 honest start distinguishes missing vs expired and times out HTTP. Codesign paused.
 
 T178 validates profile schema and writes a detached brief signature. Codesign paused. Four-slice depth pack closed.
+
+T179 Stripe checkout sidecar outside execute; local issuer writes entitlement with source. Live Stripe shop remains locked.

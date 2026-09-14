@@ -84,6 +84,7 @@ checks. The latest verification result is:
 - Added deployment configuration for Render and Docker-based hosting.
 - T168 notary path landed: the codesign script submits to notarytool only when AEGIS_NOTARY_PROFILE is set; NOTARIZED prints only after stapler validate exits 0; without the profile it prints NOTARY_SKIPPED. Live Stripe and a real cloud license host remain locked — Planned, not shipped.
 - T171 notary submit path is wired; NOTARIZED prints only after stapler validate; live shop and stranger pack remain locked — Planned, not shipped.
+- T179 Stripe checkout sidecar outside execute; local issuer writes entitlement with source; live Stripe shop remains locked — Planned, not shipped.
 
 ## Safe handoff state
 

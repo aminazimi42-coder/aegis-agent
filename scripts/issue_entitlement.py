@@ -82,9 +82,14 @@ def _sign(payload: dict[str, Any], key: str) -> str:
 
 
 def _build_payload(
-    tenant_id: str, tier: str, days: int
+    tenant_id: str, tier: str, days: int, source: str = "manual"
 ) -> dict[str, Any]:
-    """Build the canonical entitlement payload (pre-signature)."""
+    """Build the canonical entitlement payload (pre-signature).
+
+    *source* is ``"manual"`` (default, local CLI issue) or
+    ``"external_checkout"`` (when a stranger pays on the external
+    checkout sidecar and the local fulfill path writes the file).
+    """
     now = datetime.now(timezone.utc)
     expires = now + timedelta(days=days)
     return {
@@ -93,18 +98,24 @@ def _build_payload(
         "issued_at": now.isoformat(),
         "expires_at": expires.isoformat(),
         "issuer": _ISSUER,
+        "source": source,
     }
 
 
 def issue(
-    tenant_id: str, tier: str, days: int, key: str
+    tenant_id: str,
+    tier: str,
+    days: int,
+    key: str,
+    source: str = "manual",
 ) -> dict[str, Any]:
     """Build and sign an entitlement payload and write it to disk.
 
     Returns the signed payload dict.  Does not include the key in the
-    output.
+    output.  *source* is ``"manual"`` (default) or
+    ``"external_checkout"``.
     """
-    payload = _build_payload(tenant_id, tier, days)
+    payload = _build_payload(tenant_id, tier, days, source=source)
     payload["signature_sha256"] = _sign(payload, key)
     out_path = _data_root() / "entitlement.json"
     out_path.write_text(
