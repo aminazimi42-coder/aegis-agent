@@ -127,3 +127,5 @@ T173 local fulfill is grant-gated and outside execute; live Stripe shop remains 
 T174 loop depth uses durable notes and profile; multi-month twin remains locked.
 
 T175 receipt depth adds correlation id, note hash, digest preview, Intact/Tampered. Codesign paused.
+
+T176 cages writes to AEGIS_DATA_DIR and extends redact. Codesign paused.

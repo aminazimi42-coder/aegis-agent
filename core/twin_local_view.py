@@ -106,15 +106,29 @@ def data_root() -> Path:
     return root
 
 
+class PathDeniedError(ValueError):
+    """Typed rejection when a resolved path escapes AEGIS_DATA_DIR.
+
+    T176 — uniform path cage.  The ``code`` attribute is the stable typed
+    string that both HTTP and CLI return when a write destination
+    resolves outside the data root.
+    """
+
+    code: str = "path_denied_outside_data_dir"
+
+
 def cage_path(path: str | Path) -> Path:
     """Resolve *path* and return it only when it stays inside the data root.
 
     T159 — tool-output path cage.  Before any local file write from a
     tool or export helper, the destination must be resolved and checked
     against ``data_root()``.  When the resolved path escapes the data
-    root, ``ValueError("path outside AEGIS_DATA_DIR")`` is raised — a
-    typed English rejection with no write and no execute of the
-    rejected path.
+    root, :class:`PathDeniedError` is raised — a typed English rejection
+    with no write and no execute of the rejected path.
+
+    T176 — the typed ``code`` attribute is
+    ``path_denied_outside_data_dir`` so HTTP and CLI both return the
+    same stable string.
 
     Relative paths are resolved against the data root so that a bare
     filename lands inside the root by default.  The returned path is
@@ -130,7 +144,7 @@ def cage_path(path: str | Path) -> Path:
     try:
         dest_resolved.relative_to(root_resolved)
     except ValueError:
-        raise ValueError("path outside AEGIS_DATA_DIR") from None
+        raise PathDeniedError("path outside AEGIS_DATA_DIR") from None
     return dest
 
 

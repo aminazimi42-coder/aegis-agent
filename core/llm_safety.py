@@ -15,6 +15,7 @@ import re
 from typing import Any
 
 from core.llm_provider import HttpProvider, get_provider
+from core.redact import _SSH_KEY_BLOCK_RE, _WEBHOOK_SECRET_RE
 
 ALLOWED_TOOLS: tuple[str, ...] = (
     "weekly_digest",
@@ -53,7 +54,16 @@ _JWT_RE = re.compile(
 # ``sk...``, ``sk_live_...``).
 _BEARER_RE = re.compile(r"(?:Bearer\s+)?sk[-_:][A-Za-z0-9_-]{8,}", re.IGNORECASE)
 
-_SECRET_SHAPES: tuple[re.Pattern[str], ...] = (_AWS_KEY_RE, _JWT_RE, _BEARER_RE)
+# T176 — webhook query secrets and SSH private-key blocks.
+# The shapes are imported from core.redact so the LLM safety layer
+# redacts the same secret shapes as the propose/audit path.
+_SECRET_SHAPES: tuple[re.Pattern[str], ...] = (
+    _AWS_KEY_RE,
+    _JWT_RE,
+    _BEARER_RE,
+    _SSH_KEY_BLOCK_RE,
+    _WEBHOOK_SECRET_RE,
+)
 
 
 def redact_secrets(text: str) -> str:

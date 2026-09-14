@@ -58,9 +58,32 @@ _BEARER_RE = re.compile(
 
 # T162 — PEM private-key begin markers.  ``-----BEGIN <TYPE> PRIVATE KEY-----``
 # is the start of every PEM-encoded private key (RSA, EC, OPENSSH, …).
-# Redact the marker so the private-key block is never persisted verbatim.
+# T176 — redact the *entire* private-key block from begin to end marker so
+# the key body is never persisted verbatim.
 _PEM_BEGIN_RE = re.compile(
-    r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----",
+    r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----"
+)
+_PEM_END_RE = re.compile(
+    r"-----END [A-Z0-9 ]*PRIVATE KEY-----"
+)
+
+# T176 — SSH private-key blocks.  ``-----BEGIN OPENSSH PRIVATE KEY-----`` …
+# ``-----END OPENSSH PRIVATE KEY-----`` is the standard OpenSSH private-key
+# format.  The general PEM pattern above already covers the begin marker;
+# this full-block pattern redacts the entire key body from begin to end.
+_SSH_KEY_BLOCK_RE = re.compile(
+    r"-----BEGIN (?:OPENSSH|RSA|EC|DSA|PGP) PRIVATE KEY-----"
+    r".*?-----END (?:OPENSSH|RSA|EC|DSA|PGP) PRIVATE KEY-----",
+    re.DOTALL,
+)
+
+# T176 — webhook URL query secrets.  A webhook URL may carry a secret or
+# token as a query parameter: ``https://hooks.example.com/…?secret=abc…``
+# or ``…&token=xyz…``.  Redact the parameter value so the URL shape stays
+# but the secret does not.
+_WEBHOOK_SECRET_RE = re.compile(
+    r"([?&](?:secret|token|key|webhook_secret)=[A-Za-z0-9_\-]{8,})",
+    re.IGNORECASE,
 )
 
 _SECRET_SHAPES: tuple[re.Pattern[str], ...] = (
@@ -69,7 +92,10 @@ _SECRET_SHAPES: tuple[re.Pattern[str], ...] = (
     _AWS_RE,
     _JWT_RE,
     _BEARER_RE,
+    _SSH_KEY_BLOCK_RE,
     _PEM_BEGIN_RE,
+    _PEM_END_RE,
+    _WEBHOOK_SECRET_RE,
 )
 
 _REPLACEMENT = "[REDACTED]"

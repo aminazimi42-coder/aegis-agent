@@ -77,14 +77,19 @@ def backup_tenant(tenant_id: str, dest: Path) -> Path:
 
     Returns the path to the written archive.  *dest* must end with
     ``.zip`` and reside under ``AEGIS_DATA_DIR``.
+
+    T176 — the destination is caged through ``cage_path`` so a path
+    outside ``AEGIS_DATA_DIR`` returns a typed deny and does not write.
     """
     dest = Path(dest)
     if dest.suffix != ".zip":
         raise ValueError("dest must end with .zip")
-    data_dir = _data_dir()
-    # Resolve dest relative to AEGIS_DATA_DIR when not absolute.
+    # T176 — uniform path cage: resolve and reject outside the data root.
+    from core.twin_local_view import cage_path
+
     if not dest.is_absolute():
-        dest = data_dir / dest
+        dest = Path(os.getenv("AEGIS_DATA_DIR", "data")) / dest
+    dest = cage_path(dest)
     dest.parent.mkdir(parents=True, exist_ok=True)
 
     # Build the backup SQLite DB in a temp file.

@@ -833,10 +833,18 @@ def _write_receipt(action: dict[str, Any]) -> Path:
     receipt via ``prev_receipt_sha`` (or ``GENESIS`` for the first) and
     carries its own ``receipt_sha`` (SHA-256 of the canonical body without
     the ``receipt_sha`` line).  Returns the path of the written receipt.
+
+    T176 — the receipts directory is caged through ``cage_path`` so a
+    path outside ``AEGIS_DATA_DIR`` returns a typed deny and does not
+    write.
     """
+    from core.twin_local_view import cage_path
+
     tenant_id = action["tenant_id"]
     action_id = action["action_id"]
     receipts_dir = _work_products_dir(tenant_id) / "receipts"
+    # T176 — cage the receipts directory under AEGIS_DATA_DIR.
+    receipts_dir = cage_path(receipts_dir)
     receipts_dir.mkdir(parents=True, exist_ok=True)
     md_path = receipts_dir / f"{action_id}.md"
     data = _dry_run_receipt_bytes(action)

@@ -10,7 +10,6 @@ telemetry egress — the file is local only.
 from __future__ import annotations
 
 import json
-import os
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
@@ -30,8 +29,9 @@ _correlation_map: dict[str, str] = {}
 
 def _audit_dir() -> Path:
     """Return the audit directory under ``AEGIS_DATA_DIR``."""
-    base = Path(os.getenv("AEGIS_DATA_DIR", "data"))
-    return base / "audit"
+    from core.twin_local_view import data_root
+
+    return data_root() / "audit"
 
 
 def _audit_path(date_str: str | None = None) -> Path:
@@ -82,12 +82,18 @@ def log_event(
     }
     if extra:
         # T124 — redact secret-shaped strings from audit extra values.
+        # T176 — bearer, webhook, and SSH shapes are also redacted.
         from core.redact import redact_payload
 
         event.update(redact_payload(extra))
 
-    path = _audit_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
+    # T176 — cage the audit directory under AEGIS_DATA_DIR.
+    from core.twin_local_view import cage_path
+
+    audit_dir = cage_path(_audit_dir())
+    audit_dir.mkdir(parents=True, exist_ok=True)
+    date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    path = audit_dir / f"{date_str}.jsonl"
     line = json.dumps(
         event,
         sort_keys=True,

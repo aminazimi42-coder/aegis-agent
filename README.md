@@ -87,6 +87,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Local fulfill outside execute** — `app/licensing/fulfill.py` writes `entitlement.json` only when a local grant (`AEGIS_FULFILL_GRANT`) and issuer key (`AEGIS_ENTITLEMENT_ISSUER_KEY` or key file) are present; a missing grant or key writes nothing. Execute does not take payment; no paid shop is deployed.
 - **Loop depth from durable notes and profile** — the next propose response reads the last reject reason and last approve note from the durable feedback store and includes both when present; the weekly brief uses the saved profile name, role, goals, and timezone; the Approved strip stays. This is Echo, not a multi-month behavioral twin.
 - **Receipt depth: correlation id, note hash, digest preview, Intact/Tampered** — one local correlation id ties propose, approve, receipt, and audit for the same action; the receipt chain includes a hash of the operator note when a note exists; the operator page shows a digest preview before Approve; a local verify-chain helper reports Intact or Tampered.
+- **Path cage and extra redact** — every operator file write is caged to `AEGIS_DATA_DIR`; a path outside that dir returns a typed `path_denied_outside_data_dir` deny and does not write; bearer tokens, webhook query secrets, and SSH private-key blocks are redacted on propose, execute logs, and audit.
 
 ---
 
