@@ -147,3 +147,5 @@ T182 checkout sidecar stays outside execute; live Apple ticket and live Stripe s
 T185 documents live host aegis-agent-haka.onrender.com and instance 0.5c-512mb; free-tier cold-start sentence removed; LIMITATIONS + THREAT_NOTES added. T186 public demo denies raw PAT ingest; local loop unchanged.
 
 T187 notarize_operator.sh wraps T183 submit + T184 staple; live Apple ticket still needs AEGIS_NOTARY_PROFILE on hermesdev; T188 billing locked.
+
+T188 shop event handler stays outside execute; live Stripe keys and deployed webhook host remain outside git.
