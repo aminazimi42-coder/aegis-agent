@@ -1,10 +1,16 @@
 services:
   - type: web
-    name: aegis-agent-platform
-    env: python
-    plan: free
-    buildCommand: pip install --upgrade pip && pip install .
-    startCommand: uvicorn app.server:app --host 0.0.0.0 --port $PORT
+    # Live dashboard 2026-09-15: service name is aegis-agent (not
+    # aegis-agent-platform — that old hostname returns 404).  The public
+    # URL is https://aegis-agent-haka.onrender.com.  Instance class is
+    # 0.5c-512mb (paid), not the old free plan.  Auto-Deploy is on for
+    # the main branch.  This is a demo deployment, not the sold product;
+    # the product loop stays local (start_operator.sh, $HOME/.aegis,
+    # port 8741).
+    name: aegis-agent-haka
+    env: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     autoDeploy: true
     envVars:
