@@ -139,3 +139,5 @@ T179 Stripe checkout sidecar outside execute; local issuer writes entitlement wi
 T183 notary submit helper landed; staple and live billing remain locked.
 
 T184 staple helper landed; live ticket still requires AEGIS_NOTARY_PROFILE on hermesdev; live billing locked.
+
+T181 local issuer outside execute; live Apple ticket and live Stripe remain deferred.
