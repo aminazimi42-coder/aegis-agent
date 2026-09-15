@@ -135,3 +135,5 @@ T177 honest start distinguishes missing vs expired and times out HTTP. Codesign 
 T178 validates profile schema and writes a detached brief signature. Codesign paused. Four-slice depth pack closed.
 
 T179 Stripe checkout sidecar outside execute; local issuer writes entitlement with source. Live Stripe shop remains locked.
+
+T183 notary submit helper landed; staple and live billing remain locked.

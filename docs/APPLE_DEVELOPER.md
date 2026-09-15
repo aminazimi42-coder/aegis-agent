@@ -46,6 +46,42 @@ The profile name is an environment variable — never a committed secret.
 
 Never run this on the **amin** operator account.
 
+## Submit (T183)
+
+A separate submit-only helper (`scripts/notarize_submit.sh`) sends the
+already-signed app to Apple Notary and prints a submission id.  Waiting
+for Apple's verdict and stapling the ticket are NOT in this slice.
+
+### Create the keychain profile on hermesdev only, not amin
+
+```bash
+xcrun notarytool store-credentials "aegis-notary" \
+  --apple-id "aminazimi42@icloud.com" \
+  --team-id "3J54UZPZW3"
+```
+
+Apple will ask for an app-specific password.  That password never
+enters git.
+
+### Then submit
+
+```bash
+export AEGIS_NOTARY_PROFILE=aegis-notary
+./scripts/notarize_submit.sh
+```
+
+The script verifies the signature with `codesign --verify --deep --strict`,
+builds a zip with `ditto`, and submits with `--keychain-profile` only —
+no `--apple-id`, no `--password`, no `--team-id` flags on the submit
+command.  It prints `NOTARY_SUBMITTED: <id>` on success or
+`NOTARY_PROFILE_MISSING` and exits 0 when the profile is absent.
+
+Still enroll, sign, and submit on hermesdev.  The shared drop box is
+not the submit machine.
+
+No dollar amount.  No pay date.  No Stripe.  No license host.  No App
+Store claim.
+
 ## Raw certificate files (repeated)
 
 Raw `.cer`, `.csr`, `.p12`, and `.p8` files stay in Downloads or the

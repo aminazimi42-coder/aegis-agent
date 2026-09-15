@@ -1,33 +1,79 @@
-T178_CONTINUE — Finish T178 only. Do not start T179. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, Grok bots, voice, Windows, a seventh agent, or a signed-app claim. Do not write the word notarized into README. English only in repo files. Do not copy $HOME/.aegis.
+T183 — Live notary SUBMIT only. This is market-pack item 1 of 4 plus the later amin trial. Do ONLY this directive. Do not start T180, T181, T182, T184. Do not run the amin stranger trial. Do not read task_instruction.txt. Do not treat this as the old T179 Stripe sidecar. That Stripe file is a different slice and stays untouched. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a card form, a live license host, Grok bots, voice, Windows, WebSockets, Playwright, OS cron, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T178. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates. Do not store an Apple password, app-specific password, App Store Connect API key, notary password, .p12, or payment date in the repo. Do not print the word NOTARIZED anywhere in product copy or script success text. Do not run stapler staple. Do not claim Gatekeeper accepted the app.
 
-HARD STOP: write the missing tests, then pytest, then commit, then push in THIS same turn. After push, stop. Do not ask whether to continue.
+Baseline on hermesdev 2026-09-15: Developer ID Application: Amin Azimi (3J54UZPZW3) signed
+dist/AegisOperator-mac/Aegis Operator.app
+codesign EXIT:0, verify --deep --strict VERIFY:0, spctl SPCTL:3 source=Unnotarized Developer ID.
+T168 already taught codesign_operator.sh to skip notary without AEGIS_NOTARY_PROFILE. T183 adds a submit-only helper and one live submit on hermesdev when the profile exists. CI has no Apple identity. That is allowed.
 
-Already in the tree if the previous turn wrote them: profile schema validate_profile, GET profile returns profile_invalid on bad load, signed_export writes sibling .sig, verify_local_sig returns Intact/Tampered/Missing. Do not rip those out. Complete what is missing.
+GOAL: A submit-only path that sends the already-signed app to Apple Notary and prints a submission id. Staple and the word NOTARIZED stay locked for the next market slice. Missing profile must print NOTARY_PROFILE_MISSING and stop cleanly. Secrets stay out of git.
 
-1) Create tests/test_t178_profile_export_sig.py as valid Python 3.11.
-- Every def must have matching parentheses. Compile before pytest.
-- test_valid_profile_still_prefills
-- test_invalid_profile_typed_error
-- test_signed_export_writes_sig_sibling
-- test_missing_brief_is_not_success
-- test_local_sig_intact
-- test_local_sig_tampered
-- test_readme_author_untouched
-- Use tmp_path. Do not write the live $HOME/.aegis. Do not start uvicorn.
+Implement:
 
-2) Then this exact order. If a proof fails, fix only that failure and restart from 1 in the SAME turn.
+1) scripts/notarize_submit.sh
+- Refuse to run unless the signed app exists at
+  dist/AegisOperator-mac/Aegis Operator.app
+  or AEGIS_NOTARY_APP if that path is set and is a directory ending in .app.
+- Refuse if `codesign --verify --deep --strict` on that app fails. Print SIGNATURE_INVALID and exit 1.
+- Build a zip next to the app with ditto:
+  ditto -c -k --keepParent "$APP" "$ZIP"
+  ZIP name: dist/AegisOperator-mac/Aegis Operator.notarize.zip
+- If AEGIS_NOTARY_PROFILE is unset or empty: print NOTARY_PROFILE_MISSING and the exact owner command below, then exit 0. Do not fail CI. Do not invent credentials.
+- If profile is set: run ONLY
+  xcrun notarytool submit "$ZIP" --keychain-profile "$AEGIS_NOTARY_PROFILE" --output-format json
+  Do not pass --apple-id, --password, --team-id, or a raw key path.
+  Do not use --wait on this slice (waiting and staple are the next market slice).
+- Print the submission id from JSON if present. Print NOTARY_SUBMITTED and the id. Never print NOTARIZED.
+- chmod +x the script.
+- Do not open Safari. Do not upload anywhere except notarytool submit when the profile is set.
 
-1. ./.venv/bin/python -m py_compile tests/test_t178_profile_export_sig.py
-2. ./.venv/bin/python -m ruff check --fix .
-3. ./.venv/bin/python -m ruff check .
-4. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; r=Path('README.md').read_text(); print(('schema' in r.lower() or '.sig' in r.lower() or 'signature' in r.lower()), 'Author' in r, 'notarized' not in r.lower())"
-   Required: True True True
-5. ./.venv/bin/python -m pytest -q
+2) Owner profile command (docs only, never commit secrets)
+In docs/APPLE_DEVELOPER.md add a Submit section:
+- Create the keychain profile on hermesdev only, not amin:
+  xcrun notarytool store-credentials "aegis-notary" --apple-id "aminazimi42@icloud.com" --team-id "3J54UZPZW3"
+  Apple will ask for an app-specific password. That password never enters git.
+- Then:
+  export AEGIS_NOTARY_PROFILE=aegis-notary
+  ./scripts/notarize_submit.sh
+- Still enroll, sign, and submit on hermesdev. Shared drop box is not the submit machine.
+- No dollar amount. No pay date. No Stripe. No license host. No App Store claim.
+
+3) README Now vs Planned
+- Now: local Developer ID signature exists on the operator app; a submit-only helper can send a zip when AEGIS_NOTARY_PROFILE is set; Gatekeeper still rejects Unnotarized Developer ID until staple.
+- Planned stays: staple, stranger giveable open, live Stripe, cloud license host.
+- Do not write that the shipped app is notarized.
+
+4) STATUS.md
+- One line: T183 notary submit helper landed; staple and live billing remain locked.
+- Do not write NOTARIZED.
+
+5) tests/test_t183_notary_submit.py
+- test_script_exists
+- test_script_uses_keychain_profile_only
+- test_script_has_no_wait_and_no_staple
+- test_script_never_prints_notarized_success
+- test_readme_does_not_claim_app_is_notarized
+- test_status_keeps_staple_and_billing_locked
+- test_no_apple_secrets_tracked
+- Do not call notarytool against Apple in pytest. Do not start uvicorn.
+
+6) Live submit on hermesdev after tests pass, only if profile exists
+- If AEGIS_NOTARY_PROFILE is set in the environment, run ./scripts/notarize_submit.sh once and paste the printed submission id into the final report.
+- If missing, print NOTARY_PROFILE_MISSING in the report and stop after push. Do not block the slice. T183 is still passed when the helper and tests land.
+- Never write the profile password into the report.
+
+Verification, exact order. If a proof fails, fix only that failure and restart from 1. If the tool budget is low after pytest, skip commentary and do git commit + push immediately.
+
+1. ./.venv/bin/python -m ruff check --fix .
+2. ./.venv/bin/python -m ruff check .
+3. Proof:
+   ./.venv/bin/python -c "from pathlib import Path; s=Path('scripts/notarize_submit.sh').read_text() if Path('scripts/notarize_submit.sh').is_file() else ''; r=Path('README.md').read_text(); st=Path('STATUS.md').read_text() if Path('STATUS.md').is_file() else ''; print(Path('scripts/notarize_submit.sh').is_file(), 'notarytool submit' in s, '--wait' not in s, 'stapler staple' not in s, 'NOTARIZED' not in s, 'NOTARY_PROFILE_MISSING' in s)"
+   Required: True True True True True True
+   README must not claim the shipped app is notarized.
+4. ./.venv/bin/python -m pytest -q
    Required: 0 failed
-6. git add -A (do not force-add dist/, .kms/, *.cer, *.p8, *.p12, or $HOME/.aegis/; do not delete _directive.txt)
-7. git commit -m "feat(t178): profile schema and detached brief signature"
-8. git push origin main
-9. Print new SHA, pytest count, and the proof line.
+5. git add -A (do not force-add dist/, .kms/, *.p8, large notarize zip, or $HOME/.aegis/; do not delete _directive.txt)
+6. git commit -m "feat(t183): notary submit-only helper without notarized lie"
+7. git push origin main
+8. Print new SHA, pytest count, the proof line, and NOTARY_SUBMITTED id or NOTARY_PROFILE_MISSING.
 
-After step 5 you MUST run steps 6–9 in the same turn. Stop only after a successful push. Do nothing else.
+Stop only after a successful push. Do nothing else.

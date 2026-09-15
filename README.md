@@ -93,6 +93,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **start_operator preflight** — `scripts/start_operator.sh` checks for a usable `python3` (prefers 3.11) and verifies that port 8741 is free or already this engine before bind; it exits non-zero with a typed English line when either check fails; it does not open Safari.
 - **Profile schema on load and detached brief signature** — loading a profile that fails schema validation returns a typed `profile_invalid` error and does not crash the operator page; a valid profile still prefills. Signed export writes the markdown brief and a sibling `.sig` file under `AEGIS_DATA_DIR/export`; a local verify helper reports Intact or Tampered.
 - **Stripe checkout sidecar outside execute** — `app/licensing/billing_checkout.py` `create_checkout_intent()` returns `not_configured` when `STRIPE_SECRET_KEY` is unset (default in tests and CI) and never calls the network; a local issuer writes `entitlement.json` with `source` under `AEGIS_DATA_DIR`; execute and propose read the file only; a forged header or remote 200 without the file cannot raise the tier. Payment is outside this page. No paid shop is deployed.
+- **Notary submit-only helper** — a local Developer ID signature exists on the operator app; `scripts/notarize_submit.sh` can send a zip to Apple Notary when `AEGIS_NOTARY_PROFILE` is set and prints a submission id; without the profile it prints `NOTARY_PROFILE_MISSING` and exits 0. Gatekeeper still rejects a Developer ID app without a staple ticket.
 
 ---
 
@@ -108,7 +109,7 @@ The road ahead, not yet shipped:
 - **Professional, then Executive, then Engineering** — tier rollout in that order; each tier is a local entitlement file, not a card charge.
 - **Payments never enter core** — billing, if any, lives outside this repository; `core/` stays free of payment logic.
 - **Mac installer trial and Developer ID** — the Mac installer folder will be trialed on owner and amin accounts; signing requires a Developer ID, and the license host remains outside this repo.
-- **Planned: live Stripe shop, deployed license host, Developer ID staple** — a live Stripe account, a deployed license host, and a Developer ID staple for the installer are planned, not shipped; they remain locked.
+- **Planned: staple, stranger giveable open, live Stripe shop, deployed license host** — a notary staple ticket, a stranger giveable open, a live Stripe account, a deployed license host, and a Developer ID staple for the installer are planned, not shipped; they remain locked.
 
 ---
 
