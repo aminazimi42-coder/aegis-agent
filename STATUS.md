@@ -144,4 +144,4 @@ T181 local issuer outside execute; live Apple ticket and live Stripe remain defe
 
 T182 checkout sidecar stays outside execute; live Apple ticket and live Stripe shop remain deferred.
 
-T185 documents live host aegis-agent-haka.onrender.com and instance 0.5c-512mb; free-tier cold-start sentence removed; LIMITATIONS + THREAT_NOTES added. T186 not started.
+T185 documents live host aegis-agent-haka.onrender.com and instance 0.5c-512mb; free-tier cold-start sentence removed; LIMITATIONS + THREAT_NOTES added. T186 public demo denies raw PAT ingest; local loop unchanged.

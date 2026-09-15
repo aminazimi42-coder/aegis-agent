@@ -43,6 +43,7 @@ flowchart LR
 A local digital-twin operator — not a store installer, not a cloud brain. Today it ships:
 
 - **Live demo host** — the live demo is `https://aegis-agent-haka.onrender.com` (health 200 observed 2026-09-15); the dashboard instance class is `0.5c-512mb` (paid), not the old free plan. It is a demo, not the product; local data stays under `$HOME/.aegis`, not on the Render disk. Echo is the default engine; no cloud LLM unless the operator sets an HTTP adapter. Entitlement is a local file. Checkout sidecar is `not_configured` without a key outside git.
+- **Public demo rejects raw PAT ingest** — the public Render demo rejects a raw GitHub PAT on `/api/v1/twin/observe/github`; the operator twin is the local page at `127.0.0.1:8741`.
 
 - **Six specialists propose only** — Alina, Kian, Bita, Aylin, Ahmad, Amin; nothing executes without a human approval gate.
 - **Hash approve** — approvals bind to the SHA-256 digest of the action payload.

@@ -1,79 +1,49 @@
-T183 — Live notary SUBMIT only. This is market-pack item 1 of 4 plus the later amin trial. Do ONLY this directive. Do not start T180, T181, T182, T184. Do not run the amin stranger trial. Do not read task_instruction.txt. Do not treat this as the old T179 Stripe sidecar. That Stripe file is a different slice and stays untouched. Do not rewrite LICENSE or the README Author paragraph. Do not add Stripe, a card form, a live license host, Grok bots, voice, Windows, WebSockets, Playwright, OS cron, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T178. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates. Do not store an Apple password, app-specific password, App Store Connect API key, notary password, .p12, or payment date in the repo. Do not print the word NOTARIZED anywhere in product copy or script success text. Do not run stapler staple. Do not claim Gatekeeper accepted the app.
+T186 — Public-demo write and raw-PAT deny only. This is compressed-eval item 2 of 2. Do ONLY this directive. Do not start T187. Do not run notarytool, store-credentials, codesign, or the amin trial. Do not read task_instruction.txt. Do not rewrite LICENSE or the README Author paragraph. Do not add Grok bots, voice, Windows, WebSockets, Playwright, OS cron, JWT product auth, or a seventh agent. Do not bind 0.0.0.0. Do not weaken T56–T185. English only in repo files. Do not copy $HOME/.aegis. Do not write the word CTO into operator HTML or specialist templates. Do not store STRIPE_SECRET_KEY, webhook secrets, a GitHub PAT, or a payment date in the repo. Do not write NOTARIZED as a shipped claim.
 
-Baseline on hermesdev 2026-09-15: Developer ID Application: Amin Azimi (3J54UZPZW3) signed
-dist/AegisOperator-mac/Aegis Operator.app
-codesign EXIT:0, verify --deep --strict VERIFY:0, spctl SPCTL:3 source=Unnotarized Developer ID.
-T168 already taught codesign_operator.sh to skip notary without AEGIS_NOTARY_PROFILE. T183 adds a submit-only helper and one live submit on hermesdev when the profile exists. CI has no Apple identity. That is allowed.
+Baseline: T185 712b0f2f0985214954744f5f0fa7b580a8023bd1. pytest 1053 passed 1 skipped. Live demo host https://aegis-agent-haka.onrender.com instance 0.5c-512mb. Product remains local $HOME/.aegis port 8741. Echo-limited on missing entitlement.
 
-GOAL: A submit-only path that sends the already-signed app to Apple Notary and prints a submission id. Staple and the word NOTARIZED stay locked for the next market slice. Missing profile must print NOTARY_PROFILE_MISSING and stop cleanly. Secrets stay out of git.
+GOAL: The public Render demo must not accept a raw GitHub PAT or treat an anonymous cloud hit as the operator twin. Local start_operator.sh on hermesdev/amin is unchanged. No new identity product.
 
 Implement:
 
-1) scripts/notarize_submit.sh
-- Refuse to run unless the signed app exists at
-  dist/AegisOperator-mac/Aegis Operator.app
-  or AEGIS_NOTARY_APP if that path is set and is a directory ending in .app.
-- Refuse if `codesign --verify --deep --strict` on that app fails. Print SIGNATURE_INVALID and exit 1.
-- Build a zip next to the app with ditto:
-  ditto -c -k --keepParent "$APP" "$ZIP"
-  ZIP name: dist/AegisOperator-mac/Aegis Operator.notarize.zip
-- If AEGIS_NOTARY_PROFILE is unset or empty: print NOTARY_PROFILE_MISSING and the exact owner command below, then exit 0. Do not fail CI. Do not invent credentials.
-- If profile is set: run ONLY
-  xcrun notarytool submit "$ZIP" --keychain-profile "$AEGIS_NOTARY_PROFILE" --output-format json
-  Do not pass --apple-id, --password, --team-id, or a raw key path.
-  Do not use --wait on this slice (waiting and staple are the next market slice).
-- Print the submission id from JSON if present. Print NOTARY_SUBMITTED and the id. Never print NOTARIZED.
-- chmod +x the script.
-- Do not open Safari. Do not upload anywhere except notarytool submit when the profile is set.
+1) Demo mode detector (one helper, reuse if a flag already exists)
+- Public demo is true when AEGIS_PUBLIC_DEMO is 1/true or RENDER is set in the environment.
+- Local operator default is false (unset on laptop).
+- Do not detect demo from the hostname string alone inside execute.
 
-2) Owner profile command (docs only, never commit secrets)
-In docs/APPLE_DEVELOPER.md add a Submit section:
-- Create the keychain profile on hermesdev only, not amin:
-  xcrun notarytool store-credentials "aegis-notary" --apple-id "aminazimi42@icloud.com" --team-id "3J54UZPZW3"
-  Apple will ask for an app-specific password. That password never enters git.
-- Then:
-  export AEGIS_NOTARY_PROFILE=aegis-notary
-  ./scripts/notarize_submit.sh
-- Still enroll, sign, and submit on hermesdev. Shared drop box is not the submit machine.
-- No dollar amount. No pay date. No Stripe. No license host. No App Store claim.
+2) Deny on public demo only
+- POST /api/v1/twin/observe/github (and any sibling that accepts a token/PAT field) returns 403 with a typed code such as TWIN_DEMO_INGEST_DENIED. Do not store the token. Do not call GitHub.
+- Other unauthenticated mutating twin writes that ingest untrusted remote credentials follow the same deny when demo is true.
+- GET /health, /docs, /metrics stay up.
+- Local mode (flag unset): existing observe/propose/approve/execute behavior unchanged.
 
-3) README Now vs Planned
-- Now: local Developer ID signature exists on the operator app; a submit-only helper can send a zip when AEGIS_NOTARY_PROFILE is set; Gatekeeper still rejects Unnotarized Developer ID until staple.
-- Planned stays: staple, stranger giveable open, live Stripe, cloud license host.
-- Do not write that the shipped app is notarized.
+3) Operator HTML / README Now
+- One sentence: the public demo rejects raw PAT ingest; the operator twin is the local page.
+- Do not claim the demo is a multi-tenant product.
+- Author paragraph untouched.
 
 4) STATUS.md
-- One line: T183 notary submit helper landed; staple and live billing remain locked.
-- Do not write NOTARIZED.
+- One line: T186 public demo denies raw PAT ingest; local loop unchanged.
 
-5) tests/test_t183_notary_submit.py
-- test_script_exists
-- test_script_uses_keychain_profile_only
-- test_script_has_no_wait_and_no_staple
-- test_script_never_prints_notarized_success
-- test_readme_does_not_claim_app_is_notarized
-- test_status_keeps_staple_and_billing_locked
-- test_no_apple_secrets_tracked
-- Do not call notarytool against Apple in pytest. Do not start uvicorn.
+5) tests/test_t186_public_demo_deny.py
+- demo flag on -> observe/github with a fake PAT is 403 and the string is not written to disk
+- demo flag off -> existing local path still callable in-process (no live GitHub)
+- health still 200 in demo mode if a test client is used
+- README does not contain notarized as a shipped claim
+- No xfail. Do not start uvicorn. Do not hit aegis-agent-haka.
 
-6) Live submit on hermesdev after tests pass, only if profile exists
-- If AEGIS_NOTARY_PROFILE is set in the environment, run ./scripts/notarize_submit.sh once and paste the printed submission id into the final report.
-- If missing, print NOTARY_PROFILE_MISSING in the report and stop after push. Do not block the slice. T183 is still passed when the helper and tests land.
-- Never write the profile password into the report.
-
-Verification, exact order. If a proof fails, fix only that failure and restart from 1. If the tool budget is low after pytest, skip commentary and do git commit + push immediately.
+Verification, exact order. If a proof fails, fix only that failure and restart from 1.
 
 1. ./.venv/bin/python -m ruff check --fix .
 2. ./.venv/bin/python -m ruff check .
 3. Proof:
-   ./.venv/bin/python -c "from pathlib import Path; s=Path('scripts/notarize_submit.sh').read_text() if Path('scripts/notarize_submit.sh').is_file() else ''; r=Path('README.md').read_text(); st=Path('STATUS.md').read_text() if Path('STATUS.md').is_file() else ''; print(Path('scripts/notarize_submit.sh').is_file(), 'notarytool submit' in s, '--wait' not in s, 'stapler staple' not in s, 'NOTARIZED' not in s, 'NOTARY_PROFILE_MISSING' in s)"
-   Required: True True True True True True
-   README must not claim the shipped app is notarized.
+   ./.venv/bin/python -c "from pathlib import Path; print(Path('tests/test_t186_public_demo_deny.py').is_file(), 'T186' in Path('STATUS.md').read_text(), 'notarized' not in Path('README.md').read_text().lower())"
+   Required: True True True
 4. ./.venv/bin/python -m pytest -q
    Required: 0 failed
-5. git add -A (do not force-add dist/, .kms/, *.p8, large notarize zip, or $HOME/.aegis/; do not delete _directive.txt)
-6. git commit -m "feat(t183): notary submit-only helper without notarized lie"
+5. git add -A (do not force-add dist/, .kms/, $HOME/.aegis/; do not delete _directive.txt)
+6. git commit -m "feat(t186): public demo denies raw PAT ingest"
 7. git push origin main
-8. Print new SHA, pytest count, the proof line, and NOTARY_SUBMITTED id or NOTARY_PROFILE_MISSING.
+8. Print new SHA, pytest count, and the three-token proof.
 
 Stop only after a successful push. Do nothing else.

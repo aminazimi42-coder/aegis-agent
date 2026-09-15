@@ -15,6 +15,7 @@ from typing import Any
 
 from core.ai_core import AICore
 from core.api_errors import twin_value_error_response
+from core.demo_mode import is_public_demo
 from core.evidence_ledger import EvidenceLedgerSingleton
 from core.finops_autopilot import FinOpsAutopilot
 from core.human_authority import HumanAuthority
@@ -958,6 +959,14 @@ def create_app() -> FastAPI:
 
     @app.post("/api/v1/twin/observe/github", tags=["twin"], status_code=200)
     def twin_observe_github_endpoint(request: TwinObserveGithubRequest) -> Any:
+        if is_public_demo():
+            return JSONResponse(
+                status_code=403,
+                content={
+                    "detail": "public demo does not accept raw PAT ingest",
+                    "code": "TWIN_DEMO_INGEST_DENIED",
+                },
+            )
         try:
             return twin_observe_github(
                 tenant_id=request.tenant_id,
