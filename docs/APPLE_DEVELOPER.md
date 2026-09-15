@@ -82,6 +82,28 @@ not the submit machine.
 No dollar amount.  No pay date.  No Stripe.  No license host.  No App
 Store claim.
 
+## Staple (T184)
+
+A separate staple-only helper (`scripts/notarize_staple.sh`) checks an
+existing notary submission and staples the signed app only when Apple
+reports Accepted.  Without a profile, without a submission id, or
+before Accepted it prints `NOTARY_PENDING` or `NOTARY_PROFILE_MISSING`
+and never prints the success word.
+
+### After a submission id exists
+
+```bash
+export AEGIS_NOTARY_SUBMISSION_ID=<id-from-notarize_submit.sh>
+export AEGIS_NOTARY_PROFILE=aegis-notary
+./scripts/notarize_staple.sh
+```
+
+The script runs `xcrun notarytool info "$ID" --keychain-profile
+"$AEGIS_NOTARY_PROFILE" --output-format json` to check the status —
+no `--apple-id`, no `--password`, no raw key path.  When Apple reports
+`Accepted` it runs `stapler staple` then `stapler validate` and prints
+the success word only if `stapler validate` exits 0.
+
 ## Raw certificate files (repeated)
 
 Raw `.cer`, `.csr`, `.p12`, and `.p8` files stay in Downloads or the

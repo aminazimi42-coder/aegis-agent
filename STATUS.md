@@ -137,3 +137,5 @@ T178 validates profile schema and writes a detached brief signature. Codesign pa
 T179 Stripe checkout sidecar outside execute; local issuer writes entitlement with source. Live Stripe shop remains locked.
 
 T183 notary submit helper landed; staple and live billing remain locked.
+
+T184 staple helper landed; live ticket still requires AEGIS_NOTARY_PROFILE on hermesdev; live billing locked.
