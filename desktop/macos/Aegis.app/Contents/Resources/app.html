@@ -194,7 +194,7 @@
     <div id="checkout-offer" style="display:none;"></div>
   </div>
 
-  <!-- ── Home / Status ───────────────────────────────────────────── --> -->
+  <!-- ── Home / Status ───────────────────────────────────────────── -->
   <h2>Home / Status</h2>
   <div class="card">
     <div class="row">
@@ -208,6 +208,15 @@
       <span class="muted">HTTP token cost: <span id="status-token-cost">—</span></span>
     </div>
     <pre id="health-json"></pre>
+  </div>
+
+  <!-- T189 — Verify chain control on Home -->
+  <h2>Verify chain</h2>
+  <div class="card">
+    <div class="row">
+      <button id="btn-verify-chain" type="button" onclick="verifyChain()">Verify chain</button>
+      <span class="muted" id="verify-chain-label"></span>
+    </div>
   </div>
 
   <!-- ── Two-column home (T120): Archive + Latest task ─────────── -->
@@ -323,6 +332,9 @@
     // T142 — disable reveal while offline.
     var br2 = el("btn-reveal-export");
     if (br2) { br2.disabled = true; }
+    // T189 — disable verify chain while offline.
+    var bv = el("btn-verify-chain");
+    if (bv) { bv.disabled = true; }
   }
   function setOnline() {
     engineOnline = true;
@@ -344,6 +356,9 @@
     // T142 — reveal stays enabled while engine is up.
     var br2 = el("btn-reveal-export");
     if (br2) { br2.disabled = false; }
+    // T189 — verify chain stays enabled while engine is up.
+    var bv = el("btn-verify-chain");
+    if (bv) { bv.disabled = false; }
   }
   function checkHealth() {
     get("/health", function (err, data, status) {
@@ -515,6 +530,11 @@
     var digestPreview = a.digest_preview || '';
     if (digestPreview) {
       html += '<div class="queue-meta">digest preview: <code>' + esc(digestPreview) + '</code></div>';
+    }
+    // T189 — dry-run preview labeled preview / not-executed.
+    var dryPreview = a.dry_run_preview || '';
+    if (dryPreview) {
+      html += '<div class="queue-meta">preview / not-executed: <code>' + esc(dryPreview) + '</code></div>';
     }
     if (digest) {
       html += '<div class="row">'
@@ -899,6 +919,32 @@
       }
     });
   }
+
+  // ── Verify chain (T189) ──
+  // Local request only: calls the existing verify-chain helper for
+  // the most recent local receipt.  Result is Intact or Tampered.
+  window.verifyChain = function () {
+    var lb = el("verify-chain-label");
+    if (!engineOnline) {
+      if (lb) { lb.textContent = "Engine offline — start the server, then refresh"; lb.className = "muted err"; }
+      return;
+    }
+    if (lb) { lb.textContent = "Verifying…"; lb.className = "muted"; }
+    var t = (el("tenant") && el("tenant").value) || "local";
+    get("/api/v1/twin/verify-chain/" + encodeURIComponent(t), function (err, data, status) {
+      if (err || !data || status !== 200) {
+        if (lb) { lb.textContent = "verify_failed: network"; lb.className = "muted err"; }
+        return;
+      }
+      var result = data.result || "Missing";
+      var aid = data.action_id || "";
+      if (result === "Missing") {
+        if (lb) { lb.textContent = "Missing — no local receipt yet"; lb.className = "muted"; }
+      } else {
+        if (lb) { lb.textContent = result + " — " + aid; lb.className = "muted"; }
+      }
+    });
+  };
 
   // ── Init ──
   checkHealth();

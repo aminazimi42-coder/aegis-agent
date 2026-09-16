@@ -149,3 +149,5 @@ T185 documents live host aegis-agent-haka.onrender.com and instance 0.5c-512mb; 
 T187 notarize_operator.sh wraps T183 submit + T184 staple; live Apple ticket still needs AEGIS_NOTARY_PROFILE on hermesdev; T188 billing locked.
 
 T188 shop event handler stays outside execute; live Stripe keys and deployed webhook host remain outside git.
+
+T189 page truth surfaces dry-run preview and Intact/Tampered verify-chain on the operator page. Instructions 2–4 not started.

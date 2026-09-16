@@ -284,6 +284,18 @@ def list_queue(tenant_id: str) -> dict[str, list[dict[str, Any]]]:
         a["digest_prefix"] = (a.get("payload_sha256", "") or "")[:12]
         a["approved_at"] = a.get("approved_at", "")
 
+    # T189 — dry-run preview on Latest cards: reuse the T125
+    # _dry_run_receipt_bytes helper to show what execute would write,
+    # without flipping status or appending a real receipt.
+    from core.twin_actions import _dry_run_receipt_bytes
+
+    for a in latest:
+        try:
+            preview_bytes = _dry_run_receipt_bytes(a)
+            a["dry_run_preview"] = preview_bytes.decode("utf-8", errors="replace")[:200]
+        except Exception:
+            a["dry_run_preview"] = "preview_unavailable"
+
     return {
         "pending": pending,
         "approved_waiting": approved_waiting,

@@ -101,6 +101,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Notary staple helper** — `scripts/notarize_staple.sh` checks an existing notary submission and staples the signed app only when Apple reports Accepted; without a profile or submission id it prints `NOTARY_PROFILE_MISSING` or `NOTARY_PENDING` and exits 0. The success word prints only if `stapler validate` exits 0 on this machine; otherwise the app is not claimed as staple-validated.
 - **One notary operator wrapper** — `scripts/notarize_operator.sh` calls the submit helper (T183) then the staple helper (T184) in order; it does not reimplement zip, submit, or staple. Without `AEGIS_NOTARY_PROFILE` it prints `NOTARY_PROFILE_MISSING` and exits 0. Gatekeeper still rejects a Developer ID app without a staple ticket on this machine; T188 billing stays locked this slice.
 - **Local license issuer outside execute** — a local issuer writes `entitlement.json` under `AEGIS_DATA_DIR` only; `execute`, `propose`, and `complete_safe` read that file only — they do not call the issuer, do not import Stripe, and do not call the network; a missing, unreadable, or expired file is Echo-limited; a forged header or a remote 200 without the local file cannot raise the tier.
+- **Page truth: dry-run preview and Verify chain** — each Latest card on the operator page shows the payload digest and a dry-run preview labeled `preview / not-executed` (the preview reuses the T125 dry-run receipt-bytes helper and does not flip status to executed or append a real receipt); Home has one Verify chain control that prints `Intact` or `Tampered` from the local receipt hash chain for the most recent executed action. No cloud verify; approve-before-execute stays.
 
 ---
 
@@ -116,7 +117,7 @@ The road ahead, not yet shipped:
 - **Professional, then Executive, then Engineering** — tier rollout in that order; each tier is a local entitlement file, not a card charge.
 - **Payments never enter core** — billing, if any, lives outside this repository; `core/` stays free of payment logic.
 - **Mac installer trial and Developer ID** — the Mac installer folder will be trialed on owner and amin accounts; signing requires a Developer ID, and the license host remains outside this repo.
-- **Planned: staple, stranger giveable open, live Stripe shop, deployed license host** — a notary staple ticket, a stranger giveable open, a live Stripe account, a deployed license host, and a Developer ID staple for the installer are planned, not shipped; they remain locked. T188 event handler exists; the owner sets keys outside git and points a Stripe webhook at a process that is not the twin execute path.
+- **Planned: staple, stranger giveable open, live Stripe shop, deployed license host, instructions 2–4** — a notary staple ticket, a stranger giveable open, a live Stripe account, a deployed license host, a Developer ID staple for the installer, and instructions 2–4 of this pack are planned, not shipped; they remain locked. T188 event handler exists; the owner sets keys outside git and points a Stripe webhook at a process that is not the twin execute path.
 
 ---
 

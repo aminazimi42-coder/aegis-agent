@@ -1280,6 +1280,33 @@ def create_app() -> FastAPI:
             "result": verify_chain(tenant_id, action_id),
         }
 
+    # T189 — verify the most recent local receipt chain for a tenant.
+    # Reuses the T175 verify_chain helper; finds the latest executed
+    # action for the tenant and verifies its receipt.  Returns Missing
+    # when no receipt exists.  No cross-tenant access.
+    @app.get(
+        "/api/v1/twin/verify-chain/{tenant_id}",
+        tags=["twin"],
+    )
+    def twin_verify_chain_latest(tenant_id: str) -> Any:
+        from core.twin_actions import list_actions, verify_chain
+
+        actions = list_actions(tenant_id)
+        executed = [a for a in actions if a.get("status") == "executed"]
+        if not executed:
+            return {
+                "tenant_id": tenant_id,
+                "action_id": "",
+                "result": "Missing",
+            }
+        latest_action = max(executed, key=lambda a: a.get("created_at", ""))
+        action_id = latest_action["action_id"]
+        return {
+            "tenant_id": tenant_id,
+            "action_id": action_id,
+            "result": verify_chain(tenant_id, action_id),
+        }
+
     # --- Production integrity (T07) --- #
 
     @app.get("/api/v1/platform/status", tags=["twin"])
