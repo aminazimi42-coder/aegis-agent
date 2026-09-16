@@ -122,9 +122,11 @@
   <h1>Aegis Operator</h1>
 
   <!-- T122 — honest offline banner: shown only when the engine is down -->
+  <!-- T191 — local-dead: the local engine is dead, not a cloud disconnect -->
   <div id="offline-banner" class="card" style="display:none;border:1px solid #ff3b30;background:#fff5f5;">
-    <div class="queue-title" style="color:#ff3b30;">Engine offline</div>
+    <div class="queue-title" style="color:#ff3b30;">Engine offline — local engine is dead</div>
     <div class="queue-body">The local twin at <code>http://127.0.0.1:8741</code> is not reachable.
+    The local engine is dead — not a remote outage or a network provider issue.
     Start the local server (<code>scripts/run_local.sh</code>), then refresh this page.
     Your committed profile is preserved — nothing is cleared while the engine is down.</div>
     <div id="banner-reason" class="queue-meta" style="display:none;"></div>
@@ -301,7 +303,7 @@
     var dot = el("health-dot");
     var text = el("health-text");
     if (dot) { dot.className = "status-dot dot-err"; }
-    if (text) { text.textContent = "Local twin unreachable on 127.0.0.1:8741"; }
+    if (text) { text.textContent = "Local engine is dead — 127.0.0.1:8741 not reachable"; }
     var box = el("health-json");
     if (box) { box.textContent = ""; }
     // T162 — banner reason: when the Echo-limited reason is known

@@ -95,6 +95,31 @@ fi
 echo "pid=$$" > "$LOCK_FILE"
 echo "port=$PORT" >> "$LOCK_FILE"
 
+# --- entitlement preflight (T191) ----------------------------------------
+# Report the local entitlement state before bind.  Missing or expired
+# does not crash — the engine still starts Echo-limited.  Valid continues
+# to bind normally.  Three distinct typed lines for three states.
+ENT_REASON="$("$PY" -c "
+from core.entitlement import load
+r = load()
+print(r.get('reason', ''))
+" 2>/dev/null || echo "")"
+if [ -z "$ENT_REASON" ]; then
+    echo "start_operator: entitlement valid"
+else
+    case "$ENT_REASON" in
+        missing_file)
+            echo "start_operator: entitlement missing"
+            ;;
+        expired)
+            echo "start_operator: entitlement expired"
+            ;;
+        *)
+            echo "start_operator: entitlement degraded ($ENT_REASON)"
+            ;;
+    esac
+fi
+
 # --- engine start --------------------------------------------------------
 echo "Aegis engine — data dir: $AEGIS_DATA_DIR"
 echo "Aegis engine — URL: http://127.0.0.1:8741/"

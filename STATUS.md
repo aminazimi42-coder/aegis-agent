@@ -153,3 +153,5 @@ T188 shop event handler stays outside execute; live Stripe keys and deployed web
 T189 page truth surfaces dry-run preview and Intact/Tampered verify-chain on the operator page. Instructions 2–4 not started.
 
 T190 cages paths outside AEGIS_DATA_DIR, deepens redact with webhook/SSH shapes, and shows local brief+.sig verify on export. Instructions 3–4 not started.
+
+T191 honest start preflight on start_operator.sh plus local-dead banner. Instruction 4 not started.
