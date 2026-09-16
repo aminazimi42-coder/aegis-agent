@@ -151,3 +151,5 @@ T187 notarize_operator.sh wraps T183 submit + T184 staple; live Apple ticket sti
 T188 shop event handler stays outside execute; live Stripe keys and deployed webhook host remain outside git.
 
 T189 page truth surfaces dry-run preview and Intact/Tampered verify-chain on the operator page. Instructions 2–4 not started.
+
+T190 cages paths outside AEGIS_DATA_DIR, deepens redact with webhook/SSH shapes, and shows local brief+.sig verify on export. Instructions 3–4 not started.

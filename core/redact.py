@@ -86,6 +86,18 @@ _WEBHOOK_SECRET_RE = re.compile(
     re.IGNORECASE,
 )
 
+# T190 — webhook secret prefix ``whsec_…``.  A webhook signing secret
+# uses a distinctive prefix not covered by the query-param pattern above.
+# Also redact common assignment shapes:
+# ``whsec_secret=…``, ``webhook_secret=…``, ``WEBHOOK_SECRET=…``.
+_WHSEC_PREFIX_RE = re.compile(
+    r"whsec_[A-Za-z0-9]{16,}",
+)
+_WEBHOOK_ASSIGN_RE = re.compile(
+    r"(?i)(?:whsec_secret|webhook_secret)"
+    r"\s*[:=]\s*[\"']?[A-Za-z0-9_\-]{8,}",
+)
+
 _SECRET_SHAPES: tuple[re.Pattern[str], ...] = (
     _SK_RE,
     _GH_RE,
@@ -96,6 +108,8 @@ _SECRET_SHAPES: tuple[re.Pattern[str], ...] = (
     _PEM_BEGIN_RE,
     _PEM_END_RE,
     _WEBHOOK_SECRET_RE,
+    _WHSEC_PREFIX_RE,
+    _WEBHOOK_ASSIGN_RE,
 )
 
 _REPLACEMENT = "[REDACTED]"

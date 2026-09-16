@@ -15,7 +15,7 @@ import re
 from typing import Any
 
 from core.llm_provider import HttpProvider, get_provider
-from core.redact import _SSH_KEY_BLOCK_RE, _WEBHOOK_SECRET_RE
+from core.redact import _SSH_KEY_BLOCK_RE, _WEBHOOK_ASSIGN_RE, _WEBHOOK_SECRET_RE, _WHSEC_PREFIX_RE
 
 ALLOWED_TOOLS: tuple[str, ...] = (
     "weekly_digest",
@@ -63,6 +63,8 @@ _SECRET_SHAPES: tuple[re.Pattern[str], ...] = (
     _BEARER_RE,
     _SSH_KEY_BLOCK_RE,
     _WEBHOOK_SECRET_RE,
+    _WHSEC_PREFIX_RE,
+    _WEBHOOK_ASSIGN_RE,
 )
 
 

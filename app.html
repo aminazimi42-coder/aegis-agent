@@ -811,7 +811,9 @@
         var outPath = (data && data.path) ? data.path : "";
         if (outPath) { lastExportPath = outPath; }
         var shaPref = (data && data.sha256) ? data.sha256.slice(0, 12) : "";
-        sb.textContent = "Exported: " + outPath + (shaPref ? ("  sha256:" + shaPref + "…") : "");
+        var verifyVal = (data && data.verify) ? data.verify : "";
+        var verifyPart = verifyVal ? ("  sig:" + verifyVal) : "";
+        sb.textContent = "Exported: " + outPath + (shaPref ? ("  sha256:" + shaPref + "…") : "") + verifyPart;
         sb.className = "muted";
       }
     });

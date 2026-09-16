@@ -244,11 +244,22 @@ def signed_export(tenant_id: str, name: str | None = None) -> dict[str, Any]:
     sig_content = f"sha256: {sha}\nsigner: aegis-local\n"
     sig_path.write_text(sig_content, encoding="utf-8")
 
+    # T190 — run the existing local brief+.sig helper on those two files
+    # so the operator page can surface Intact/Tampered or a typed fail.
+    verify_status: str
+    if not out_path.is_file():
+        verify_status = "export_verify_failed: missing_file"
+    elif not sig_path.is_file():
+        verify_status = "export_verify_failed: missing_sig"
+    else:
+        verify_status = verify_local_sig(str(out_path))
+
     return {
         "tenant_id": tenant_id,
         "path": str(out_path),
         "sha256": sha,
         "sig_path": str(sig_path),
+        "verify": verify_status,
     }
 
 
