@@ -202,10 +202,15 @@ def list_queue(tenant_id: str) -> dict[str, list[dict[str, Any]]]:
       (approved but not yet executed).
     * ``latest`` — proposed actions whose ``batch_id`` equals the
       newest propose batch for *tenant_id* (T120).  When no batch_id
-      exists on any row, ``latest`` is empty.
+      exists on any row, ``latest`` is empty.  T192 — the newest batch
+      is pinned across **all** actions for the tenant (including
+      approved/rejected rows), so an empty Latest does not silently
+      promote older Archive pending rows.
     * ``archive`` — proposed actions whose ``batch_id`` differs from
       the newest batch, plus proposed rows whose ``batch_id`` is
       ``None`` (older rows without a batch_id are treated as archive).
+      T192 — archive rows are labeled ``older_pending`` and move to
+      Latest only after an explicit operator click.
 
     Actions with status ``"executed"`` or ``"rejected"`` are excluded
     from all four lists.  No network libraries are used — the data is
@@ -265,7 +270,14 @@ def list_queue(tenant_id: str) -> dict[str, list[dict[str, Any]]]:
                 a["why"] = payload["why"]
 
     # T120 — split proposed rows into latest vs archive by batch_id.
-    newest_batch = _newest_batch_id(pending)
+    # T192 — pin Latest to the newest propose batch_id for the tenant
+    # across ALL actions (including approved/rejected), not just
+    # currently-pending rows.  When the newest batch has zero remaining
+    # proposed rows, latest is empty — older archive pending rows do NOT
+    # silently promote into Latest.  Archive rows are labeled
+    # ``older_pending`` and move to Latest only after an explicit
+    # operator click (Surface older pending).
+    newest_batch = _newest_batch_id(actions)
     latest: list[dict[str, Any]] = []
     archive: list[dict[str, Any]] = []
     for a in pending:
@@ -273,6 +285,7 @@ def list_queue(tenant_id: str) -> dict[str, list[dict[str, Any]]]:
         if bid is not None and bid == newest_batch:
             latest.append(a)
         else:
+            a["older_pending"] = True
             archive.append(a)
 
     # T137 — enrich each approved row with the operator-visible fields:
@@ -304,16 +317,20 @@ def list_queue(tenant_id: str) -> dict[str, list[dict[str, Any]]]:
     }
 
 
-def _newest_batch_id(pending: list[dict[str, Any]]) -> str | None:
-    """Return the batch_id of the newest propose batch among *pending*.
+def _newest_batch_id(actions: list[dict[str, Any]]) -> str | None:
+    """Return the batch_id of the newest propose batch among *actions*.
 
     The newest batch is the batch_id of the most recently created
-    proposed row that has a non-null batch_id.  Returns ``None`` when no
-    pending row has a batch_id.
+    action row that has a non-null batch_id, across **all** statuses
+    (proposed, approved, rejected, executed).  T192 — scanning all
+    actions pins Latest to the newest batch even when every row in
+    that batch has been approved or rejected, so an empty Latest does
+    not silently promote older Archive pending rows.  Returns ``None``
+    when no row has a batch_id.
     """
     newest: str | None = None
     newest_created: str = ""
-    for a in pending:
+    for a in actions:
         bid = a.get("batch_id")
         if not bid:
             continue

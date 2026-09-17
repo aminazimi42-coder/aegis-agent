@@ -228,6 +228,10 @@
     <div class="col-archive card">
       <div class="col-header">Archive</div>
       <div id="archive-items"><span class="muted">Loading…</span></div>
+      <div class="row" style="margin-top:0.75rem;">
+        <button id="btn-surface-older" type="button" onclick="surfaceOlder()">Surface older pending</button>
+        <span class="muted" id="surface-older-label"></span>
+      </div>
     </div>
     <!-- Right column: Latest — proposed rows from the most recent batch -->
     <div class="col-latest card">
@@ -539,10 +543,29 @@
       html += '<div class="queue-meta">preview / not-executed: <code>' + esc(dryPreview) + '</code></div>';
     }
     if (digest) {
+      // T192 — optional reject reason select next to the Reject button.
+      // One-click Reject without choosing a reason still works (defaults OTHER).
+      var reasonOpts = [
+        '<select id="reject-reason-' + esc(a.action_id) + '" class="reject-reason-select">',
+        '<option value="">No reason</option>',
+        '<option value="WRONG_TIMING">Wrong timing</option>',
+        '<option value="WRONG_RECIPIENT">Wrong recipient</option>',
+        '<option value="LOW_CONFIDENCE">Low confidence</option>',
+        '<option value="POLICY_VIOLATION">Policy violation</option>',
+        '<option value="DUPLICATE">Duplicate</option>',
+        '<option value="OTHER">Other</option>',
+        '</select>'
+      ].join('');
+      // T192 — older-pending label for Archive rows.
+      var olderTag = '';
+      if (a.older_pending) {
+        olderTag = ' <span class="risk-label">older pending</span>';
+      }
       html += '<div class="row">'
         + '<button onclick="approveAction(\'' + esc(a.action_id) + '\',\'' + esc(digest) + '\')">Approve</button>'
         + '<button class="btn-reject" onclick="rejectAction(\'' + esc(a.action_id) + '\',\'' + esc(digest) + '\')">Reject</button>'
-        + '<span class="muted" id="approve-label-' + esc(a.action_id) + '"></span></div>';
+        + reasonOpts
+        + '<span class="muted" id="approve-label-' + esc(a.action_id) + '"></span>' + olderTag + '</div>';
     } else {
       html += '<div class="muted err">No digest — cannot approve or reject</div>';
     }
@@ -643,11 +666,14 @@
       return;
     }
     var t = el("tenant").value || "local";
+    var reasonSel = el("reject-reason-" + actionId);
+    var reasonVal = (reasonSel && reasonSel.value) || "";
     var body = {
       tenant_id: t,
       ["ac" + "tor_id"]: "operator",
       expected_payload_sha256: digest,
     };
+    if (reasonVal) { body.reason_enum = reasonVal; }
     post("/api/v1/twin/actions/" + encodeURIComponent(actionId) + "/reject", body, function (err, data, status) {
       var label = el("approve-label-" + actionId);
       if (err || status !== 200) {
@@ -947,6 +973,26 @@
       } else {
         if (lb) { lb.textContent = result + " — " + aid; lb.className = "muted"; }
       }
+    });
+  };
+
+  // ── Surface older pending (T192) ──
+  window.surfaceOlder = function () {
+    if (!engineOnline) {
+      var sl = el("surface-older-label");
+      if (sl) { sl.textContent = "Engine offline — start the server, then refresh"; sl.className = "muted err"; }
+      return;
+    }
+    var sl = el("surface-older-label");
+    if (sl) { sl.textContent = "Surfacing…"; sl.className = "muted"; }
+    var t = (el("tenant") && el("tenant").value) || "local";
+    post("/api/v1/twin/queue/" + encodeURIComponent(t) + "/surface-older", { tenant_id: t }, function (err, data, status) {
+      if (err || status !== 200) {
+        if (sl) { sl.textContent = "Surface failed"; sl.className = "muted err"; }
+        return;
+      }
+      if (sl) { sl.textContent = "Surfaced"; sl.className = "muted"; }
+      loadQueue();
     });
   };
 

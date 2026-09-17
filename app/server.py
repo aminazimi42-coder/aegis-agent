@@ -1378,6 +1378,57 @@ def create_app() -> FastAPI:
         """
         return twin_list_queue(tenant_id)
 
+    # T192 — Surface older pending: an explicit operator click may
+    # promote the older Archive pending batch into Latest by
+    # re-batching those rows with a fresh newest batch_id.  Without
+    # this click, an empty Latest does not silently promote Archive.
+    @app.post("/api/v1/twin/queue/{tenant_id}/surface-older", tags=["twin"], status_code=200)
+    def twin_queue_surface_older(tenant_id: str) -> Any:
+        """Promote the oldest pending Archive batch into Latest.
+
+        T192 — gives the older Archive pending rows a fresh batch_id
+        so they become the newest batch and appear in Latest.  No
+        auto-promote; this route is the only path that makes an older
+        batch the Latest batch.  Returns the updated queue.
+        """
+        from uuid import uuid4
+
+        from core.persistence import get_connection
+
+        # Find the oldest pending archive batch_id (not the newest).
+        q = twin_list_queue(tenant_id)
+        archive = q.get("archive", [])
+        if not archive:
+            return twin_list_queue(tenant_id)
+        # Pick the oldest archive batch_id by created_at.
+        oldest_batch = None
+        oldest_created = None
+        for row in archive:
+            bid = row.get("batch_id")
+            if not bid:
+                continue
+            created = row.get("created_at", "")
+            if oldest_created is None or created < oldest_created:
+                oldest_batch = bid
+                oldest_created = created
+        if oldest_batch is None:
+            # Archive rows have no batch_id — re-batch all archive rows.
+            archive_ids = [r["action_id"] for r in archive]
+        else:
+            archive_ids = [
+                r["action_id"] for r in archive if r.get("batch_id") == oldest_batch
+            ]
+        new_batch = f"batch-{uuid4().hex[:12]}"
+        now_iso = datetime.now(timezone.utc).isoformat()
+        with get_connection() as conn:
+            for aid in archive_ids:
+                conn.execute(
+                    "UPDATE twin_actions SET batch_id = ?, created_at = ? "
+                    "WHERE action_id = ?",
+                    (new_batch, now_iso, aid),
+                )
+        return twin_list_queue(tenant_id)
+
     # --- Operator page propose to queue (T111) --- #
 
     @app.post("/api/v1/twin/propose", tags=["twin"], status_code=200)
