@@ -1532,12 +1532,13 @@ def create_app() -> FastAPI:
         last_reject_reason: str | None = None
         last_approve_note: str | None = None
         for note in notes:
+            # T193 — use the T117 enum only, not the free-text why.
+            # When the reject had no chosen reason, the enum defaults
+            # to OTHER and is still shown.  Omit only when the tenant
+            # has never rejected.
             if note.get("decision") == "reject" and last_reject_reason is None:
-                reason_text = note.get("why_text", "") or ""
                 reason_enum = note.get("reason") or ""
-                if reason_text:
-                    last_reject_reason = reason_text
-                elif reason_enum:
+                if reason_enum:
                     last_reject_reason = reason_enum
             elif note.get("decision") == "approve" and last_approve_note is None:
                 approve_text = note.get("why_text", "") or ""
@@ -1553,6 +1554,17 @@ def create_app() -> FastAPI:
             result["last_reject_reason"] = last_reject_reason
         if last_approve_note is not None:
             result["last_approve_note"] = last_approve_note
+        # T193 — write a local session receipt after a successful propose.
+        try:
+            from core.session_receipt import write_session_receipt
+
+            write_session_receipt(
+                request.tenant_id,
+                last_event="propose",
+                last_action_id="",
+            )
+        except Exception:
+            pass
         return result
 
     # --- Local buyer one-pager export (T136) ---

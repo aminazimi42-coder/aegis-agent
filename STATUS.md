@@ -157,3 +157,5 @@ T190 cages paths outside AEGIS_DATA_DIR, deepens redact with webhook/SSH shapes,
 T191 honest start preflight on start_operator.sh plus local-dead banner. Instruction 4 not started.
 
 T192 optional reject reason and no silent Archive-to-Latest promote; four-slice pack closed.
+
+T193 last reject reason on next propose and local session receipt under the data dir.

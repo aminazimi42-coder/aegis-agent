@@ -545,6 +545,17 @@ def approve(
                     )
                 except Exception:
                     pass
+            # T193 — write a local session receipt after a successful approve.
+            try:
+                from core.session_receipt import write_session_receipt
+
+                write_session_receipt(
+                    action_dict["tenant_id"],
+                    last_event="approve",
+                    last_action_id=action_id,
+                )
+            except Exception:
+                pass
             return action_dict
 
 
@@ -651,6 +662,18 @@ def reject(
         action["why_text"] = why or ""
         action["reject_reason"] = reason
         action["reject_reason_enum"] = reason_enum
+        # T193 — write a local session receipt after a successful reject.
+        try:
+            from core.session_receipt import write_session_receipt
+
+            write_session_receipt(
+                action["tenant_id"],
+                last_event="reject",
+                last_action_id=action_id,
+                last_reject_reason=reason_enum or "",
+            )
+        except Exception:
+            pass
         return action
 
 

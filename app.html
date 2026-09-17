@@ -166,6 +166,7 @@
     <div class="row">
       <button id="btn-propose" onclick="proposeTask()">Propose</button>
       <span class="muted" id="propose-label"></span>
+      <span class="muted" id="last-reject-label"></span>
     </div>
   </div>
 
@@ -714,6 +715,17 @@
         var cnt = (data && data.count) || 0;
         label.textContent = "Proposed: " + cnt + " row" + (cnt === 1 ? "" : "s");
         label.className = "muted";
+      }
+      // T193 — show the last reject reason line when present.
+      var lrLabel = el("last-reject-label");
+      if (lrLabel) {
+        if (data && data.last_reject_reason) {
+          lrLabel.textContent = "Last reject: " + data.last_reject_reason;
+          lrLabel.className = "muted";
+        } else {
+          lrLabel.textContent = "";
+          lrLabel.className = "muted";
+        }
       }
       if (el("propose-text")) { el("propose-text").value = ""; }
       loadQueue();
