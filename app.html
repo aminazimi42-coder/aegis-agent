@@ -234,6 +234,15 @@
     </div>
   </div>
 
+  <!-- T201 — Observe-only local mail/calendar -->
+  <h2>Observe local mail/calendar</h2>
+  <div class="card">
+    <div class="row">
+      <button id="btn-observe-mail" type="button" onclick="observeMailCalendar()">Observe local mail/calendar</button>
+      <span class="muted" id="observe-mail-label"></span>
+    </div>
+  </div>
+
   <!-- ── Two-column home (T120): Archive + Latest task ─────────── -->
   <h2>Home — Two Columns</h2>
   <div class="two-col">
@@ -357,6 +366,9 @@
     // T198 — disable evidence pack while offline.
     var be = el("btn-evidence-pack");
     if (be) { be.disabled = true; }
+    // T201 — disable observe mail/calendar while offline.
+    var bom = el("btn-observe-mail");
+    if (bom) { bom.disabled = true; }
   }
   function setOnline() {
     engineOnline = true;
@@ -384,6 +396,9 @@
     // T198 — evidence pack stays enabled while engine is up.
     var be = el("btn-evidence-pack");
     if (be) { be.disabled = false; }
+    // T201 — observe mail/calendar stays enabled while engine is up.
+    var bom = el("btn-observe-mail");
+    if (bom) { bom.disabled = false; }
   }
   function checkHealth() {
     get("/health", function (err, data, status) {
@@ -1033,6 +1048,44 @@
         var shaPref = (data && data.sha256) ? data.sha256.slice(0, 12) : "";
         ep.textContent = "Exported: " + outPath + (shaPref ? ("  sha256:" + shaPref + "…") : "");
         ep.className = "muted";
+      }
+    });
+  };
+
+  // ── Observe local mail/calendar (T201) ──
+  // Reads a local .eml or .ics file already inside AEGIS_DATA_DIR and
+  // proposes six specialist cards.  A path outside the data dir is a
+  // typed deny.  No send, no remote calendar write, no execute.
+  window.observeMailCalendar = function () {
+    var ol = el("observe-mail-label");
+    if (!engineOnline) {
+      if (ol) { ol.textContent = "Engine offline — start the server, then refresh"; ol.className = "muted err"; }
+      return;
+    }
+    if (ol) { ol.textContent = "Observing…"; ol.className = "muted"; }
+    var t = (el("tenant") && el("tenant").value) || "local";
+    var fp = (el("observe-file-path") && el("observe-file-path").value) || "";
+    post("/api/v1/twin/observe/mail-calendar", { tenant_id: t, file_path: fp }, function (err, data, status) {
+      if (err) {
+        if (ol) { ol.textContent = "observe_failed: network"; ol.className = "muted err"; }
+        return;
+      }
+      if (status !== 200) {
+        if (ol) { ol.textContent = "observe_failed: " + status; ol.className = "muted err"; }
+        return;
+      }
+      if (data && data.code === "path_denied_outside_data_dir") {
+        if (ol) { ol.textContent = "observe_failed: path_denied_outside_data_dir"; ol.className = "muted err"; }
+        return;
+      }
+      if (data && data.code === "observe_denied") {
+        if (ol) { ol.textContent = "observe_failed: " + (data.detail || "denied"); ol.className = "muted err"; }
+        return;
+      }
+      if (ol) {
+        var cnt = (data && data.count) ? data.count : 0;
+        ol.textContent = "Proposed: " + cnt + " card" + (cnt === 1 ? "" : "s");
+        ol.className = "muted";
       }
     });
   };

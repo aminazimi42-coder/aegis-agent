@@ -462,6 +462,21 @@ class TwinEvidencePackRequest(BaseModel):
     tenant_id: str
 
 
+class TwinObserveMailCalendarRequest(BaseModel):
+    """Body for T201 — observe-only local .eml or .ics propose.
+
+    ``tenant_id`` identifies the caller; ``file_path`` is a path
+    inside ``AEGIS_DATA_DIR`` to a local ``.eml`` or ``.ics`` file
+    already copied there.  A path outside the data dir is a typed
+    deny.  The parsed subject / summary / dtstart become task text
+    that feeds the existing six-specialist propose path.  No send,
+    no remote calendar write, no execute.
+    """
+
+    tenant_id: str
+    file_path: str
+
+
 def create_app() -> FastAPI:
     """Create and configure the production FastAPI application."""
     app = FastAPI(
@@ -1747,6 +1762,51 @@ def create_app() -> FastAPI:
             return JSONResponse(
                 status_code=400,
                 content={"detail": exc.code},
+            )
+
+    # --- T201 — Observe-only local mail/calendar propose --- #
+
+    @app.post(
+        "/api/v1/twin/observe/mail-calendar",
+        tags=["twin"],
+        status_code=200,
+    )
+    def twin_observe_mail_calendar(
+        request: TwinObserveMailCalendarRequest,
+    ) -> Any:
+        """Observe a local ``.eml`` or ``.ics`` file and propose cards.
+
+        The file must already sit inside ``AEGIS_DATA_DIR``.  A path
+        outside the data dir is a typed deny.  Only local bytes are
+        parsed — no HTTP, no SMTP, no IMAP.  The parsed text feeds the
+        existing six-specialist propose path; status stays
+        ``proposed`` with no auto-approve and no auto-execute.  Any
+        effect named ``send``, ``smtp``, ``mailto``,
+        ``calendar-write``, or ``invite-send`` is a typed deny.
+        """
+        from core.observe_mail_calendar import (
+            ObserveDeniedError,
+            observe_local_mail_calendar,
+        )
+        from core.twin_local_view import PathDeniedError
+
+        try:
+            return observe_local_mail_calendar(
+                request.tenant_id,
+                request.file_path,
+            )
+        except PathDeniedError:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "detail": "path_denied_outside_data_dir",
+                    "code": "path_denied_outside_data_dir",
+                },
+            )
+        except ObserveDeniedError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": exc.reason, "code": exc.code},
             )
 
     # --- Local entitlement line for the operator page (T147) --- #

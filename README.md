@@ -114,6 +114,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Local evidence pack** — the operator page can write a local evidence pack under the data dir from verify-chain, last signed brief+.sig, audit tail, and receipt hashes; a path outside the data dir is a typed deny. No cloud, no execute, no approve.
 - **Weekly brief from saved profile** — the operator page Weekly brief control proposes six specialist cards from the saved local profile; an empty profile is a typed local fail; nothing auto-executes.
 - **Operator entitlement banner** — the operator page prints the local entitlement state: missing, expired, exhausted, or a valid tier name (echo, professional, executive, engineering); exhausted quota stays Echo-limited; no price on the page.
+- **Observe-only local mail/calendar** — a local ``.eml`` or ``.ics`` file already inside the data dir can be observed into proposed cards; send and remote calendar write are typed deny; a path outside the data dir is a typed deny. No mailbox password, no network fetch.
 
 ---
 
@@ -129,7 +130,7 @@ The road ahead, not yet shipped:
 - **Professional, then Executive, then Engineering** — tier rollout in that order; each tier is a local entitlement file, not a card charge.
 - **Payments never enter core** — billing, if any, lives outside this repository; `core/` stays free of payment logic.
 - **Mac installer trial and Developer ID** — the Mac installer folder will be trialed on owner and amin accounts; signing requires a Developer ID, and the license host remains outside this repo.
-- **Planned: staple, stranger giveable open, live Stripe shop, deployed license host, T201 observe-only mail/calendar** — a notary staple ticket, a stranger giveable open, a live Stripe account, a deployed license host, a Developer ID staple for the installer, and T201 observe-only mail/calendar are planned, not shipped; they remain locked. T188 event handler exists; the owner sets keys outside git and points a Stripe webhook at a process that is not the twin execute path.
+- **Planned: staple, stranger giveable open, live Stripe shop, deployed license host** — a notary staple ticket, a stranger giveable open, a live Stripe account, a deployed license host, and a Developer ID staple for the installer are planned, not shipped; they remain locked. T188 event handler exists; the owner sets keys outside git and points a Stripe webhook at a process that is not the twin execute path.
 
 ---
 
