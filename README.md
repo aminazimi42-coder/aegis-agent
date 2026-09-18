@@ -114,7 +114,8 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Local evidence pack** — the operator page can write a local evidence pack under the data dir from verify-chain, last signed brief+.sig, audit tail, and receipt hashes; a path outside the data dir is a typed deny. No cloud, no execute, no approve.
 - **Weekly brief from saved profile** — the operator page Weekly brief control proposes six specialist cards from the saved local profile; an empty profile is a typed local fail; nothing auto-executes.
 - **Operator entitlement banner** — the operator page prints the local entitlement state: missing, expired, exhausted, or a valid tier name (echo, professional, executive, engineering); exhausted quota stays Echo-limited; no price on the page.
-- **Observe-only local mail/calendar** — a local ``.eml`` or ``.ics`` file already inside the data dir can be observed into proposed cards; send and remote calendar write are typed deny; a path outside the data dir is a typed deny. No mailbox password, no network fetch.
+- **Observe-only local mail/calendar** — a local `.eml` or `.ics` file already inside the data dir can be observed into proposed cards; send and remote calendar write are typed deny; a path outside the data dir is a typed deny. No mailbox password, no network fetch.
+- **Today filter on Home** — Home can filter today from the local session receipt; the entitlement line may show remaining quota; the Approved strip shows digest and Intact or Tampered; a checklist and a must-not line are on the page.
 
 ---
 

@@ -291,11 +291,21 @@ def list_queue(tenant_id: str) -> dict[str, list[dict[str, Any]]]:
     # T137 — enrich each approved row with the operator-visible fields:
     # agent (from kind prefix), title/task excerpt, digest prefix, and
     # approved timestamp.  Rejected actions are excluded.
+    # T202 — also attach verify_status (Intact/Tampered/Missing) from the
+    # local verify-chain helper for each approved action.
+    from core.twin_actions import verify_chain as _verify_chain
+
     for a in approved_waiting:
         kind_str = a.get("kind", "")
         a["agent"] = kind_str.split(":")[0] if ":" in kind_str else kind_str
         a["digest_prefix"] = (a.get("payload_sha256", "") or "")[:12]
         a["approved_at"] = a.get("approved_at", "")
+        try:
+            a["verify_status"] = _verify_chain(
+                a.get("tenant_id", ""), a.get("action_id", "")
+            )
+        except Exception:
+            a["verify_status"] = "Missing"
 
     # T189 — dry-run preview on Latest cards: reuse the T125
     # _dry_run_receipt_bytes helper to show what execute would write,

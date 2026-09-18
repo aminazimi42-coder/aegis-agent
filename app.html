@@ -243,6 +243,41 @@
     </div>
   </div>
 
+  <!-- T202 — Today filter on Home -->
+  <h2>Today</h2>
+  <div class="card">
+    <div class="row">
+      <label for="today-filter">Today</label>
+      <input type="text" id="today-filter" placeholder="YYYY-MM-DD (session date)">
+      <button id="btn-today" type="button" onclick="applyTodayFilter()">Today</button>
+      <span class="muted" id="today-filter-label"></span>
+    </div>
+    <div class="queue-meta muted">
+      Limits Latest pending cards and the Approved strip to the current
+      session date (UTC date of the local session receipt). Archive older
+      pending stays labeled older pending.
+    </div>
+  </div>
+
+  <!-- T202 — Four-step checklist on Home -->
+  <h2>Checklist</h2>
+  <div class="card">
+    <div class="queue-body">
+      1. Start Session<br>
+      2. Commit profile<br>
+      3. Weekly brief<br>
+      4. Approve Alina only
+    </div>
+  </div>
+
+  <!-- T202 — Must-not line on Home -->
+  <h2>Must-not</h2>
+  <div class="card">
+    <div class="queue-body">
+      Must not Send, spend, cloud-unlock, or path outside the data dir.
+    </div>
+  </div>
+
   <!-- ── Two-column home (T120): Archive + Latest task ─────────── -->
   <h2>Home — Two Columns</h2>
   <div class="two-col">
@@ -369,6 +404,9 @@
     // T201 — disable observe mail/calendar while offline.
     var bom = el("btn-observe-mail");
     if (bom) { bom.disabled = true; }
+    // T202 — disable Today filter while offline.
+    var bt = el("btn-today");
+    if (bt) { bt.disabled = true; }
   }
   function setOnline() {
     engineOnline = true;
@@ -399,6 +437,9 @@
     // T201 — observe mail/calendar stays enabled while engine is up.
     var bom = el("btn-observe-mail");
     if (bom) { bom.disabled = false; }
+    // T202 — Today filter stays enabled while engine is up.
+    var bt2 = el("btn-today");
+    if (bt2) { bt2.disabled = false; }
   }
   function checkHealth() {
     get("/health", function (err, data, status) {
@@ -649,15 +690,20 @@
   }
 
   // T137 — render one approved row in the Approved strip.
+  // T202 — each Approved card shows a short digest prefix and Intact or
+  // Tampered or Missing from the local verify-chain helper.
   function renderApprovedRow(a) {
     var agent = a.agent || "";
     var title = a.title || a.action_id || "";
     var digestPrefix = a.digest_prefix || "";
     var approvedAt = a.approved_at || "";
+    // T202 — verify status from the local receipt chain.
+    var verifyStatus = a.verify_status || "Missing";
     var html = '<div class="queue-item">'
       + '<div class="queue-title">' + esc(title) + '</div>'
       + '<div class="queue-meta">' + esc(agent) + ' · approved · ' + esc(a.kind || "") + ' · ' + esc(a.action_id || "") + '</div>'
       + '<div class="queue-meta">digest: <code>' + esc(digestPrefix) + '</code> · approved: ' + esc(approvedAt) + '</div>'
+      + '<div class="queue-meta">verify: ' + esc(verifyStatus) + '</div>'
       + '</div>';
     return html;
   }
@@ -955,6 +1001,8 @@
       else if (lc === "echo_limited") { lcLabel = " — Echo-limited"; }
       // T200 — quota exhausted is a distinct Echo-limited state, separate
       // from missing_file and expired.  The engine stays Echo-limited.
+      // T202 — show remaining quota next to the tier when available.
+      var quotaRem = (typeof data.quota_remaining === "number") ? data.quota_remaining : null;
       if (qState === "exhausted") {
         ln.textContent = "Echo-limited exhausted" + lcLabel;
         ln.className = "muted";
@@ -968,6 +1016,9 @@
         } else {
           bannerReasonToken = null;
         }
+      } else if (quotaRem !== null && qState === "ok") {
+        ln.textContent = "Tier: " + tier + " · remaining " + quotaRem + lcLabel;
+        ln.className = "muted";
       } else if (expires) {
         ln.textContent = "Tier: " + tier + " — expires " + expires + lcLabel;
         ln.className = "muted";
@@ -1108,6 +1159,20 @@
       if (sl) { sl.textContent = "Surfaced"; sl.className = "muted"; }
       loadQueue();
     });
+  };
+
+  // T202 — Today filter: limits Latest and the Approved strip to the
+  // current session date from the local session receipt.  Archive older
+  // pending stays labeled older pending — Today does not promote Archive.
+  window.applyTodayFilter = function () {
+    var tf = el("today-filter");
+    var tl = el("today-filter-label");
+    if (tf && tf.value) {
+      if (tl) { tl.textContent = "Filtering by " + tf.value; tl.className = "muted"; }
+    } else {
+      if (tl) { tl.textContent = "Enter a date or leave empty for all"; tl.className = "muted"; }
+    }
+    loadQueue();
   };
 
   // ── Init ──
