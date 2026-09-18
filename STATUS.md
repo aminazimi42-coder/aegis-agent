@@ -161,3 +161,5 @@ T192 optional reject reason and no silent Archive-to-Latest promote; four-slice 
 T193 last reject reason on next propose and local session receipt under the data dir.
 
 T194 operator Engine line for Echo / HTTP(Ollama alias) / Echo(fallback); no live key in git.
+
+T195 optional SQLite encryption at rest; default plaintext; no passphrase in git.
