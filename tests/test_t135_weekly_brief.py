@@ -73,8 +73,8 @@ class TestT135WeeklyBrief(unittest.TestCase):
         lowered = html.lower()
 
         # Button must exist.
-        self.assertIn("propose weekly brief", lowered,
-                      "app.html must have a Propose weekly brief button")
+        self.assertIn("weekly brief", lowered,
+                      "app.html must have a Weekly brief button")
         # Button must call the JS function.
         self.assertIn("proposeweeklybrief", lowered.replace(" ", ""),
                        "app.html must call proposeWeeklyBrief()")

@@ -170,11 +170,11 @@
     </div>
   </div>
 
-  <!-- ── Weekly brief (T135) ─────────────────────────────────────── -->
+  <!-- ── Weekly brief (T135 / T199) ─────────────────────────────── -->
   <h2>Weekly Brief</h2>
   <div class="card">
     <div class="row">
-      <button id="btn-weekly-brief" onclick="proposeWeeklyBrief()" disabled>Propose weekly brief</button>
+      <button id="btn-weekly-brief" onclick="proposeWeeklyBrief()" disabled>Weekly brief</button>
       <span class="muted" id="weekly-brief-label"></span>
     </div>
   </div>
@@ -754,10 +754,12 @@
     });
   };
 
-  // ── Propose weekly brief (T135) ──
-  // Builds a deterministic task string from the saved profile fields
-  // (name, role, goals, timezone).  When no profile exists the button
-  // stays disabled and the endpoint is not called — no fabricated brief.
+  // ── Propose weekly brief (T135 / T199) ──
+  // T199 — the server builds the task text from the saved profile
+  // fields (name, role, goals, timezone); the client sends only the
+  // ``weekly_brief: true`` flag.  When no profile exists the server
+  // returns a typed 400 — no fabricated brief.  The button may be
+  // clicked more than once; each click is a new batch.
   window.proposeWeeklyBrief = function () {
     if (!engineOnline) {
       var wl = el("weekly-brief-label");
@@ -769,23 +771,8 @@
     }
     var wl = el("weekly-brief-label");
     if (wl) { wl.textContent = ""; wl.className = "muted"; }
-    if (!profilePrefill) {
-      if (wl) {
-        wl.textContent = "No saved profile — commit a profile first";
-        wl.className = "muted err";
-      }
-      return;
-    }
-    var name = profilePrefill.name || "";
-    var role = profilePrefill.role || "";
-    var goals = profilePrefill.goals || "";
-    var tz = profilePrefill.timezone || "";
-    var briefText = "Weekly desk brief for " + name
-      + " (" + role + ")"
-      + " — goals: " + goals
-      + " — timezone: " + tz;
     var t = el("tenant").value || "local";
-    post("/api/v1/twin/propose", { tenant_id: t, text: briefText }, function (err, data, status) {
+    post("/api/v1/twin/propose", { tenant_id: t, weekly_brief: true }, function (err, data, status) {
       if (err || status !== 200) {
         var detail = "Weekly brief failed";
         if (data && data.detail) { detail = data.detail; }

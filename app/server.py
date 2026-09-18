@@ -346,13 +346,21 @@ class TwinActionExecuteRequest(BaseModel):
 class TwinProposeTextRequest(BaseModel):
     """Body for the operator page to propose one task text (T111).
 
-    ``tenant_id`` identifies the caller; ``text`` is required and must be
-    non-empty.  The six specialists each call their ``propose()`` so all
-    six rows land in the single shared queue.  No execution.
+    ``tenant_id`` identifies the caller; ``text`` is the operator task
+    text.  The six specialists each call their ``propose()`` so all six
+    rows land in the single shared queue.  No execution.
+
+    T199 — when ``weekly_brief`` is ``True`` the server builds the task
+    text from the durable profile fields already stored for
+    ``tenant_id`` (name, role, goals, timezone); the ``text`` field is
+    optional in that mode.  If no committed profile exists the route
+    returns a typed 400 — the operator does not retype goals every
+    Monday.
     """
 
     tenant_id: str
-    text: str
+    text: str = ""
+    weekly_brief: bool = False
 
 
 class TwinActionRejectRequest(BaseModel):
@@ -1447,20 +1455,57 @@ def create_app() -> FastAPI:
     def twin_operator_propose(request: TwinProposeTextRequest) -> Any:
         """Propose one operator task text via the six specialists.
 
-        ``tenant_id`` identifies the caller; ``text`` is required and
-        must be non-empty.  Each of the six specialists
-        (Alina, Kian, Bita, Aylin, Ahmad, Amin) calls its own
-        :meth:`~core.agent_base.BaseAgent.propose` so all six rows
-        land in the single shared ``twin_actions`` queue with
+        ``tenant_id`` identifies the caller; ``text`` is the operator
+        task text.  Each of the six specialists (Alina, Kian, Bita,
+        Aylin, Ahmad, Amin) calls its own
+        :meth:`~core.agent_base.BaseAgent.propose` so all six rows land
+        in the single shared ``twin_actions`` queue with
         ``status = "proposed"``, ``action_id`` and
         ``payload_sha256``.  No execution.
+
+        T199 — when ``weekly_brief`` is ``True`` the server builds the
+        task text from the durable profile fields already stored for
+        ``tenant_id`` (name, role, goals, timezone); empty fields are
+        omitted.  If no committed profile exists the route returns a
+        typed 400 — no fabricated brief, no crash.  The operator does
+        not retype goals every Monday.
         """
-        text = (request.text or "").strip()
-        if not text:
-            return JSONResponse(
-                status_code=400,
-                content={"detail": "text required"},
-            )
+        # T199 — weekly brief: build text from the saved profile only.
+        if request.weekly_brief:
+            from core.twin_interview import get_latest_profile
+
+            profile = get_latest_profile(request.tenant_id)
+            if profile is None:
+                return JSONResponse(
+                    status_code=400,
+                    content={"detail": "no consented profile"},
+                )
+            name = profile.get("repositories") or ""
+            role = profile.get("role") or ""
+            goals = profile.get("decision_style") or ""
+            tz = profile.get("tools") or ""
+            parts: list[str] = []
+            if name:
+                parts.append(name)
+            if role:
+                parts.append(f"role: {role}")
+            if goals:
+                parts.append(f"goals: {goals}")
+            if tz:
+                parts.append(f"timezone: {tz}")
+            text = "Weekly desk brief — " + " — ".join(parts) if parts else ""
+            if not text:
+                return JSONResponse(
+                    status_code=400,
+                    content={"detail": "no consented profile"},
+                )
+        else:
+            text = (request.text or "").strip()
+            if not text:
+                return JSONResponse(
+                    status_code=400,
+                    content={"detail": "text required"},
+                )
         from agents.ahmad.agent import AhmadAgent
         from agents.alina.agent import AlinaAgent
         from agents.amin.agent import AminAgent
