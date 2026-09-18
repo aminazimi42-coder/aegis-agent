@@ -116,6 +116,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Operator entitlement banner** — the operator page prints the local entitlement state: missing, expired, exhausted, or a valid tier name (echo, professional, executive, engineering); exhausted quota stays Echo-limited; no price on the page.
 - **Observe-only local mail/calendar** — a local `.eml` or `.ics` file already inside the data dir can be observed into proposed cards; send and remote calendar write are typed deny; a path outside the data dir is a typed deny. No mailbox password, no network fetch.
 - **Today filter on Home** — Home can filter today from the local session receipt; the entitlement line may show remaining quota; the Approved strip shows digest and Intact or Tampered; a checklist and a must-not line are on the page.
+- **Weekly brief cites last approve and last reject** — the weekly brief may cite the last approve (specialist name plus action-id prefix) and the last reject reason already on disk; the session id and last task string restore from the local receipt after an engine sleep. No multi-week habit model.
 
 ---
 

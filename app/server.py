@@ -915,7 +915,23 @@ def create_app() -> FastAPI:
 
     @app.post("/api/v1/twin/session/start", tags=["twin"], status_code=200)
     def twin_session_start(request: TwinSessionStartRequest) -> dict[str, Any]:
-        return twin_start(request.tenant_id)
+        # T203 — restore the prior session id and last task after an engine
+        # sleep when a local session receipt exists for this tenant.  If
+        # the receipt is missing, start a new session id (typed, not a crash).
+        from core.session_receipt import read_session_receipt
+
+        prior = read_session_receipt(request.tenant_id)
+        if prior is not None and prior.get("session_id"):
+            return {
+                "session_id": prior["session_id"],
+                "tenant_id": request.tenant_id,
+                "last_task": prior.get("last_task", ""),
+                "restored": True,
+            }
+        session = twin_start(request.tenant_id)
+        session["last_task"] = ""
+        session["restored"] = False
+        return session
 
     @app.post(
         "/api/v1/twin/session/{session_id}/answer", tags=["twin"], status_code=200
@@ -1634,6 +1650,7 @@ def create_app() -> FastAPI:
                 request.tenant_id,
                 last_event="propose",
                 last_action_id="",
+                last_task=text,
             )
         except Exception:
             pass

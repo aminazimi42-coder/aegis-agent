@@ -169,3 +169,4 @@ T198 local evidence pack from existing chain/brief/audit/receipts; instructions 
 T199 weekly brief from durable profile proposes six cards; instructions 3–4 not started.
 T200 page entitlement tier and quota-exhaust Echo; T201 observe-only local eml/ics propose; send is typed deny. Four-slice pack T198-T201 closed. No T202.
 T202 page today-filter quota-remaining checklist must-not Approved digest Intact; T203 not started.
+T203 weekly brief cites last approve and last reject; session id and last task restore after sleep; T204 not started.

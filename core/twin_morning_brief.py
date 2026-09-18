@@ -87,6 +87,50 @@ def _collect_pending_actions(tenant_id: str) -> list[dict[str, Any]]:
     return pending
 
 
+def _collect_last_approve_and_reject(
+    tenant_id: str,
+) -> tuple[str | None, str | None]:
+    """Return ``(last_approve_cite, last_reject_reason)`` for *tenant_id*.
+
+    T203 — reuses T130/T138/T193 durable note fields.  ``last_approve_cite``
+    is the approved specialist name (derived from the action ``kind``
+    prefix, e.g. ``"Alina"``) plus action-id prefix (e.g.
+    ``"Alina act-7142b446"``); ``last_reject_reason`` is the T117 enum
+    label stored on the last reject.  Either is ``None`` when no prior
+    approve or reject exists.  Neighbor tenant notes must not appear —
+    the query is tenant-bound.
+    """
+    from core.twin_actions import _load_action, list_recent_notes
+
+    notes = list_recent_notes(tenant_id, n=10)
+    last_approve: str | None = None
+    last_reject: str | None = None
+    for note in notes:
+        if note.get("decision") == "approve" and last_approve is None:
+            action_id = note.get("action_id") or ""
+            specialist = ""
+            if action_id:
+                action = _load_action(action_id)
+                if action is not None:
+                    kind = action.get("kind", "") or ""
+                    if ":" in kind:
+                        specialist = kind.split(":")[0]
+                    else:
+                        specialist = kind
+            prefix = action_id[:12] if action_id else ""
+            if specialist and prefix:
+                last_approve = f"{specialist} {prefix}"
+            elif specialist:
+                last_approve = specialist
+            elif prefix:
+                last_approve = prefix
+        elif note.get("decision") == "reject" and last_reject is None:
+            reason = note.get("reason") or ""
+            if reason:
+                last_reject = reason
+    return last_approve, last_reject
+
+
 def _collect_open_decision_ids(tenant_id: str) -> list[str]:
     """Collect decision-record ids for *tenant_id* (render-time join only).
 
@@ -113,12 +157,24 @@ def _render_markdown(
     repos: list[str],
     pending_actions: list[dict[str, Any]],
     open_decision_ids: list[str] | None = None,
+    last_approve_cite: str | None = None,
+    last_reject_reason: str | None = None,
 ) -> str:
     """Render the morning brief markdown content."""
     lines: list[str] = [
         f"# Morning Brief — {tenant_id}",
         "",
     ]
+
+    # --- Last approve and last reject (T203) --- #
+    cite_parts: list[str] = []
+    if last_approve_cite:
+        cite_parts.append(f"Last approve: {last_approve_cite}")
+    if last_reject_reason:
+        cite_parts.append(f"Last reject: {last_reject_reason}")
+    if cite_parts:
+        lines.append(" — ".join(cite_parts))
+        lines.append("")
 
     # --- Meetings ---
     lines.append("## Meetings")
@@ -197,9 +253,18 @@ def render_brief(tenant_id: str) -> dict[str, Any]:
     repos = _collect_repos(tenant_id, behavior)
     pending_actions = _collect_pending_actions(tenant_id)
     open_decision_ids = _collect_open_decision_ids(tenant_id)
+    last_approve_cite, last_reject_reason = _collect_last_approve_and_reject(
+        tenant_id
+    )
 
     content = _render_markdown(
-        tenant_id, meetings, repos, pending_actions, open_decision_ids
+        tenant_id,
+        meetings,
+        repos,
+        pending_actions,
+        open_decision_ids,
+        last_approve_cite,
+        last_reject_reason,
     )
     content = apply_style(tenant_id, content)
 
@@ -210,6 +275,8 @@ def render_brief(tenant_id: str) -> dict[str, Any]:
     return {
         "tenant_id": tenant_id,
         "path": brief_path.as_posix(),
+        "last_approve_cite": last_approve_cite,
+        "last_reject_reason": last_reject_reason,
         "sections": {
             "meetings": meetings,
             "repos": repos,

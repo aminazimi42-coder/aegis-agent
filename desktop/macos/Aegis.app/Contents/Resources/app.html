@@ -148,6 +148,7 @@
     <div class="row">
       <button id="btn-start" onclick="startInterview()">Start Session</button>
       <span class="muted" id="session-label"></span>
+      <span class="muted" id="last-task-label"></span>
     </div>
     <div id="questions" style="margin-top:0.75rem"></div>
     <div class="row" style="margin-top:0.75rem">
@@ -480,6 +481,10 @@
       if (err) { el("session-label").textContent = "Error"; return; }
       session = data.session_id;
       el("session-label").textContent = "Session: " + session;
+      if (data.last_task) {
+        var lt = el("last-task-label");
+        if (lt) { lt.textContent = "Last task: " + data.last_task; }
+      }
       renderQuestions();
     });
   };
