@@ -111,6 +111,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Optional SQLite encryption at rest** — the SQLite file under the data dir stays plaintext unless `AEGIS_DATA_ENCRYPT=1` and a process passphrase is set; the passphrase is not stored in git. Default remains plaintext so the live hermesdev store keeps opening.
 - **Encrypted portable bundle (T197)** — an encrypted ``portable_*.aegis`` bundle can be written under the data dir and restored on another Mac with the same passphrase; a truncated or disk-full write is a typed fail, not a silent skip. No cloud backup; the bundle is a local file copied by hand.
 - **Optional LLM token from Keychain** — on macOS the optional LLM token may be read from the system Keychain (service `AegisOperator`, account `llm-token`) or `AGENT_LLM_API_KEY`; CI uses a mock store; the default engine remains Echo when no token and no base URL are set. No live key is committed to git.
+- **Local evidence pack** — the operator page can write a local evidence pack under the data dir from verify-chain, last signed brief+.sig, audit tail, and receipt hashes; a path outside the data dir is a typed deny. No cloud, no execute, no approve.
 
 ---
 
@@ -126,7 +127,7 @@ The road ahead, not yet shipped:
 - **Professional, then Executive, then Engineering** — tier rollout in that order; each tier is a local entitlement file, not a card charge.
 - **Payments never enter core** — billing, if any, lives outside this repository; `core/` stays free of payment logic.
 - **Mac installer trial and Developer ID** — the Mac installer folder will be trialed on owner and amin accounts; signing requires a Developer ID, and the license host remains outside this repo.
-- **Planned: staple, stranger giveable open, live Stripe shop, deployed license host, instruction 4** — a notary staple ticket, a stranger giveable open, a live Stripe account, a deployed license host, a Developer ID staple for the installer, and instruction 4 of this pack are planned, not shipped; they remain locked. T188 event handler exists; the owner sets keys outside git and points a Stripe webhook at a process that is not the twin execute path.
+- **Planned: staple, stranger giveable open, live Stripe shop, deployed license host, T199 weekly brief, T200 entitlement-tier banner, T201 observe-only mail/calendar** — a notary staple ticket, a stranger giveable open, a live Stripe account, a deployed license host, a Developer ID staple for the installer, a T199 weekly brief, a T200 entitlement-tier banner, and T201 observe-only mail/calendar are planned, not shipped; they remain locked. T188 event handler exists; the owner sets keys outside git and points a Stripe webhook at a process that is not the twin execute path.
 
 ---
 

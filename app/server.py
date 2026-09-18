@@ -442,6 +442,18 @@ class TwinRevealExportRequest(BaseModel):
     path: str
 
 
+class TwinEvidencePackRequest(BaseModel):
+    """Body for exporting a tenant-bound local evidence pack (T198).
+
+    Gathers this tenant's existing local proofs (verify-chain result,
+    signed brief+.sig, audit tail, receipt hashes) into one zip
+    under ``AEGIS_DATA_DIR/export/``.  No cloud, no execute, no
+    approve.
+    """
+
+    tenant_id: str
+
+
 def create_app() -> FastAPI:
     """Create and configure the production FastAPI application."""
     app = FastAPI(
@@ -1670,6 +1682,27 @@ def create_app() -> FastAPI:
             )
 
         return {"path": str(resolved), "revealed": True}
+
+    # --- Local evidence pack (T198) --- #
+
+    @app.post("/api/v1/twin/evidence-pack", tags=["twin"], status_code=200)
+    def twin_evidence_pack(request: TwinEvidencePackRequest) -> Any:
+        """Build a tenant-bound local evidence pack under the data dir.
+
+        Gathers verify-chain result, signed brief+.sig, audit tail,
+        and receipt hashes into one zip.  No cloud, no execute, no
+        approve.
+        """
+        from core.evidence_desk import build_evidence_pack
+        from core.twin_local_view import PathDeniedError
+
+        try:
+            return build_evidence_pack(request.tenant_id)
+        except PathDeniedError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": exc.code},
+            )
 
     # --- Local entitlement line for the operator page (T147) --- #
 

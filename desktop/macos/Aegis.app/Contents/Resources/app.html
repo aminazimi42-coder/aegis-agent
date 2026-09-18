@@ -225,6 +225,15 @@
     </div>
   </div>
 
+  <!-- T198 — Local evidence pack control on Home -->
+  <h2>Evidence desk</h2>
+  <div class="card">
+    <div class="row">
+      <button id="btn-evidence-pack" type="button" onclick="exportEvidencePack()">Export evidence pack</button>
+      <span class="muted" id="evidence-pack-label"></span>
+    </div>
+  </div>
+
   <!-- ── Two-column home (T120): Archive + Latest task ─────────── -->
   <h2>Home — Two Columns</h2>
   <div class="two-col">
@@ -345,6 +354,9 @@
     // T189 — disable verify chain while offline.
     var bv = el("btn-verify-chain");
     if (bv) { bv.disabled = true; }
+    // T198 — disable evidence pack while offline.
+    var be = el("btn-evidence-pack");
+    if (be) { be.disabled = true; }
   }
   function setOnline() {
     engineOnline = true;
@@ -369,6 +381,9 @@
     // T189 — verify chain stays enabled while engine is up.
     var bv = el("btn-verify-chain");
     if (bv) { bv.disabled = false; }
+    // T198 — evidence pack stays enabled while engine is up.
+    var be = el("btn-evidence-pack");
+    if (be) { be.disabled = false; }
   }
   function checkHealth() {
     get("/health", function (err, data, status) {
@@ -991,6 +1006,39 @@
         if (lb) { lb.textContent = "Missing — no local receipt yet"; lb.className = "muted"; }
       } else {
         if (lb) { lb.textContent = result + " — " + aid; lb.className = "muted"; }
+      }
+    });
+  };
+
+  // ── Export evidence pack (T198) ──
+  // Gathers this tenant's existing local proofs into one zip under
+  // AEGIS_DATA_DIR/export/.  No cloud, no execute, no approve.
+  window.exportEvidencePack = function () {
+    var ep = el("evidence-pack-label");
+    if (!engineOnline) {
+      if (ep) { ep.textContent = "Engine offline — start the server, then refresh"; ep.className = "muted err"; }
+      return;
+    }
+    if (ep) { ep.textContent = "Exporting…"; ep.className = "muted"; }
+    var t = (el("tenant") && el("tenant").value) || "local";
+    post("/api/v1/twin/evidence-pack", { tenant_id: t }, function (err, data, status) {
+      if (err) {
+        if (ep) { ep.textContent = "pack_failed: network"; ep.className = "muted err"; }
+        return;
+      }
+      if (status !== 200) {
+        if (ep) { ep.textContent = "pack_failed: " + status; ep.className = "muted err"; }
+        return;
+      }
+      if (data && data.detail === "path_denied_outside_data_dir") {
+        if (ep) { ep.textContent = "pack_failed: path_denied_outside_data_dir"; ep.className = "muted err"; }
+        return;
+      }
+      if (ep) {
+        var outPath = (data && data.path) ? data.path : "";
+        var shaPref = (data && data.sha256) ? data.sha256.slice(0, 12) : "";
+        ep.textContent = "Exported: " + outPath + (shaPref ? ("  sha256:" + shaPref + "…") : "");
+        ep.className = "muted";
       }
     });
   };

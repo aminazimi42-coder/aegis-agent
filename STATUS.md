@@ -165,3 +165,4 @@ T194 operator Engine line for Echo / HTTP(Ollama alias) / Echo(fallback); no liv
 T195 optional SQLite encryption at rest; default plaintext; no passphrase in git.
 T196 optional LLM token from Keychain on Darwin, mock on CI; no live key in git.
 T197 encrypted inter-Mac portable bundle; mid-write kill and disk-full are typed fail. Four-slice pack T194–T197 closed.
+T198 local evidence pack from existing chain/brief/audit/receipts; instructions 2–4 not started.
