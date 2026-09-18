@@ -932,13 +932,20 @@
       var tier = data.tier || "echo";
       var reason = data.reason || null;
       var expires = data.expires_at || null;
+      var qState = data.quota_state || "unset";
       var lc = data.license_check || "local_only";
       var lcLabel = "";
       if (lc === "remote_ok") { lcLabel = " — remote OK"; }
       else if (lc === "remote_unreachable") { lcLabel = " — remote unreachable"; }
       else if (lc === "echo_limited") { lcLabel = " — Echo-limited"; }
-      if (reason) {
-        ln.textContent = "Echo-limited (" + reason + ")" + lcLabel;
+      // T200 — quota exhausted is a distinct Echo-limited state, separate
+      // from missing_file and expired.  The engine stays Echo-limited.
+      if (qState === "exhausted") {
+        ln.textContent = "Echo-limited exhausted" + lcLabel;
+        ln.className = "muted";
+        bannerReasonToken = "exhausted";
+      } else if (reason) {
+        ln.textContent = "Echo-limited " + reason + lcLabel;
         ln.className = "muted";
         // T162 — store the reason token for the offline banner.
         if (reason === "missing_file" || reason === "expired") {

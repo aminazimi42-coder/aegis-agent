@@ -167,3 +167,4 @@ T196 optional LLM token from Keychain on Darwin, mock on CI; no live key in git.
 T197 encrypted inter-Mac portable bundle; mid-write kill and disk-full are typed fail. Four-slice pack T194–T197 closed.
 T198 local evidence pack from existing chain/brief/audit/receipts; instructions 2–4 not started.
 T199 weekly brief from durable profile proposes six cards; instructions 3–4 not started.
+T200 page entitlement tier and quota-exhaust Echo; T201 not started.

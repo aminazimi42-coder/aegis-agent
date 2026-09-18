@@ -29,7 +29,11 @@ from core.twin_local_view import data_root
 
 ECHO_TIER: str = "echo"
 PROFESSIONAL_TIER: str = "professional"
-_VALID_TIERS: frozenset[str] = frozenset({ECHO_TIER, PROFESSIONAL_TIER})
+EXECUTIVE_TIER: str = "executive"
+ENGINEERING_TIER: str = "engineering"
+_VALID_TIERS: frozenset[str] = frozenset(
+    {ECHO_TIER, PROFESSIONAL_TIER, EXECUTIVE_TIER, ENGINEERING_TIER}
+)
 
 # T154 — HMAC key for local-cli issuer.  When the entitlement carries
 # ``issuer="local-cli"``, the ``signature_sha256`` field is an
