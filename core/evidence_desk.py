@@ -202,10 +202,15 @@ def build_evidence_pack(tenant_id: str) -> dict[str, Any]:
     brief_path, sig_path = _newest_signed_brief()
     brief_content: str | None = None
     sig_content: str | None = None
+    brief_verify: str = "Missing"
     if brief_path is not None and brief_path.is_file():
         brief_content = brief_path.read_text(encoding="utf-8")
         if sig_path is not None and sig_path.is_file():
             sig_content = sig_path.read_text(encoding="utf-8")
+        # T204 — local verifier result for the brief+.sig pair.
+        from core.twin_local_recall import verify_local_sig
+
+        brief_verify = verify_local_sig(str(brief_path))
 
     # 3) audit tail (redacted)
     audit_text = _audit_tail(tenant_id)
@@ -232,6 +237,8 @@ def build_evidence_pack(tenant_id: str) -> dict[str, Any]:
                         "missing_brief.txt",
                         "missing_brief: no signed local brief found\n",
                     )
+                # T204 — local brief verify result (Intact/Tampered/Missing).
+                zf.writestr("brief_verify.txt", brief_verify + "\n")
                 zf.writestr("audit_tail.jsonl", audit_text + "\n")
                 zf.writestr("receipts.txt", receipts_text)
                 # Manifest with the tenant id and timestamp.

@@ -117,6 +117,8 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Observe-only local mail/calendar** — a local `.eml` or `.ics` file already inside the data dir can be observed into proposed cards; send and remote calendar write are typed deny; a path outside the data dir is a typed deny. No mailbox password, no network fetch.
 - **Today filter on Home** — Home can filter today from the local session receipt; the entitlement line may show remaining quota; the Approved strip shows digest and Intact or Tampered; a checklist and a must-not line are on the page.
 - **Weekly brief cites last approve and last reject** — the weekly brief may cite the last approve (specialist name plus action-id prefix) and the last reject reason already on disk; the session id and last task string restore from the local receipt after an engine sleep. No multi-week habit model.
+- **Observe byte receipt** — a successful observe of a local `.eml` or `.ics` writes a local byte receipt under the data dir recording tenant, source basename, byte length, and sha256; nothing leaves the data dir.
+- **Evidence pack zip brief verify** — the evidence pack zip includes the last signed brief, its sibling `.sig`, and a small text member with Intact or Tampered or Missing from the local verifier; nothing leaves the data dir.
 
 ---
 

@@ -16,11 +16,13 @@ auto-execute.  Any effect named ``send``, ``smtp``, ``mailto``,
 from __future__ import annotations
 
 import email
+import hashlib
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from core.redact import redact
-from core.twin_local_view import cage_path
+from core.twin_local_view import cage_path, data_root
 
 # Accepted file suffixes — only .eml and .ics.
 _ACCEPTED_SUFFIXES: tuple[str, ...] = (".eml", ".ics")
@@ -202,12 +204,54 @@ def observe_local_mail_calendar(
             }
         )
 
+    # 3) T204 — write one local byte receipt for the observed file.
+    #    Records tenant, source basename, byte length, and sha256 of
+    #    the raw bytes.  Reuses T125 receipt dir and T190 cage_path.
+    #    No cloud, no execute, no send.
+    receipt_path = _write_byte_receipt(tenant_id, path)
+
     return {
         "tenant_id": tenant_id,
         "proposed": proposals,
         "count": len(proposals),
         "path": path.as_posix(),
+        "byte_receipt": str(receipt_path),
     }
+
+
+def _write_byte_receipt(
+    tenant_id: str,
+    source_path: Path,
+) -> Path:
+    """Write one local byte receipt for an observed file.
+
+    T204 — after a successful observe of a local ``.eml`` or ``.ics``
+    inside ``AEGIS_DATA_DIR``, write one receipt under
+    ``<data_root>/receipts/observe_<sha8>.json`` recording the tenant,
+    the basename of the source path, the byte length, and the sha256 of
+    the raw bytes.  Reuses the T125 receipt directory and T190
+    ``cage_path``.  Returns the receipt path.  No cloud, no execute.
+    """
+    root = data_root()
+    receipts_dir = cage_path(root / "receipts")
+    receipts_dir.mkdir(parents=True, exist_ok=True)
+    raw = source_path.read_bytes()
+    sha = hashlib.sha256(raw).hexdigest()
+    receipt = {
+        "tenant_id": tenant_id,
+        "source": source_path.name,
+        "byte_length": len(raw),
+        "sha256": sha,
+        "written_at": datetime.now(timezone.utc).isoformat(),
+    }
+    receipt_path = cage_path(receipts_dir / f"observe_{sha[:8]}.json")
+    import json
+
+    receipt_path.write_text(
+        json.dumps(receipt, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    return receipt_path
 
 
 def denied_effects() -> frozenset[str]:
