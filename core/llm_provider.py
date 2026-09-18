@@ -164,13 +164,27 @@ class HttpProvider:
 
 
 def load_llm_key() -> str | None:
-    """Load the LLM API key from the environment or the data-dir file.
+    """Load the LLM API key from the Keychain/mock, env, or the data-dir file.
 
-    Checks ``AEGIS_LLM_API_KEY`` first, then ``$AEGIS_DATA_DIR/llm_key``.
-    Returns the stripped key string or ``None`` when neither source has
-    a non-empty key.  This function never writes or creates the file —
-    it only reads.
+    T196 — lookup order for the optional HTTP adapter token:
+
+    1.  macOS Keychain (or mock on CI) via
+        :func:`core.llm_keychain.load_optional_llm_key`,
+    2.  ``AEGIS_LLM_API_KEY`` env (checked inside the keychain helper),
+    3.  ``$AEGIS_DATA_DIR/llm_key`` file,
+    4.  ``None``.
+
+    This function never writes or creates the file — it only reads.
     """
+    key = None
+    try:
+        from core.llm_keychain import load_optional_llm_key
+
+        key = load_optional_llm_key()
+    except Exception:
+        pass
+    if key and key.strip():
+        return key.strip()
     key = os.getenv("AEGIS_LLM_API_KEY")
     if key and key.strip():
         return key.strip()

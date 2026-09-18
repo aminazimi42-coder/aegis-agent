@@ -163,3 +163,4 @@ T193 last reject reason on next propose and local session receipt under the data
 T194 operator Engine line for Echo / HTTP(Ollama alias) / Echo(fallback); no live key in git.
 
 T195 optional SQLite encryption at rest; default plaintext; no passphrase in git.
+T196 optional LLM token from Keychain on Darwin, mock on CI; no live key in git.

@@ -109,6 +109,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Local session receipt** — after a propose, approve, or reject, one local session receipt is written under `<AEGIS_DATA_DIR>/receipts/session_<id>.json` with the tenant, event, action id, reject reason, timestamp, and engine label; no cloud, no card numbers, no Stripe fields.
 - **Operator engine line** — the operator Home / Status surface shows one English engine line: `Echo` by default, `HTTP (Ollama alias)` when `AGENT_LLM_BASE_URL` is set and reachable, or `Echo (fallback)` when a URL was set but the endpoint is unreachable. The default remains Echo.
 - **Optional SQLite encryption at rest** — the SQLite file under the data dir stays plaintext unless `AEGIS_DATA_ENCRYPT=1` and a process passphrase is set; the passphrase is not stored in git. Default remains plaintext so the live hermesdev store keeps opening.
+- **Optional LLM token from Keychain** — on macOS the optional LLM token may be read from the system Keychain (service `AegisOperator`, account `llm-token`) or `AGENT_LLM_API_KEY`; CI uses a mock store; the default engine remains Echo when no token and no base URL are set. No live key is committed to git.
 
 ---
 
@@ -125,7 +126,7 @@ The road ahead, not yet shipped:
 - **Payments never enter core** — billing, if any, lives outside this repository; `core/` stays free of payment logic.
 - **Mac installer trial and Developer ID** — the Mac installer folder will be trialed on owner and amin accounts; signing requires a Developer ID, and the license host remains outside this repo.
 - **Planned: staple, stranger giveable open, live Stripe shop, deployed license host, instruction 4** — a notary staple ticket, a stranger giveable open, a live Stripe account, a deployed license host, a Developer ID staple for the installer, and instruction 4 of this pack are planned, not shipped; they remain locked. T188 event handler exists; the owner sets keys outside git and points a Stripe webhook at a process that is not the twin execute path.
-- **Planned: Keychain (T196) and portable bundle (T197)** — Keychain-based passphrase storage and a portable inter-Mac bundle are planned, not shipped; T195 optional encryption at rest ships with a process-environment passphrase only.
+- **Planned: portable bundle (T197)** — a portable inter-Mac bundle is planned, not shipped; T196 optional LLM token from the macOS Keychain ships with a mock store on CI.
 
 ---
 
