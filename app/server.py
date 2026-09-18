@@ -477,6 +477,53 @@ class TwinObserveMailCalendarRequest(BaseModel):
     file_path: str
 
 
+class TwinQuitRequest(BaseModel):
+    """Body for stopping the local engine (T205).
+
+    The click sends ``SIGTERM`` to the process on
+    ``127.0.0.1:8741`` only.  ``start_operator.sh`` remains the
+    sole start path.
+    """
+
+    tenant_id: str
+
+
+def _is_localhost(host: str) -> bool:
+    """Return True when *host* is a loopback or test-client address.
+
+    Accepts ``127.0.0.1``, ``::1``, and ``testclient`` (Starlette
+    TestClient).  Any other host is a non-local deny.
+    """
+    return host in ("127.0.0.1", "::1", "testclient")
+
+
+def _is_port_8741_in_use() -> bool:
+    """Return True when port 8741 is bound (engine running)."""
+    import socket
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(0.3)
+    try:
+        sock.connect(("127.0.0.1", 8741))
+        return True
+    except OSError:
+        return False
+    finally:
+        sock.close()
+
+
+def _send_quit_sigterm() -> None:
+    """Send ``SIGTERM`` to the current process to stop the local engine.
+
+    This helper is the single mockable seam — tests patch it instead
+    of killing the pytest process.
+    """
+    import os
+    import signal
+
+    os.kill(os.getpid(), signal.SIGTERM)
+
+
 def create_app() -> FastAPI:
     """Create and configure the production FastAPI application."""
     app = FastAPI(
@@ -1954,6 +2001,33 @@ def create_app() -> FastAPI:
             content=html_path.read_text(encoding="utf-8"),
             media_type="text/html",
         )
+
+    # --- T205 — Quit engine: SIGTERM on 127.0.0.1:8741 only --- #
+
+    @app.post("/api/v1/twin/quit", tags=["twin"], status_code=200)
+    def twin_quit_endpoint(request: TwinQuitRequest, raw: Request) -> Any:
+        """Stop the local engine.
+
+        Sends ``SIGTERM`` to the process on ``127.0.0.1:8741`` only.
+        ``start_operator.sh`` remains the sole start path.  A non-local
+        caller is a typed deny; when port 8741 is already free the
+        engine is reported as already stopped.
+        """
+        host = ""
+        if raw.client is not None:
+            host = raw.client.host or ""
+        if not _is_localhost(host):
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "non_local_host_denied", "code": "non_local_host_denied"},
+            )
+        if not _is_port_8741_in_use():
+            return JSONResponse(
+                status_code=200,
+                content={"detail": "engine already stopped", "code": "engine_already_stopped"},
+            )
+        _send_quit_sigterm()
+        return {"detail": "engine stopping", "code": "engine_stopping"}
 
     return app
 

@@ -235,6 +235,15 @@
     </div>
   </div>
 
+  <!-- T205 — Quit engine: SIGTERM on 127.0.0.1:8741 only -->
+  <h2>Quit engine</h2>
+  <div class="card">
+    <div class="row">
+      <button id="btn-quit-engine" type="button" onclick="quitEngine()">Quit engine</button>
+      <span class="muted" id="quit-engine-label"></span>
+    </div>
+  </div>
+
   <!-- T201 — Observe-only local mail/calendar -->
   <h2>Observe local mail/calendar</h2>
   <div class="card">
@@ -1178,6 +1187,26 @@
       if (tl) { tl.textContent = "Enter a date or leave empty for all"; tl.className = "muted"; }
     }
     loadQueue();
+  };
+
+  // ── Quit engine (T205) ──
+  // POSTs the local quit route which sends SIGTERM to the process on
+  // 127.0.0.1:8741 only.  start_operator.sh remains the sole start path.
+  window.quitEngine = function () {
+    var ql = el("quit-engine-label");
+    if (ql) { ql.textContent = "Stopping…"; ql.className = "muted"; }
+    var t = (el("tenant") && el("tenant").value) || "local";
+    post("/api/v1/twin/quit", { tenant_id: t }, function (err, data, status) {
+      if (err || status !== 200) {
+        if (ql) { ql.textContent = "quit_failed: " + (status || "network"); ql.className = "muted err"; }
+        return;
+      }
+      if (data && data.code === "engine_already_stopped") {
+        if (ql) { ql.textContent = "Engine already stopped"; ql.className = "muted"; }
+        return;
+      }
+      if (ql) { ql.textContent = "Engine stopping"; ql.className = "muted"; }
+    });
   };
 
   // ── Init ──
