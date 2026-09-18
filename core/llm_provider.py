@@ -219,3 +219,29 @@ def get_provider() -> LLMProvider:
         if base_url and api_key:
             return HttpProvider(base_url, api_key)
     return EchoProvider()
+
+
+def engine_label() -> str:
+    """Return the honest operator engine label for the status surface.
+
+    T194 — one English line sourced from the existing adapter contract:
+
+    - ``"Echo"`` — default (no base URL, unset backend).
+    - ``"HTTP (Ollama alias)"`` — ``AGENT_LLM_BACKEND=ollama`` and a
+      reachable base URL is set.
+    - ``"Echo (fallback)"`` — a base URL was set but the provider is
+      unreachable (connection refused, 401, 500, timeout).
+
+    Missing base URL, unset backend, connection refused, 401, 500, or
+    timeout stays Echo (fallback) when a URL was set, else Echo.
+    """
+    base_url = os.getenv("AEGIS_LLM_BASE_URL", "").strip()
+
+    if not base_url:
+        return "Echo"
+
+    # A base URL was set — check whether the provider is reachable.
+    provider = get_provider()
+    if isinstance(provider, HttpProvider) and provider.is_available():
+        return "HTTP (Ollama alias)"
+    return "Echo (fallback)"

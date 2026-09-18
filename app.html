@@ -210,6 +210,9 @@
     <div class="row">
       <span class="muted">HTTP token cost: <span id="status-token-cost">—</span></span>
     </div>
+    <div class="row">
+      <span class="muted">Engine: <span id="engine-line">—</span></span>
+    </div>
     <pre id="health-json"></pre>
   </div>
 
@@ -390,6 +393,10 @@
         }
         if (cost && typeof data2.http_token_cost === "number") {
           cost.textContent = String(data2.http_token_cost);
+        }
+        var eng = el("engine-line");
+        if (eng && typeof data2.engine === "string") {
+          eng.textContent = data2.engine;
         }
       });
     });

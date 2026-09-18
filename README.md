@@ -107,6 +107,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Optional reject reason and no silent Archive promote** — the reject button sends an optional `reason_enum` from a `<select>` next to the Reject button; one-click Reject without choosing a reason still works (defaults to `OTHER`). An empty Latest does not silently promote older Archive pending rows — the newest batch is pinned across all actions so Archive stays Archive until the operator clicks Surface older pending.
 - **Last reject reason on next propose** — after a reject with a T117 enum, the next propose for that tenant shows the stored `last_reject_reason` on the card; when the last reject had no chosen reason, `OTHER` is stored and still shown; the field is omitted only when the tenant has never rejected.
 - **Local session receipt** — after a propose, approve, or reject, one local session receipt is written under `<AEGIS_DATA_DIR>/receipts/session_<id>.json` with the tenant, event, action id, reject reason, timestamp, and engine label; no cloud, no card numbers, no Stripe fields.
+- **Operator engine line** — the operator Home / Status surface shows one English engine line: `Echo` by default, `HTTP (Ollama alias)` when `AGENT_LLM_BASE_URL` is set and reachable, or `Echo (fallback)` when a URL was set but the endpoint is unreachable. The default remains Echo.
 
 ---
 

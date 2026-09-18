@@ -66,11 +66,13 @@ def platform_status() -> dict:
     config = load_config()
     provider = get_provider()
     duration_ms = int((time.monotonic() - _PROCESS_START) * 1000)
+    from core.llm_provider import engine_label
     return {
         "version": config.version,
         "agent_count": len(AGENT_REGISTRY),
         "agents": [agent.name for agent in AGENT_REGISTRY],
         "llm_provider": type(provider).__name__,
+        "engine": engine_label(),
         "twin_routes": _twin_routes_available(),
         "persistence": "sqlite",
         "tier": current_tier(),
