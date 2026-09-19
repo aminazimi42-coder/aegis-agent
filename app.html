@@ -723,7 +723,7 @@
     // T206 — copy-redact control: copies the visible card text after the
     // existing T124/T190 redaction helpers.  Clipboard stays local.
     var copyRedactHtml = '<div class="row"><button type="button" '
-      + 'class="btn-copy-redact" onclick="copyRedactCard(\\'' + esc(a.action_id || "") + '\\')">Copy redact</button>'
+      + 'class="btn-copy-redact" onclick="copyRedactCard(\'' + esc(a.action_id || "") + '\')">Copy redact</button>'
       + '<span class="muted" id="copy-redact-label-' + esc(a.action_id || "") + '"></span></div>';
     // T206 — why-drawer: closed by default.  Open shows the existing digest
     // plus dry-run preview/not-executed from T189.  It does not execute.
