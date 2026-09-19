@@ -502,6 +502,31 @@ class TwinQuietModeRequest(BaseModel):
     quiet: bool = False
 
 
+class TwinStandingOrderPinRequest(BaseModel):
+    """Body for saving the standing-order pin for a tenant (T208).
+
+    The pin is a short local text string stored on the durable profile
+    for that tenant.  An empty pin clears the pin.  When present, the
+    next Propose and Weekly brief include the pin in the task text —
+    they do not execute it.
+    """
+
+    tenant_id: str
+    pin: str = ""
+
+
+class TwinTenantSwitchRequest(BaseModel):
+    """Body for a typed tenant switch (T208).
+
+    The operator enters the target tenant id and the exact confirm word
+    ``SWITCH_TENANT``.  A wrong confirm is a typed deny
+    ``TENANT_SWITCH_CONFIRM_REQUIRED`` — no switch.
+    """
+
+    target_tenant_id: str
+    confirm: str = ""
+
+
 def _is_localhost(host: str) -> bool:
     """Return True when *host* is a loopback or test-client address.
 
@@ -1644,6 +1669,11 @@ def create_app() -> FastAPI:
                     status_code=400,
                     content={"detail": "text required"},
                 )
+        # T208 — standing-order pin: when present, append the pin to the
+        # task text so the six specialists carry it.  It is not executed.
+        from core.standing_order import pin_suffix
+
+        text = text + pin_suffix(request.tenant_id)
         from agents.ahmad.agent import AhmadAgent
         from agents.alina.agent import AlinaAgent
         from agents.amin.agent import AminAgent
@@ -2095,6 +2125,65 @@ def create_app() -> FastAPI:
             "tenant_id": tenant_id,
             "quiet_mode": is_quiet_mode(tenant_id),
         }
+
+    # --- T208 — Standing-order pin --- #
+
+    @app.post(
+        "/api/v1/twin/standing-order-pin", tags=["twin"], status_code=200
+    )
+    def twin_standing_order_pin_save(
+        request: TwinStandingOrderPinRequest,
+    ) -> Any:
+        """Save the standing-order pin for *tenant_id*.
+
+        T208 — the pin is a short local text string stored on the durable
+        profile for that tenant.  An empty pin clears the pin.  When
+        present, the next Propose and Weekly brief include the pin in
+        the task text — they do not execute it.  The pin is tenant-bound.
+        """
+        from core.standing_order import save_pin
+
+        saved = save_pin(request.tenant_id, request.pin)
+        return {
+            "tenant_id": request.tenant_id,
+            "pin": saved,
+            "code": "pin_saved",
+        }
+
+    @app.get(
+        "/api/v1/twin/standing-order-pin/{tenant_id}", tags=["twin"]
+    )
+    def twin_standing_order_pin_get(tenant_id: str) -> Any:
+        """Return the standing-order pin for *tenant_id* (or empty)."""
+        from core.standing_order import get_pin
+
+        return {
+            "tenant_id": tenant_id,
+            "pin": get_pin(tenant_id),
+        }
+
+    # --- T208 — Typed tenant switch --- #
+
+    @app.post("/api/v1/twin/switch-tenant", tags=["twin"], status_code=200)
+    def twin_switch_tenant(request: TwinTenantSwitchRequest) -> Any:
+        """Switch to *target_tenant_id* with the exact confirm word.
+
+        T208 — the operator enters the target tenant id and the exact
+        confirm word ``SWITCH_TENANT``.  A wrong confirm is a typed
+        deny ``TENANT_SWITCH_CONFIRM_REQUIRED`` — no switch.  After a
+        valid switch, list_queue, the Approved strip, and the profile
+        GET return only the target tenant.  Source tenant cards stay on
+        the source tenant; neighbor queues do not merge.
+        """
+        from core.tenant_switch import switch_tenant
+
+        result = switch_tenant(request.target_tenant_id, request.confirm)
+        if result.get("switched") == "true":
+            return result
+        return JSONResponse(
+            status_code=200,
+            content=result,
+        )
 
     # --- T205 — Quit engine: SIGTERM on 127.0.0.1:8741 only --- #
 

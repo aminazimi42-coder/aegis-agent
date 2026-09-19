@@ -172,6 +172,44 @@
     </div>
   </div>
 
+  <!-- T208 — Tenant chip and typed switch -->
+  <h2>Tenant</h2>
+  <div class="card">
+    <div class="row">
+      <span class="badge" id="tenant-chip">local</span>
+      <span class="muted" id="tenant-chip-label">Current tenant</span>
+    </div>
+    <div class="row">
+      <label for="switch-target">Switch to</label>
+      <input type="text" id="switch-target" placeholder="target tenant id">
+      <label for="switch-confirm">Confirm</label>
+      <input type="text" id="switch-confirm" placeholder="SWITCH_TENANT">
+      <button id="btn-switch-tenant" type="button" onclick="switchTenant()">Switch tenant</button>
+      <span class="muted" id="switch-tenant-label"></span>
+    </div>
+    <div class="queue-meta muted">
+      Enter the target tenant id and the exact confirm word SWITCH_TENANT.
+      A wrong confirm is a typed deny — no switch.  Neighbor queues do not
+      merge.
+    </div>
+  </div>
+
+  <!-- T208 — Standing-order pin -->
+  <h2>Standing order</h2>
+  <div class="card">
+    <div class="row">
+      <label for="standing-order-pin">Standing order</label>
+      <input type="text" id="standing-order-pin" placeholder="one short local line">
+      <button id="btn-save-pin" type="button" onclick="saveStandingOrderPin()">Save pin</button>
+      <span class="muted" id="standing-order-pin-label"></span>
+    </div>
+    <div class="queue-meta muted">
+      A short local string pinned for this tenant.  When present, the next
+      Propose and Weekly brief include the pin in the task text — they do
+      not execute it.  Empty pin means no pin.
+    </div>
+  </div>
+
   <!-- T207 — Training vs Live work flag on the propose form -->
   <h2>Propose a Task</h2>
   <div class="card">
@@ -1380,12 +1418,89 @@
     });
   }
 
+  // ── T208 — Tenant chip and typed switch ──
+  function loadTenantChip() {
+    var t = (el("tenant") && el("tenant").value) || "local";
+    var chip = el("tenant-chip");
+    if (chip) {
+      var prefix = t.length > 8 ? t.slice(0, 8) + "…" : t;
+      chip.textContent = prefix;
+    }
+  }
+  window.refreshTenantChip = loadTenantChip;
+
+  window.switchTenant = function () {
+    var sl = el("switch-tenant-label");
+    if (!engineOnline) {
+      if (sl) { sl.textContent = "Engine offline — start the server, then refresh"; sl.className = "muted err"; }
+      return;
+    }
+    var target = (el("switch-target") && el("switch-target").value) || "";
+    var confirm = (el("switch-confirm") && el("switch-confirm").value) || "";
+    if (sl) { sl.textContent = "Switching…"; sl.className = "muted"; }
+    post("/api/v1/twin/switch-tenant", { target_tenant_id: target.trim(), confirm: confirm.trim() }, function (err, data, status) {
+      if (err || status !== 200) {
+        if (sl) { sl.textContent = "Switch failed"; sl.className = "muted err"; }
+        return;
+      }
+      if (data && data.code === "TENANT_SWITCH_CONFIRM_REQUIRED") {
+        if (sl) { sl.textContent = "Confirm required — enter SWITCH_TENANT"; sl.className = "muted err"; }
+        return;
+      }
+      if (data && data.switched === "true") {
+        if (sl) { sl.textContent = "Switched to " + (data.tenant_id || target); sl.className = "muted"; }
+        var ti = el("tenant");
+        if (ti) { ti.value = data.tenant_id || target; }
+        loadTenantChip();
+        loadQueue();
+      } else {
+        if (sl) { sl.textContent = "Switch denied"; sl.className = "muted err"; }
+      }
+    });
+  };
+
+  // ── T208 — Standing-order pin ──
+  window.saveStandingOrderPin = function () {
+    var pl = el("standing-order-pin-label");
+    if (!engineOnline) {
+      if (pl) { pl.textContent = "Engine offline — start the server, then refresh"; pl.className = "muted err"; }
+      return;
+    }
+    var t = (el("tenant") && el("tenant").value) || "local";
+    var pin = (el("standing-order-pin") && el("standing-order-pin").value) || "";
+    if (pl) { pl.textContent = "Saving…"; pl.className = "muted"; }
+    post("/api/v1/twin/standing-order-pin", { tenant_id: t, pin: pin }, function (err, data, status) {
+      if (err || status !== 200) {
+        if (pl) { pl.textContent = "Save failed"; pl.className = "muted err"; }
+        return;
+      }
+      if (pl) {
+        pl.textContent = data && data.pin ? "Pin saved" : "Pin cleared";
+        pl.className = "muted";
+      }
+    });
+  };
+
+  function loadStandingOrderPin() {
+    var t = (el("tenant") && el("tenant").value) || "local";
+    get("/api/v1/twin/standing-order-pin/" + encodeURIComponent(t), function (err, data, status) {
+      var inp = el("standing-order-pin");
+      if (err || !data || status !== 200) {
+        if (inp) { inp.value = ""; }
+        return;
+      }
+      if (inp) { inp.value = data.pin || ""; }
+    });
+  }
+
   // ── Init ──
   checkHealth();
   loadQueue();
   loadProfile();
   loadEntitlement();
   loadQuietMode();
+  loadTenantChip();
+  loadStandingOrderPin();
 })();
 </script>
 </body>

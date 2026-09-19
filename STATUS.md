@@ -174,3 +174,4 @@ T204 observe byte receipt; evidence zip includes last brief+.sig+Intact; T205 no
 T205 Quit engine SIGTERM port 8741 only; start_operator.sh remains sole start; T206 not started.
 T206 primary-specialist badge, caged path preview, copy-redact, why-drawer, Approved search; T207 not started.
 T207 Quiet mode until next Start Session; Training vs Live work flag on propose; T208 not started.
+T208 standing-order pin; tenant chip and typed switch; neighbor queues do not merge; T209 not started.

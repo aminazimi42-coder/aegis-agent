@@ -124,6 +124,8 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Approved local search** — the Approved strip has a local case-insensitive search box that filters by specialist name, action id, or digest prefix; empty query shows the full strip. No cloud, no delete.
 - **Quiet mode** — the operator page has a Quiet mode toggle that blocks Propose and Weekly brief from creating new cards until the next Start Session for that tenant; existing Latest, Archive, and Approved stay.
 - **Training vs Live work flag** — each propose batch carries a Training or Live work flag; Training-flagged actions cannot execute (typed deny), and Live work uses the existing approve-then-execute path.
+- **Standing-order pin** — the operator page has a Standing order control that saves a short local string for the current tenant; when present, the next Propose and Weekly brief include that string in the task text — they do not execute it.
+- **Typed tenant switch** — the operator page has a tenant chip and a typed switch that requires the exact confirm word SWITCH_TENANT; a wrong confirm is a typed deny and neighbor queues do not merge.
 
 ---
 
