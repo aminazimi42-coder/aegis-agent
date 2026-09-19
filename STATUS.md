@@ -172,3 +172,4 @@ T202 page today-filter quota-remaining checklist must-not Approved digest Intact
 T203 weekly brief cites last approve and last reject; session id and last task restore after sleep; T204 not started.
 T204 observe byte receipt; evidence zip includes last brief+.sig+Intact; T205 not started.
 T205 Quit engine SIGTERM port 8741 only; start_operator.sh remains sole start; T206 not started.
+T206 primary-specialist badge, caged path preview, copy-redact, why-drawer, Approved search; T207 not started.

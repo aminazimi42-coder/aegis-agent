@@ -148,6 +148,24 @@ def cage_path(path: str | Path) -> Path:
     return dest
 
 
+def caged_path_preview(path: str | Path) -> str | None:
+    """Return the caged preview string for *path*, or ``None``.
+
+    T206 — page depth.  When *path* resolves inside ``AEGIS_DATA_DIR`` the
+    path string is returned as a safe preview.  When *path* resolves
+    outside the data root (or is empty) ``None`` is returned — a path
+    outside the cage is **not** previewed as allowed.  No file is opened
+    and nothing is executed.
+    """
+    if not path:
+        return None
+    try:
+        caged = cage_path(path)
+    except PathDeniedError:
+        return None
+    return str(caged)
+
+
 def provider_status() -> dict[str, Any]:
     """Return a dict describing which LLM path is active.
 
@@ -318,6 +336,44 @@ def list_queue(tenant_id: str) -> dict[str, list[dict[str, Any]]]:
             a["dry_run_preview"] = preview_bytes.decode("utf-8", errors="replace")[:200]
         except Exception:
             a["dry_run_preview"] = "preview_unavailable"
+        # T206 — primary-specialist badge on Latest cards: the proposing
+        # specialist name from the kind prefix (Alina, Kian, Bita, Aylin,
+        # Ahmad, Amin).  No seventh name.
+        kind_str = a.get("kind", "") or ""
+        a["primary_specialist"] = kind_str.split(":")[0] if ":" in kind_str else kind_str
+        # T206 — caged-path preview: when the propose payload names a
+        # path under AEGIS_DATA_DIR the card shows that local path.
+        # A path outside the cage is not previewed as allowed; reuse
+        # the T190 typed deny / cage helper.  No file is opened.
+        p = a.get("payload")
+        if isinstance(p, str):
+            import json as _json2
+
+            try:
+                p = _json2.loads(p)
+            except (ValueError, TypeError):
+                p = None
+        path_val = ""
+        if isinstance(p, dict):
+            path_val = p.get("path") or p.get("file_path") or ""
+        if not path_val:
+            # T206 — also scan the body/title for a path-like token.
+            body_text = ""
+            if isinstance(p, dict):
+                body_text = p.get("body") or p.get("text") or ""
+            if not body_text:
+                body_text = a.get("title", "") or ""
+            if isinstance(body_text, str) and "/" in body_text:
+                for token in body_text.split():
+                    if "/" in token and len(token) >= 4:
+                        preview = caged_path_preview(token)
+                        if preview:
+                            path_val = token
+                            break
+        try:
+            a["caged_path_preview"] = caged_path_preview(path_val) if path_val else None
+        except Exception:
+            a["caged_path_preview"] = None
 
     return {
         "pending": pending,

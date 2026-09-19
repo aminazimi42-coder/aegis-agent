@@ -120,6 +120,8 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Weekly brief cites last approve and last reject** — the weekly brief may cite the last approve (specialist name plus action-id prefix) and the last reject reason already on disk; the session id and last task string restore from the local receipt after an engine sleep. No multi-week habit model.
 - **Observe byte receipt** — a successful observe of a local `.eml` or `.ics` writes a local byte receipt under the data dir recording tenant, source basename, byte length, and sha256; nothing leaves the data dir.
 - **Evidence pack zip brief verify** — the evidence pack zip includes the last signed brief, its sibling `.sig`, and a small text member with Intact or Tampered or Missing from the local verifier; nothing leaves the data dir.
+- **Page depth: specialist badge, caged-path preview, copy-redact, why-drawer** — each Latest card shows a primary-specialist badge and a caged-path preview that only renders for paths inside `AEGIS_DATA_DIR`; a Copy redact button copies the card text after the T124/T190 redaction helpers so bearer, webhook, SSH, and PEM shapes never reach the clipboard.
+- **Approved local search** — the Approved strip has a local case-insensitive search box that filters by specialist name, action id, or digest prefix; empty query shows the full strip. No cloud, no delete.
 
 ---
 

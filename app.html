@@ -310,6 +310,10 @@
   <!-- ── Approved strip (T137): approved receipts for current tenant ── -->
   <h2>Approved</h2>
   <div class="card">
+    <!-- T206 — local case-insensitive Approved search box -->
+    <div class="row" style="margin-bottom:0.5rem;">
+      <input type="search" id="approved-search" placeholder="Search approved by specialist, action id, or digest" oninput="loadQueue()" />
+    </div>
     <div id="approved-items"><span class="muted">Loading…</span></div>
   </div>
 
@@ -617,24 +621,54 @@
         conflictTag += ' <span class="muted">prior: ' + esc(a.prior_action_id) + '</span>';
       }
     }
+    // T206 — primary-specialist badge on Latest pending cards.
+    var primarySpecialist = a.primary_specialist || specialistName || "";
+    var badgeHtml = '<div class="queue-meta primary-specialist-badge">'
+      + 'Primary specialist: ' + esc(primarySpecialist) + '</div>';
+    // T206 — caged-path preview (only when the path is inside the cage).
+    var cagedPreview = a.caged_path_preview || "";
+    var cagedHtml = "";
+    if (cagedPreview) {
+      cagedHtml = '<div class="queue-meta caged-path-preview">'
+        + 'caged path preview: <code>' + esc(cagedPreview) + '</code></div>';
+    }
+    // T206 — copy-redact control: copies the visible card text after the
+    // existing T124/T190 redaction helpers.  Clipboard stays local.
+    var copyRedactHtml = '<div class="row"><button type="button" '
+      + 'class="btn-copy-redact" onclick="copyRedactCard(\\'' + esc(a.action_id || "") + '\\')">Copy redact</button>'
+      + '<span class="muted" id="copy-redact-label-' + esc(a.action_id || "") + '"></span></div>';
+    // T206 — why-drawer: closed by default.  Open shows the existing digest
+    // plus dry-run preview/not-executed from T189.  It does not execute.
+    var dryPreview = a.dry_run_preview || "";
+    var digestPreview = a.digest_preview || "";
+    var whyDrawerHtml = '<details class="why-drawer"><summary>Why</summary>'
+      + '<div class="queue-meta">digest: <code>' + esc(digestPreview) + '</code></div>'
+      + '<div class="queue-meta">preview / not-executed: <code>' + esc(dryPreview) + '</code></div>'
+      + '</details>';
     var html = '<div class="queue-item">'
       + '<div class="queue-title">' + esc(a.title || a.action_id) + '</div>'
       + '<div class="queue-body">' + esc(bodyText) + '</div>'
       + clarQ
       + whyLine
+      + badgeHtml
+      + cagedHtml
       + '<div class="queue-meta">' + esc(specialistName) + confLabel + ' · proposed · ' + esc(kindStr) + ' · ' + esc(a.action_id || "") + conflictTag + '</div>'
       + '<div class="queue-meta">digest: <code>' + esc(digest) + '</code>'
         + (a.digest_label ? ' <span class="risk-label">' + esc(a.digest_label) + '</span>' : '') + '</div>';
     // T175 — digest preview before Approve.
-    var digestPreview = a.digest_preview || '';
     if (digestPreview) {
       html += '<div class="queue-meta">digest preview: <code>' + esc(digestPreview) + '</code></div>';
     }
+    // T206 — why-drawer on the card.  Closed by default.  Open shows the
+    // existing digest plus dry-run preview/not-executed from T189.  It does
+    // not execute.
+    html += whyDrawerHtml;
     // T189 — dry-run preview labeled preview / not-executed.
-    var dryPreview = a.dry_run_preview || '';
     if (dryPreview) {
       html += '<div class="queue-meta">preview / not-executed: <code>' + esc(dryPreview) + '</code></div>';
     }
+    // T206 — copy-redact control on the card.
+    html += copyRedactHtml;
     if (digest) {
       // T192 — optional reject reason select next to the Reject button.
       // One-click Reject without choosing a reason still works (defaults OTHER).
@@ -692,12 +726,31 @@
         archiveBox.innerHTML = archive.map(renderCard).join("");
       }
       // T137 — render the Approved strip from approved_waiting rows.
+      // T206 — local case-insensitive Approved search box filters on
+      // specialist name, action id prefix, and digest prefix.  Empty
+      // query shows the full strip.  No cloud, no delete.
       var approved = data.approved_waiting || [];
       if (approvedBox) {
-        if (approved.length === 0) {
-          approvedBox.innerHTML = '<span class="muted">No approved actions — approve a proposed action first.</span>';
+        var q = "";
+        var searchEl = el("approved-search");
+        if (searchEl) { q = (searchEl.value || "").trim().toLowerCase(); }
+        var filtered = approved;
+        if (q) {
+          filtered = approved.filter(function (a) {
+            var agent = (a.agent || "").toLowerCase();
+            var aid = (a.action_id || "").toLowerCase();
+            var dp = (a.digest_prefix || "").toLowerCase();
+            return agent.indexOf(q) !== -1 || aid.indexOf(q) !== -1 || dp.indexOf(q) !== -1;
+          });
+        }
+        if (filtered.length === 0) {
+          if (approved.length === 0) {
+            approvedBox.innerHTML = '<span class="muted">No approved actions — approve a proposed action first.</span>';
+          } else {
+            approvedBox.innerHTML = '<span class="muted">No approved actions match the search.</span>';
+          }
         } else {
-          approvedBox.innerHTML = approved.map(renderApprovedRow).join("");
+          approvedBox.innerHTML = filtered.map(renderApprovedRow).join("");
         }
       }
     });
@@ -721,6 +774,53 @@
       + '</div>';
     return html;
   }
+
+  // T206 — Copy redact control.  Copies the visible card text after the
+  // existing T124/T190 redaction helpers (regex applied in the browser so
+  // the clipboard stays local).  Does not copy raw bearer, webhook, or
+  // SSH shapes — those are replaced with [REDACTED] before copy.
+  window.copyRedactCard = function (actionId) {
+    var item = null;
+    var boxes = ["latest-items", "archive-items"];
+    for (var i = 0; i < boxes.length; i++) {
+      var box = el(boxes[i]);
+      if (!box) { continue; }
+      var rows = box.getElementsByClassName("queue-item");
+      for (var j = 0; j < rows.length; j++) {
+        var btns = rows[j].getElementsByClassName("btn-copy-redact");
+        for (var k = 0; k < btns.length; k++) {
+          if (btns[k].getAttribute("onclick").indexOf(actionId) !== -1) {
+            item = rows[j];
+            break;
+          }
+        }
+        if (item) { break; }
+      }
+      if (item) { break; }
+    }
+    var label = el("copy-redact-label-" + actionId);
+    if (!item) {
+      if (label) { label.textContent = "Card not found"; }
+      return;
+    }
+    var text = item.innerText || item.textContent || "";
+    // T124/T190 — redact secret-shaped substrings before clipboard copy.
+    text = text.replace(/sk[-_:][A-Za-z0-9_-]{8,}/gi, "[REDACTED]");
+    text = text.replace(/gh[pous]_[A-Za-z0-9]{16,}/g, "[REDACTED]");
+    text = text.replace(/AKIA[0-9A-Z]{16}/g, "[REDACTED]");
+    text = text.replace(/Bearer\s+[A-Za-z0-9_\-.]{8,}/gi, "Bearer [REDACTED]");
+    text = text.replace(/whsec_[A-Za-z0-9]{16,}/g, "[REDACTED]");
+    text = text.replace(/-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z0-9 ]*PRIVATE KEY-----/g, "[REDACTED]");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        if (label) { label.textContent = "Copied (redacted)"; }
+      }, function () {
+        if (label) { label.textContent = "Copy failed"; }
+      });
+    } else {
+      if (label) { label.textContent = "Clipboard unavailable"; }
+    }
+  };
 
   // ── Approve a pending action (T106) ──
   window.approveAction = function (actionId, digest) {
