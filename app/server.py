@@ -527,6 +527,31 @@ class TwinTenantSwitchRequest(BaseModel):
     confirm: str = ""
 
 
+class TwinDeskSlipRequest(BaseModel):
+    """Body for the desk-slip export (T209).
+
+    ``tenant_id`` identifies the caller.  An optional ``out_path``
+    overrides the default export destination but must resolve inside
+    ``AEGIS_DATA_DIR`` — a path outside the data dir is a typed deny.
+    No cloud, no execute, no send.
+    """
+
+    tenant_id: str
+    out_path: str = ""
+
+
+class TwinGitObserveRequest(BaseModel):
+    """Body for git observe-only (T209).
+
+    ``tenant_id`` identifies the caller.  The target directory is
+    ``AEGIS_DATA_DIR/work`` only.  A missing work dir is a typed miss,
+    not a crash.  The handler never commits, pushes, or writes the
+    work tree.
+    """
+
+    tenant_id: str
+
+
 def _is_localhost(host: str) -> bool:
     """Return True when *host* is a loopback or test-client address.
 
@@ -2184,6 +2209,65 @@ def create_app() -> FastAPI:
             status_code=200,
             content=result,
         )
+
+    # --- T209 — Desk-slip export --- #
+
+    @app.post("/api/v1/twin/desk-slip", tags=["twin"], status_code=200)
+    def twin_desk_slip(request: TwinDeskSlipRequest) -> Any:
+        """Write one desk-slip markdown file under ``AEGIS_DATA_DIR/export/``.
+
+        The file may include the current tenant prefix, the last task
+        string if present, and the last approve / reject ids already
+        on disk.  No PII from outside the data dir.  No cloud, no
+        execute, no send.  A caller-specified ``out_path`` outside the
+        data dir is a typed deny.
+        """
+        from core.observe_git import write_desk_slip
+        from core.twin_local_view import PathDeniedError
+
+        try:
+            return write_desk_slip(
+                request.tenant_id,
+                out_path=request.out_path or None,
+            )
+        except PathDeniedError:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "detail": "path_denied_outside_data_dir",
+                    "code": "path_denied_outside_data_dir",
+                },
+            )
+
+    # --- T209 — Git observe-only --- #
+
+    @app.post("/api/v1/twin/git-observe", tags=["twin"], status_code=200)
+    def twin_git_observe(request: TwinGitObserveRequest) -> Any:
+        """Observe ``git status`` and last five subjects under
+        ``AEGIS_DATA_DIR/work`` only.
+
+        A missing work dir is a typed miss, not a crash.  No patch
+        body, no remotes, no credentials.  The handler never commits,
+        pushes, or writes the work tree.
+        """
+        from core.observe_git import (
+            GitObserveMissingError,
+            GitObserveWriteDeniedError,
+            observe_git,
+        )
+
+        try:
+            return observe_git(request.tenant_id)
+        except GitObserveMissingError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": exc.reason, "code": exc.code},
+            )
+        except GitObserveWriteDeniedError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": exc.reason, "code": exc.code},
+            )
 
     # --- T205 — Quit engine: SIGTERM on 127.0.0.1:8741 only --- #
 

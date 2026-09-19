@@ -126,6 +126,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Training vs Live work flag** — each propose batch carries a Training or Live work flag; Training-flagged actions cannot execute (typed deny), and Live work uses the existing approve-then-execute path.
 - **Standing-order pin** — the operator page has a Standing order control that saves a short local string for the current tenant; when present, the next Propose and Weekly brief include that string in the task text — they do not execute it.
 - **Typed tenant switch** — the operator page has a tenant chip and a typed switch that requires the exact confirm word SWITCH_TENANT; a wrong confirm is a typed deny and neighbor queues do not merge.
+- **Desk slip** — the operator page can write one desk-slip markdown file under `AEGIS_DATA_DIR/export`; git observe under `AEGIS_DATA_DIR/work` returns status and last five subjects and never commits or pushes.
 
 ---
 

@@ -311,6 +311,24 @@
     </div>
   </div>
 
+  <!-- T209 — Desk-slip export -->
+  <h2>Desk slip</h2>
+  <div class="card">
+    <div class="row">
+      <button id="btn-desk-slip" type="button" onclick="deskSlip()">Desk slip</button>
+      <span class="muted" id="desk-slip-label"></span>
+    </div>
+  </div>
+
+  <!-- T209 — Observe git -->
+  <h2>Observe git</h2>
+  <div class="card">
+    <div class="row">
+      <button id="btn-observe-git" type="button" onclick="observeGit()">Observe git</button>
+      <span class="muted" id="observe-git-label"></span>
+    </div>
+  </div>
+
   <!-- T202 — Today filter on Home -->
   <h2>Today</h2>
   <div class="card">
@@ -476,6 +494,12 @@
     // T201 — disable observe mail/calendar while offline.
     var bom = el("btn-observe-mail");
     if (bom) { bom.disabled = true; }
+    // T209 — disable desk slip while offline.
+    var bds = el("btn-desk-slip");
+    if (bds) { bds.disabled = true; }
+    // T209 — disable observe git while offline.
+    var bog = el("btn-observe-git");
+    if (bog) { bog.disabled = true; }
     // T202 — disable Today filter while offline.
     var bt = el("btn-today");
     if (bt) { bt.disabled = true; }
@@ -509,6 +533,12 @@
     // T201 — observe mail/calendar stays enabled while engine is up.
     var bom = el("btn-observe-mail");
     if (bom) { bom.disabled = false; }
+    // T209 — desk slip stays enabled while engine is up.
+    var bds = el("btn-desk-slip");
+    if (bds) { bds.disabled = false; }
+    // T209 — observe git stays enabled while engine is up.
+    var bog = el("btn-observe-git");
+    if (bog) { bog.disabled = false; }
     // T202 — Today filter stays enabled while engine is up.
     var bt2 = el("btn-today");
     if (bt2) { bt2.disabled = false; }
@@ -1328,6 +1358,79 @@
         var cnt = (data && data.count) ? data.count : 0;
         ol.textContent = "Proposed: " + cnt + " card" + (cnt === 1 ? "" : "s");
         ol.className = "muted";
+      }
+    });
+  };
+
+  // ── Desk slip (T209) ──
+  // Writes one markdown file under AEGIS_DATA_DIR/export for the
+  // current tenant only.  No PII from outside the data dir.  No
+  // cloud, no execute, no send.  A path outside the data dir is a
+  // typed deny.
+  window.deskSlip = function () {
+    var dl = el("desk-slip-label");
+    if (!engineOnline) {
+      if (dl) { dl.textContent = "Engine offline — start the server, then refresh"; dl.className = "muted err"; }
+      return;
+    }
+    if (dl) { dl.textContent = "Writing…"; dl.className = "muted"; }
+    var t = (el("tenant") && el("tenant").value) || "local";
+    post("/api/v1/twin/desk-slip", { tenant_id: t }, function (err, data, status) {
+      if (err) {
+        if (dl) { dl.textContent = "desk_slip_failed: network"; dl.className = "muted err"; }
+        return;
+      }
+      if (status !== 200) {
+        if (dl) { dl.textContent = "desk_slip_failed: " + status; dl.className = "muted err"; }
+        return;
+      }
+      if (data && data.code === "path_denied_outside_data_dir") {
+        if (dl) { dl.textContent = "desk_slip_failed: path_denied_outside_data_dir"; dl.className = "muted err"; }
+        return;
+      }
+      if (dl) {
+        var p = (data && data.path) ? data.path : "";
+        var shaPref = (data && data.sha256) ? data.sha256.slice(0, 12) : "";
+        dl.textContent = "Wrote: " + p + (shaPref ? ("  sha256:" + shaPref + "…") : "");
+        dl.className = "muted";
+      }
+    });
+  };
+
+  // ── Observe git (T209) ──
+  // Observes git status plus the last five commit subjects under
+  // AEGIS_DATA_DIR/work only.  A missing work dir is a typed miss.
+  // Never commits, pushes, or writes the work tree.
+  window.observeGit = function () {
+    var gl = el("observe-git-label");
+    if (!engineOnline) {
+      if (gl) { gl.textContent = "Engine offline — start the server, then refresh"; gl.className = "muted err"; }
+      return;
+    }
+    if (gl) { gl.textContent = "Observing…"; gl.className = "muted"; }
+    var t = (el("tenant") && el("tenant").value) || "local";
+    post("/api/v1/twin/git-observe", { tenant_id: t }, function (err, data, status) {
+      if (err) {
+        if (gl) { gl.textContent = "observe_git_failed: network"; gl.className = "muted err"; }
+        return;
+      }
+      if (status !== 200) {
+        if (gl) { gl.textContent = "observe_git_failed: " + status; gl.className = "muted err"; }
+        return;
+      }
+      if (data && data.code === "git_observe_work_dir_missing") {
+        if (gl) { gl.textContent = "observe_git_failed: work dir missing"; gl.className = "muted err"; }
+        return;
+      }
+      if (data && data.code === "GIT_OBSERVE_WRITE_DENIED") {
+        if (gl) { gl.textContent = "observe_git_failed: write denied"; gl.className = "muted err"; }
+        return;
+      }
+      if (gl) {
+        var cnt = (data && data.count) ? data.count : 0;
+        var st = (data && data.status) ? data.status : "clean";
+        gl.textContent = "Status: " + st + "  Subjects: " + cnt;
+        gl.className = "muted";
       }
     });
   };
