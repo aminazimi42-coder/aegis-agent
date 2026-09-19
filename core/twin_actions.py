@@ -231,6 +231,17 @@ def _ensure_schema() -> None:
             )
         except sqlite3.OperationalError:
             pass
+        # T207 — training column so each action carries the Training vs
+        # Live work flag from the propose batch.  Default 0 (Live work)
+        # so existing rows and raw SQL inserts from earlier tests remain
+        # executable; only ``insert_specialist_proposal`` sets it
+        # explicitly.
+        try:
+            conn.execute(
+                "ALTER TABLE twin_actions ADD COLUMN training INTEGER DEFAULT 0"
+            )
+        except sqlite3.OperationalError:
+            pass
         try:
             conn.execute(
                 "ALTER TABLE twin_feedback ADD COLUMN correlation_id TEXT"
@@ -289,6 +300,9 @@ def _row_to_dict(row: sqlite3.Row | dict[str, Any]) -> dict[str, Any]:
     # T175 — note_hash (may be NULL when no approve note exists).
     if "note_hash" in keys:
         result["note_hash"] = row["note_hash"]
+    # T207 — training flag (Training vs Live work from the propose batch).
+    if "training" in keys:
+        result["training"] = bool(row["training"])
     return result
 
 
@@ -310,7 +324,7 @@ def _load_action(action_id: str) -> dict[str, Any] | None:
             "SELECT action_id, tenant_id, kind, title, status, created_at, "
             "payload, payload_sha256, approved_payload_sha256, approved_by, approved_at, "
             "why_text, reject_reason, reject_reason_enum, conflict, batch_id, "
-            "correlation_id, note_hash "
+            "correlation_id, note_hash, training "
             "FROM twin_actions WHERE action_id = ?",
             (action_id,),
         ).fetchone()
@@ -914,6 +928,12 @@ def execute(
             return action
         if action["status"] != "approved":
             raise PermissionError("approval required")
+        # T207 — a Training-flagged action cannot execute.  The typed
+        # deny keeps status as approved/proposed — it does not become
+        # executed.  Live work uses the existing approve-then-execute
+        # path.
+        if action.get("training"):
+            raise PermissionError("TRAINING_BATCH_NO_EXECUTE")
         # T56 — recompute the current envelope digest and compare to the
         # approved_payload_sha256 captured at approve time.  Mismatch means
         # the payload was mutated after approval.
@@ -1028,7 +1048,7 @@ def list_actions(tenant_id: str) -> list[dict[str, Any]]:
             "SELECT action_id, tenant_id, kind, title, status, created_at, "
             "payload, payload_sha256, approved_payload_sha256, approved_by, approved_at, "
             "reject_reason, reject_reason_enum, conflict, batch_id, correlation_id, "
-            "note_hash "
+            "note_hash, training "
             "FROM twin_actions WHERE tenant_id = ? "
             "ORDER BY created_at ASC",
             (tenant_id,),
@@ -1149,6 +1169,7 @@ def insert_specialist_proposal(
     payload: Any,
     batch_id: str | None = None,
     action_id: str | None = None,
+    training: bool = False,
 ) -> dict[str, Any]:
     """Insert one twin_action row with ``status = "proposed"``.
 
@@ -1262,8 +1283,8 @@ def insert_specialist_proposal(
                 "INSERT INTO twin_actions "
                 "(action_id, tenant_id, kind, title, status, "
                 "created_at, payload, payload_sha256, conflict, batch_id, "
-                "correlation_id) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "correlation_id, training) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     insert_id,
                     tenant_id,
@@ -1276,6 +1297,7 @@ def insert_specialist_proposal(
                     conflict,
                     batch_id,
                     correlation_id,
+                    1 if training else 0,
                 ),
             )
     # T175 — write a propose audit line sharing the correlation_id.
@@ -1302,6 +1324,7 @@ def insert_specialist_proposal(
         "conflict": bool(conflict),
         "batch_id": batch_id,
         "correlation_id": correlation_id,
+        "training": training,
     }
     # T161 — attach prior_action_id, prior_digest, and why_line when
     # a prior-topic conflict was detected for the same tenant.

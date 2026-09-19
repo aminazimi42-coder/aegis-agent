@@ -113,7 +113,8 @@ class BaseAgent(ABC):
         return text
 
     def propose(
-        self, tenant_id: str, text: str = "", batch_id: str | None = None
+        self, tenant_id: str, text: str = "", batch_id: str | None = None,
+        training: bool = False,
     ) -> dict[str, Any]:
         """Propose one twin_action row with status ``proposed``.
 
@@ -180,7 +181,8 @@ class BaseAgent(ABC):
                 f"{self.name} can shape the proposal?"
             )
         return insert_specialist_proposal(
-            tenant_id, self.name, title, payload, batch_id=batch_id
+            tenant_id, self.name, title, payload, batch_id=batch_id,
+            training=training,
         )
 
     def profile(self) -> dict:

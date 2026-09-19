@@ -157,7 +157,22 @@
     </div>
   </div>
 
-  <!-- ── Propose a task (T111) ───────────────────────────────────── -->
+  <!-- T207 — Quiet mode control on the operator page -->
+  <h2>Quiet mode</h2>
+  <div class="card">
+    <div class="row">
+      <label for="quiet-mode-toggle">Quiet mode</label>
+      <input type="checkbox" id="quiet-mode-toggle" onchange="toggleQuietMode()">
+      <span class="muted" id="quiet-mode-label">Off</span>
+    </div>
+    <div class="queue-meta muted">
+      While Quiet is on, Propose and Weekly brief create zero new cards
+      until the next Start Session.  Existing Latest, Archive, and Approved
+      stay.  Refresh alone does not clear Quiet.
+    </div>
+  </div>
+
+  <!-- T207 — Training vs Live work flag on the propose form -->
   <h2>Propose a Task</h2>
   <div class="card">
     <div class="row">
@@ -165,6 +180,11 @@
       <textarea id="propose-text" rows="3" style="flex:1;padding:0.4rem 0.6rem;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;font-family:inherit;" placeholder="Describe one operator task…"></textarea>
     </div>
     <div class="row">
+      <label for="training-live-select">Training / Live work</label>
+      <select id="training-live-select">
+        <option value="true" selected>Training</option>
+        <option value="false">Live work</option>
+      </select>
       <button id="btn-propose" onclick="proposeTask()">Propose</button>
       <span class="muted" id="propose-label"></span>
       <span class="muted" id="last-reject-label"></span>
@@ -895,17 +915,26 @@
     }
     var t = el("tenant").value || "local";
     var text = (el("propose-text") && el("propose-text").value) || "";
+    // T207 — Training vs Live work flag from the propose form.
+    var trainingVal = true;
+    var tSel = el("training-live-select");
+    if (tSel) { trainingVal = (tSel.value === "true"); }
     var label = el("propose-label");
     if (label) { label.textContent = ""; label.className = "muted"; }
     if (!text.trim()) {
       if (label) { label.textContent = "Task text required"; label.className = "muted err"; }
       return;
     }
-    post("/api/v1/twin/propose", { tenant_id: t, text: text.trim() }, function (err, data, status) {
+    post("/api/v1/twin/propose", { tenant_id: t, text: text.trim(), training: trainingVal }, function (err, data, status) {
       if (err || status !== 200) {
         var detail = "Propose failed";
         if (data && data.detail) { detail = data.detail; }
         if (label) { label.textContent = detail; label.className = "muted err"; }
+        return;
+      }
+      // T207 — Quiet mode blocks propose; show the typed reason.
+      if (data && data.code === "QUIET_UNTIL_NEXT_SESSION") {
+        if (label) { label.textContent = "Quiet mode — no new cards until next Start Session"; label.className = "muted err"; }
         return;
       }
       if (label) {
@@ -947,11 +976,21 @@
     var wl = el("weekly-brief-label");
     if (wl) { wl.textContent = ""; wl.className = "muted"; }
     var t = el("tenant").value || "local";
-    post("/api/v1/twin/propose", { tenant_id: t, weekly_brief: true }, function (err, data, status) {
+    // T207 — Weekly brief uses the same Training/Live flag currently
+    // selected on the propose form.  It does not invent a second flag.
+    var wbTraining = true;
+    var tSel = el("training-live-select");
+    if (tSel) { wbTraining = (tSel.value === "true"); }
+    post("/api/v1/twin/propose", { tenant_id: t, weekly_brief: true, training: wbTraining }, function (err, data, status) {
       if (err || status !== 200) {
         var detail = "Weekly brief failed";
         if (data && data.detail) { detail = data.detail; }
         if (wl) { wl.textContent = detail; wl.className = "muted err"; }
+        return;
+      }
+      // T207 — Quiet mode blocks weekly brief; show the typed reason.
+      if (data && data.code === "QUIET_UNTIL_NEXT_SESSION") {
+        if (wl) { wl.textContent = "Quiet mode — no new cards until next Start Session"; wl.className = "muted err"; }
         return;
       }
       if (wl) {
@@ -1309,11 +1348,44 @@
     });
   };
 
+  // ── T207 — Quiet mode toggle ──
+  window.toggleQuietMode = function () {
+    var cb = el("quiet-mode-toggle");
+    var ql = el("quiet-mode-label");
+    var t = (el("tenant") && el("tenant").value) || "local";
+    var quiet = cb ? cb.checked : false;
+    if (ql) { ql.textContent = quiet ? "On" : "Off"; }
+    post("/api/v1/twin/quiet-mode", { tenant_id: t, quiet: quiet }, function (err, data, status) {
+      if (err || status !== 200) {
+        if (ql) { ql.textContent = "Toggle failed"; ql.className = "muted err"; }
+        return;
+      }
+      if (ql) { ql.className = "muted"; }
+    });
+  };
+
+  function loadQuietMode() {
+    var t = (el("tenant") && el("tenant").value) || "local";
+    get("/api/v1/twin/quiet-mode/" + encodeURIComponent(t), function (err, data, status) {
+      var cb = el("quiet-mode-toggle");
+      var ql = el("quiet-mode-label");
+      if (err || !data || status !== 200) {
+        if (cb) { cb.checked = false; }
+        if (ql) { ql.textContent = "Off"; }
+        return;
+      }
+      var on = data.quiet_mode === true;
+      if (cb) { cb.checked = on; }
+      if (ql) { ql.textContent = on ? "On" : "Off"; }
+    });
+  }
+
   // ── Init ──
   checkHealth();
   loadQueue();
   loadProfile();
   loadEntitlement();
+  loadQuietMode();
 })();
 </script>
 </body>

@@ -356,11 +356,18 @@ class TwinProposeTextRequest(BaseModel):
     optional in that mode.  If no committed profile exists the route
     returns a typed 400 — the operator does not retype goals every
     Monday.
+
+    T207 — ``training`` is the Training vs Live work flag.  Each
+    new action in the batch carries the flag.  Training actions cannot
+    execute; Live work uses the existing approve-then-execute path.
+    The HTML page sends ``true`` (Training, the UI default) or ``false``
+    (Live work) explicitly; this default covers clients that omit it.
     """
 
     tenant_id: str
     text: str = ""
     weekly_brief: bool = False
+    training: bool = False
 
 
 class TwinActionRejectRequest(BaseModel):
@@ -486,6 +493,13 @@ class TwinQuitRequest(BaseModel):
     """
 
     tenant_id: str
+
+
+class TwinQuietModeRequest(BaseModel):
+    """Body for toggling Quiet mode on or off (T207)."""
+
+    tenant_id: str
+    quiet: bool = False
 
 
 def _is_localhost(host: str) -> bool:
@@ -969,15 +983,40 @@ def create_app() -> FastAPI:
 
         prior = read_session_receipt(request.tenant_id)
         if prior is not None and prior.get("session_id"):
+            # T207 — the next Start Session for this tenant turns Quiet
+            # off and writes the change locally.  Refresh alone does not
+            # clear Quiet.
+            from core.session_receipt import write_session_receipt
+
+            write_session_receipt(
+                request.tenant_id,
+                session_id=prior.get("session_id"),
+                last_event=prior.get("last_event", "start"),
+                last_action_id=prior.get("last_action_id", ""),
+                last_reject_reason=prior.get("last_reject_reason", ""),
+                last_task=prior.get("last_task", ""),
+                quiet_mode=False,
+            )
             return {
                 "session_id": prior["session_id"],
                 "tenant_id": request.tenant_id,
                 "last_task": prior.get("last_task", ""),
                 "restored": True,
+                "quiet_mode": False,
             }
         session = twin_start(request.tenant_id)
         session["last_task"] = ""
         session["restored"] = False
+        session["quiet_mode"] = False
+        # T207 — write the initial session receipt with Quiet off.
+        from core.session_receipt import write_session_receipt
+
+        write_session_receipt(
+            request.tenant_id,
+            session_id=session.get("session_id"),
+            last_event="start",
+            quiet_mode=False,
+        )
         return session
 
     @app.post(
@@ -1547,7 +1586,28 @@ def create_app() -> FastAPI:
         omitted.  If no committed profile exists the route returns a
         typed 400 — no fabricated brief, no crash.  The operator does
         not retype goals every Monday.
+
+        T207 — when Quiet mode is on for this tenant the route returns
+        a typed ``QUIET_UNTIL_NEXT_SESSION`` and writes zero new
+        twin_actions.  Each action carries the Training vs Live work
+        flag from the request.  Quiet is cleared only by the next
+        Start Session for this tenant.
         """
+        # T207 — Quiet mode: block propose and weekly brief until the
+        # next Start Session for this tenant.
+        from core.session_receipt import is_quiet_mode
+
+        if is_quiet_mode(request.tenant_id):
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "detail": "Quiet mode is on — no new cards until the next Start Session",
+                    "code": "QUIET_UNTIL_NEXT_SESSION",
+                    "tenant_id": request.tenant_id,
+                    "proposals": [],
+                    "count": 0,
+                },
+            )
         # T199 — weekly brief: build text from the saved profile only.
         if request.weekly_brief:
             from core.twin_interview import get_latest_profile
@@ -1607,7 +1667,8 @@ def create_app() -> FastAPI:
         batch_id = f"batch-{uuid4().hex[:12]}"
         proposals: list[dict[str, Any]] = []
         for agent in specialists:
-            row = agent.propose(request.tenant_id, text, batch_id=batch_id)
+            row = agent.propose(request.tenant_id, text, batch_id=batch_id,
+                                training=request.training)
             # T160 — surface the deterministic confidence integer on
             # the card next to the specialist name.
             row_payload = row.get("payload") or {}
@@ -1650,6 +1711,8 @@ def create_app() -> FastAPI:
                     "prior_action_id": row_prior_id,
                     "prior_digest": row_prior_digest,
                     "why": row_why,
+                    # T207 — Training vs Live work flag on the card.
+                    "training": request.training,
                     # T175 — one local correlation id per propose.
                     "correlation_id": row.get("correlation_id"),
                     # T175 — payload digest prefix shown before Approve.
@@ -2001,6 +2064,37 @@ def create_app() -> FastAPI:
             content=html_path.read_text(encoding="utf-8"),
             media_type="text/html",
         )
+
+    # --- T207 — Quiet mode toggle --- #
+
+    @app.post("/api/v1/twin/quiet-mode", tags=["twin"], status_code=200)
+    def twin_quiet_mode_toggle(request: TwinQuietModeRequest) -> Any:
+        """Toggle Quiet mode on or off for this tenant.
+
+        T207 — Quiet mode blocks Propose and Weekly brief from writing
+        new twin_actions until the next Start Session for this tenant.
+        The flag is persisted on the durable local session receipt
+        under ``AEGIS_DATA_DIR/receipts/`` and is tenant-bound.  No
+        cloud, no Safari, no engine stop, no Quit call.
+        """
+        from core.session_receipt import set_quiet_mode
+
+        set_quiet_mode(request.tenant_id, request.quiet)
+        return {
+            "tenant_id": request.tenant_id,
+            "quiet_mode": request.quiet,
+            "code": "quiet_mode_set",
+        }
+
+    @app.get("/api/v1/twin/quiet-mode/{tenant_id}", tags=["twin"])
+    def twin_quiet_mode_get(tenant_id: str) -> Any:
+        """Return the current Quiet mode state for *tenant_id*."""
+        from core.session_receipt import is_quiet_mode
+
+        return {
+            "tenant_id": tenant_id,
+            "quiet_mode": is_quiet_mode(tenant_id),
+        }
 
     # --- T205 — Quit engine: SIGTERM on 127.0.0.1:8741 only --- #
 

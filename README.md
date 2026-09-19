@@ -122,6 +122,8 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Evidence pack zip brief verify** — the evidence pack zip includes the last signed brief, its sibling `.sig`, and a small text member with Intact or Tampered or Missing from the local verifier; nothing leaves the data dir.
 - **Page depth: specialist badge, caged-path preview, copy-redact, why-drawer** — each Latest card shows a primary-specialist badge and a caged-path preview that only renders for paths inside `AEGIS_DATA_DIR`; a Copy redact button copies the card text after the T124/T190 redaction helpers so bearer, webhook, SSH, and PEM shapes never reach the clipboard.
 - **Approved local search** — the Approved strip has a local case-insensitive search box that filters by specialist name, action id, or digest prefix; empty query shows the full strip. No cloud, no delete.
+- **Quiet mode** — the operator page has a Quiet mode toggle that blocks Propose and Weekly brief from creating new cards until the next Start Session for that tenant; existing Latest, Archive, and Approved stay.
+- **Training vs Live work flag** — each propose batch carries a Training or Live work flag; Training-flagged actions cannot execute (typed deny), and Live work uses the existing approve-then-execute path.
 
 ---
 
