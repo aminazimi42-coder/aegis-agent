@@ -172,6 +172,25 @@
     </div>
   </div>
 
+  <!-- T214 — Session lock: idle lock and local PIN -->
+  <h2>Session lock</h2>
+  <div class="card">
+    <div id="session-lock-banner" class="queue-title" style="display:none;color:#ff3b30;">SESSION LOCKED</div>
+    <div class="row">
+      <label for="session-pin-input">Local PIN</label>
+      <input type="password" id="session-pin-input" placeholder="6+ digits">
+      <button id="btn-set-pin" type="button" onclick="setSessionPin()">Set PIN</button>
+      <button id="btn-lock-session" type="button" onclick="lockSession()">Lock now</button>
+      <button id="btn-unlock-session" type="button" onclick="unlockSession()">Unlock</button>
+      <span class="muted" id="session-lock-label"></span>
+    </div>
+    <div class="queue-meta muted">
+      After idle time the session locks on this tenant only.  Unlock with
+      the local PIN.  Until unlocked, Propose, Approve, Reject, Export, and
+      Quit stay disabled.  The lock is not macOS login.
+    </div>
+  </div>
+
   <!-- T208 — Tenant chip and typed switch -->
   <h2>Tenant</h2>
   <div class="card">
@@ -1596,6 +1615,116 @@
     });
   }
 
+  // ── T214 — Session lock ──
+  window.setSessionPin = function () {
+    var sl = el("session-lock-label");
+    if (!engineOnline) {
+      if (sl) { sl.textContent = "Engine offline — start the server, then refresh"; sl.className = "muted err"; }
+      return;
+    }
+    var t = (el("tenant") && el("tenant").value) || "local";
+    var pin = (el("session-pin-input") && el("session-pin-input").value) || "";
+    if (sl) { sl.textContent = "Saving…"; sl.className = "muted"; }
+    post("/api/v1/twin/session/pin/" + encodeURIComponent(t), { tenant_id: t, pin: pin }, function (err, data, status) {
+      if (err || status !== 200) {
+        if (sl) { sl.textContent = "Save failed"; sl.className = "muted err"; }
+        return;
+      }
+      if (data && data.code === "PIN_INVALID") {
+        if (sl) { sl.textContent = "PIN must be 6+ digits"; sl.className = "muted err"; }
+        return;
+      }
+      if (data && data.code === "PIN_EMPTY") {
+        if (sl) { sl.textContent = "PIN is empty"; sl.className = "muted err"; }
+        return;
+      }
+      if (sl) { sl.textContent = "PIN set"; sl.className = "muted"; }
+    });
+  };
+
+  window.lockSession = function () {
+    var sl = el("session-lock-label");
+    if (!engineOnline) {
+      if (sl) { sl.textContent = "Engine offline — start the server, then refresh"; sl.className = "muted err"; }
+      return;
+    }
+    var t = (el("tenant") && el("tenant").value) || "local";
+    if (sl) { sl.textContent = "Locking…"; sl.className = "muted"; }
+    post("/api/v1/twin/session/lock/" + encodeURIComponent(t), { tenant_id: t }, function (err, data, status) {
+      if (err || status !== 200) {
+        if (sl) { sl.textContent = "Lock failed"; sl.className = "muted err"; }
+        return;
+      }
+      if (sl) { sl.textContent = "Locked"; sl.className = "muted"; }
+      applyLockState(true);
+    });
+  };
+
+  window.unlockSession = function () {
+    var sl = el("session-lock-label");
+    if (!engineOnline) {
+      if (sl) { sl.textContent = "Engine offline — start the server, then refresh"; sl.className = "muted err"; }
+      return;
+    }
+    var t = (el("tenant") && el("tenant").value) || "local";
+    var pin = (el("session-pin-input") && el("session-pin-input").value) || "";
+    if (sl) { sl.textContent = "Unlocking…"; sl.className = "muted"; }
+    post("/api/v1/twin/session/unlock/" + encodeURIComponent(t), { tenant_id: t, pin: pin }, function (err, data, status) {
+      if (err || status !== 200) {
+        if (sl) { sl.textContent = "Unlock failed"; sl.className = "muted err"; }
+        return;
+      }
+      if (data && data.code === "WRONG_PIN") {
+        if (sl) { sl.textContent = "Wrong PIN"; sl.className = "muted err"; }
+        return;
+      }
+      if (data && data.code === "PIN_NOT_SET") {
+        if (sl) { sl.textContent = "PIN not set — set a PIN first"; sl.className = "muted err"; }
+        return;
+      }
+      if (data && data.code === "PIN_REQUIRED") {
+        if (sl) { sl.textContent = "Enter a PIN"; sl.className = "muted err"; }
+        return;
+      }
+      if (data && data.code === "NOT_LOCKED") {
+        if (sl) { sl.textContent = "Not locked"; sl.className = "muted"; }
+        return;
+      }
+      if (sl) { sl.textContent = "Unlocked"; sl.className = "muted"; }
+      applyLockState(false);
+    });
+  };
+
+  function applyLockState(locked) {
+    var banner = el("session-lock-banner");
+    if (banner) { banner.style.display = locked ? "block" : "none"; }
+    // When locked, disable Propose, Approve, Reject, Export, Quit.
+    if (locked) {
+      var bp = el("btn-propose"); if (bp) { bp.disabled = true; }
+      var bw = el("btn-weekly-brief"); if (bw) { bw.disabled = true; }
+      var bs2 = el("btn-signed-brief"); if (bs2) { bs2.disabled = true; }
+      var bq = el("btn-quit-engine"); if (bq) { bq.disabled = true; }
+      var bso = el("btn-surface-older"); if (bso) { bso.disabled = true; }
+    } else {
+      // Re-enable only when the engine is also online.
+      if (engineOnline) {
+        var bp2 = el("btn-propose"); if (bp2) { bp2.disabled = false; }
+        var bw2 = el("btn-weekly-brief"); if (bw2) { bw2.disabled = !profilePrefill; }
+        var bs3 = el("btn-signed-brief"); if (bs3) { bs3.disabled = false; }
+        var bq2 = el("btn-quit-engine"); if (bq2) { bq2.disabled = false; }
+        var bso2 = el("btn-surface-older"); if (bso2) { bso2.disabled = false; }
+      }
+    }
+  }
+
+  function loadSessionLockState() {
+    var t = (el("tenant") && el("tenant").value) || "local";
+    get("/api/v1/twin/session/lock-state/" + encodeURIComponent(t), function (err, data, status) {
+      if (err || !data || status !== 200) { return; }
+      applyLockState(data.locked === true);
+    });
+  }
+
   // ── Init ──
   checkHealth();
   loadQueue();
@@ -1604,6 +1733,7 @@
   loadQuietMode();
   loadTenantChip();
   loadStandingOrderPin();
+  loadSessionLockState();
 })();
 </script>
 </body>

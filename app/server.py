@@ -552,6 +552,31 @@ class TwinGitObserveRequest(BaseModel):
     tenant_id: str
 
 
+class TwinSessionPinRequest(BaseModel):
+    """Body for setting the local session PIN (T214).
+
+    ``tenant_id`` identifies the caller.  ``pin`` is the local PIN to
+    store — a string of at least 6 digits.  Stored via the existing
+    T196 Keychain helper or a mock store on CI.  Never written into
+    SQLite plaintext.  Never logged.
+    """
+
+    tenant_id: str
+    pin: str = ""
+
+
+class TwinSessionUnlockRequest(BaseModel):
+    """Body for unlocking the session (T214).
+
+    ``tenant_id`` identifies the caller.  ``pin`` is the local PIN to
+    verify against the Keychain/mock store.  A wrong PIN is a typed
+    deny — no lockout product this slice.
+    """
+
+    tenant_id: str
+    pin: str = ""
+
+
 def _is_localhost(host: str) -> bool:
     """Return True when *host* is a loopback or test-client address.
 
@@ -1392,6 +1417,18 @@ def create_app() -> FastAPI:
         "/api/v1/twin/actions/{action_id}/approve", tags=["twin"], status_code=200
     )
     def twin_actions_approve(action_id: str, request: TwinActionApproveRequest) -> Any:
+        # T214 — Session lock: block approve when locked for this tenant.
+        from core.session_lock import is_locked as _session_is_locked
+
+        if _session_is_locked(request.tenant_id):
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "detail": "Session is locked — unlock with the local PIN",
+                    "code": "SESSION_LOCKED",
+                    "tenant_id": request.tenant_id,
+                },
+            )
         try:
             result = twin_action_approve(
                 action_id,
@@ -1428,6 +1465,18 @@ def create_app() -> FastAPI:
         "/api/v1/twin/actions/{action_id}/reject", tags=["twin"], status_code=200
     )
     def twin_actions_reject(action_id: str, request: TwinActionRejectRequest) -> Any:
+        # T214 — Session lock: block reject when locked for this tenant.
+        from core.session_lock import is_locked as _session_is_locked
+
+        if _session_is_locked(request.tenant_id):
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "detail": "Session is locked — unlock with the local PIN",
+                    "code": "SESSION_LOCKED",
+                    "tenant_id": request.tenant_id,
+                },
+            )
         try:
             result = twin_action_reject(
                 action_id,
@@ -1699,8 +1748,23 @@ def create_app() -> FastAPI:
         """
         # T207 — Quiet mode: block propose and weekly brief until the
         # next Start Session for this tenant.
+        # T214 — Session lock: block propose when the operator page is
+        # locked for this tenant.  The lock is tenant-bound — a neighbor
+        # tenant is never affected.
+        from core.session_lock import is_locked as _session_is_locked
         from core.session_receipt import is_quiet_mode
 
+        if _session_is_locked(request.tenant_id):
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "detail": "Session is locked — unlock with the local PIN",
+                    "code": "SESSION_LOCKED",
+                    "tenant_id": request.tenant_id,
+                    "proposals": [],
+                    "count": 0,
+                },
+            )
         if is_quiet_mode(request.tenant_id):
             return JSONResponse(
                 status_code=200,
@@ -1921,6 +1985,18 @@ def create_app() -> FastAPI:
         ``$HOME/.aegis/export/``) — never into the git worktree.  An
         empty profile or empty brief returns a typed 400, no file.
         """
+        # T214 — Session lock: block export when locked for this tenant.
+        from core.session_lock import is_locked as _session_is_locked
+
+        if _session_is_locked(request.tenant_id):
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "detail": "Session is locked — unlock with the local PIN",
+                    "code": "SESSION_LOCKED",
+                    "tenant_id": request.tenant_id,
+                },
+            )
         from core.twin_interview import get_latest_profile
         from core.twin_local_recall import signed_export
 
@@ -2359,6 +2435,18 @@ def create_app() -> FastAPI:
         caller is a typed deny; when port 8741 is already free the
         engine is reported as already stopped.
         """
+        # T214 — Session lock: block quit when locked for this tenant.
+        from core.session_lock import is_locked as _session_is_locked
+
+        if _session_is_locked(request.tenant_id):
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "detail": "Session is locked — unlock with the local PIN",
+                    "code": "SESSION_LOCKED",
+                    "tenant_id": request.tenant_id,
+                },
+            )
         host = ""
         if raw.client is not None:
             host = raw.client.host or ""
@@ -2374,6 +2462,52 @@ def create_app() -> FastAPI:
             )
         _send_quit_sigterm()
         return {"detail": "engine stopping", "code": "engine_stopping"}
+
+    # --- T214 — Operator idle lock and local Keychain PIN --- #
+
+    @app.post("/api/v1/twin/session/lock/{tenant_id}", tags=["twin"], status_code=200)
+    def twin_session_lock(tenant_id: str) -> Any:
+        """Force-lock the session for *tenant_id* now.
+
+        T214 — after the operator page is idle, the session locks on
+        that tenant only.  Until unlocked: Propose, Approve, Reject,
+        Export, and Quit engine stay disabled.  The lock is not macOS
+        login and not a new identity product.
+        """
+        from core.session_lock import lock as _session_lock
+
+        return _session_lock(tenant_id)
+
+    @app.post("/api/v1/twin/session/unlock/{tenant_id}", tags=["twin"], status_code=200)
+    def twin_session_unlock(tenant_id: str, request: TwinSessionUnlockRequest) -> Any:
+        """Unlock the session for *tenant_id* with the local PIN.
+
+        T214 — a wrong PIN is a typed deny — no lockout product this
+        slice.  The PIN value is never returned or logged.  A neighbor
+        tenant cannot unlock this tenant.
+        """
+        from core.session_lock import unlock as _session_unlock
+
+        return _session_unlock(tenant_id, request.pin)
+
+    @app.get("/api/v1/twin/session/lock-state/{tenant_id}", tags=["twin"], status_code=200)
+    def twin_session_lock_state(tenant_id: str) -> Any:
+        """Return ``{locked, locked_at}`` for *tenant_id*."""
+        from core.session_lock import lock_state as _session_lock_state
+
+        return _session_lock_state(tenant_id)
+
+    @app.post("/api/v1/twin/session/pin/{tenant_id}", tags=["twin"], status_code=200)
+    def twin_session_pin_set(tenant_id: str, request: TwinSessionPinRequest) -> Any:
+        """Set the local PIN for *tenant_id*.
+
+        T214 — the PIN is a string of at least 6 digits, stored via the
+        existing T196 Keychain helper or a mock store on CI.  Never
+        written into SQLite plaintext.  Never logged.  Never returned.
+        """
+        from core.session_lock import set_pin as _session_set_pin
+
+        return _session_set_pin(tenant_id, request.pin)
 
     return app
 
