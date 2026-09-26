@@ -129,6 +129,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Desk slip** — the operator page can write one desk-slip markdown file under `AEGIS_DATA_DIR/export`; git observe under `AEGIS_DATA_DIR/work` returns status and last five subjects and never commits or pushes.
 - **Operator page script parses** — the operator page script parses; Start Session and the two-column home load from `127.0.0.1:8741`.
 - **One-week local use** — one week of local morning and night use with a full laptop power off between sessions was completed on the operator started by `start_operator.sh`. Each counted session used Propose then Approve or Reject on the local queue. This is not a fortnight claim and not a multi-month behavioral model.
+- **Local tenant-bound decision ledger** — each Approve or Reject on the local operator persists one tenant-bound decision row under `AEGIS_DATA_DIR`; neighbor tenants cannot read it. Forget removes that tenant's rows only.
 
 ---
 

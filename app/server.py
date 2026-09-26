@@ -1393,7 +1393,7 @@ def create_app() -> FastAPI:
     )
     def twin_actions_approve(action_id: str, request: TwinActionApproveRequest) -> Any:
         try:
-            return twin_action_approve(
+            result = twin_action_approve(
                 action_id,
                 request.tenant_id,
                 request.actor_id,
@@ -1404,13 +1404,32 @@ def create_app() -> FastAPI:
             if "unknown action" in msg or "tenant mismatch" in msg:
                 return JSONResponse(status_code=404, content={"detail": msg})
             return JSONResponse(status_code=409, content={"detail": msg})
+        # T211 — append one tenant-bound decision-ledger row.
+        try:
+            from core.decision_ledger import append as _ledger_append
+
+            kind = result.get("kind", "") or ""
+            specialist = kind.split(":")[0] if ":" in kind else kind
+            digest = result.get("payload_sha256", "") or ""
+            _ledger_append(
+                request.tenant_id,
+                {
+                    "action_id": action_id,
+                    "specialist": specialist,
+                    "decision": "approve",
+                    "digest_prefix": digest[:12],
+                },
+            )
+        except Exception:
+            pass
+        return result
 
     @app.post(
         "/api/v1/twin/actions/{action_id}/reject", tags=["twin"], status_code=200
     )
     def twin_actions_reject(action_id: str, request: TwinActionRejectRequest) -> Any:
         try:
-            return twin_action_reject(
+            result = twin_action_reject(
                 action_id,
                 request.tenant_id,
                 actor_id=request.actor_id,
@@ -1427,6 +1446,27 @@ def create_app() -> FastAPI:
                 status_code=404,
                 content={"detail": msg},
             )
+        # T211 — append one tenant-bound decision-ledger row.
+        try:
+            from core.decision_ledger import append as _ledger_append
+
+            kind = result.get("kind", "") or ""
+            specialist = kind.split(":")[0] if ":" in kind else kind
+            digest = result.get("payload_sha256", "") or ""
+            reason_code = result.get("reject_reason_enum", "") or ""
+            _ledger_append(
+                request.tenant_id,
+                {
+                    "action_id": action_id,
+                    "specialist": specialist,
+                    "decision": "reject",
+                    "reason_code": reason_code,
+                    "digest_prefix": digest[:12],
+                },
+            )
+        except Exception:
+            pass
+        return result
 
     @app.post(
         "/api/v1/twin/actions/{action_id}/execute", tags=["twin"], status_code=200
@@ -1452,6 +1492,20 @@ def create_app() -> FastAPI:
     def twin_actions_list(tenant_id: str) -> Any:
         actions = twin_action_list(tenant_id)
         return {"actions": actions, "count": len(actions)}
+
+    # T211 — GET the local tenant-bound decision ledger.
+    @app.get("/api/v1/twin/decision-ledger/{tenant_id}", tags=["twin"])
+    def twin_decision_ledger_list(tenant_id: str) -> Any:
+        """Return decision-ledger rows for *tenant_id* only.
+
+        A cross-tenant id returns an empty list — never neighbor rows.
+        Unauthenticated public demo does not dump the ledger; the data
+        stays local under ``AEGIS_DATA_DIR``.
+        """
+        from core.decision_ledger import list as _ledger_list
+
+        rows = _ledger_list(tenant_id)
+        return {"tenant_id": tenant_id, "rows": rows, "count": len(rows)}
 
     # T175 — verify receipt chain for one action_id.
     @app.get(
