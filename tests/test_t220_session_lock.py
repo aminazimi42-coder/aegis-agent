@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import json
 import os
-import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -120,7 +119,7 @@ class TestT220SessionLock(unittest.TestCase):
         ):
             set_pin("tenant-a", "123456")
             lock("tenant-a")
-            for i in range(4):
+            for _ in range(4):
                 r = unlock("tenant-a", "000000")
                 self.assertEqual(r["code"], "WRONG_PIN")
             # 5th wrong PIN triggers lockout.
@@ -259,19 +258,23 @@ class TestT220SessionLock(unittest.TestCase):
         self.assertEqual(_idle_seconds(), 900)
 
     # ------------------------------------------------------------------ #
-    # 10. No biometrics / Face ID claim in operator HTML
+    # 10. No Face ID / biometrics enrollment claim in operator HTML
     # ------------------------------------------------------------------ #
 
     def test_no_biometrics_claim(self) -> None:
-        """The operator page HTML does not claim biometrics or Face ID."""
+        """The operator page HTML does not claim Face ID or biometric enrollment.
+
+        T226 — Touch ID as an optional unlock after PIN is allowed; Face ID,
+        face enrollment, and voice enrollment stay out of the twin core.
+        """
         repo = Path(__file__).resolve().parent.parent
         for html_name in ("app.html",):
             html = (repo / html_name).read_text(encoding="utf-8").lower()
             self.assertNotIn("face id", html)
             self.assertNotIn("faceid", html)
-            self.assertNotIn("biometric", html)
-            self.assertNotIn("touch id", html)
-            self.assertNotIn("touchid", html)
+            self.assertNotIn("voice id", html)
+            self.assertNotIn("voiceid", html)
+            self.assertNotIn("enrollment", html)
 
 
 if __name__ == "__main__":

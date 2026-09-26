@@ -605,6 +605,18 @@ class TwinSessionUnlockRequest(BaseModel):
     pin: str = ""
 
 
+class TwinSessionTouchIdUnlockRequest(BaseModel):
+    """Body for Touch ID unlock (T226).
+
+    ``tenant_id`` identifies the caller.  Touch ID is optional *after* the
+    T220/T222 session lock + Keychain PIN.  A successful biometric unlock
+    unlocks the session lock only — it does **not** execute anything.
+    Cancel or unavailable stays locked with a typed message.
+    """
+
+    tenant_id: str = ""
+
+
 class TwinEngineConnectRequest(BaseModel):
     """Body for the optional local-engine Connect control (T215).
 
@@ -2778,6 +2790,35 @@ def create_app() -> FastAPI:
         from core.session_lock import set_pin as _session_set_pin
 
         return _session_set_pin(tenant_id, request.pin)
+
+    # --- T226 — Optional Touch ID after PIN, mock in CI --- #
+
+    @app.get("/api/v1/twin/session/touch-id-available/{tenant_id}", tags=["twin"], status_code=200)
+    def twin_session_touch_id_available(tenant_id: str) -> Any:
+        """Return whether Touch ID (Darwin) or the mock (CI) is available.
+
+        T226 — the operator page shows an optional "Unlock with Touch ID"
+        button only when this route returns ``available: true``.  Cancel
+        stays locked with a typed message; no silent unlock.
+        """
+        from core.session_lock import touch_id_available as _touch_id_available
+
+        return {"tenant_id": tenant_id, "available": _touch_id_available()}
+
+    @app.post("/api/v1/twin/session/unlock-touch-id/{tenant_id}", tags=["twin"], status_code=200)
+    def twin_session_unlock_touch_id(
+        tenant_id: str, request: TwinSessionTouchIdUnlockRequest
+    ) -> Any:
+        """Unlock the session for *tenant_id* via optional Touch ID (T226).
+
+        Touch ID is optional *after* the T220/T222 session lock + Keychain
+        PIN.  A successful biometric unlock unlocks the session lock only —
+        it does **not** execute anything.  Cancel or unavailable stays
+        locked with a typed message.  No face/voice enrollment.
+        """
+        from core.session_lock import unlock_with_touch_id as _session_unlock_touch_id
+
+        return _session_unlock_touch_id(tenant_id)
 
     # --- T215 — Optional local-engine Connect / Use Echo control --- #
 

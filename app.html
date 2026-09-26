@@ -182,12 +182,14 @@
       <button id="btn-set-pin" type="button" onclick="setSessionPin()">Set PIN</button>
       <button id="btn-lock-session" type="button" onclick="lockSession()">Lock now</button>
       <button id="btn-unlock-session" type="button" onclick="unlockSession()">Unlock</button>
+      <button id="btn-touch-id-unlock" type="button" onclick="unlockWithTouchId()" style="display:none;">Unlock with Touch ID</button>
       <span class="muted" id="session-lock-label"></span>
     </div>
     <div class="queue-meta muted">
       After idle time the session locks on this tenant only.  Unlock with
-      the local PIN.  Until unlocked, Propose, Approve, Reject, Export, and
-      Quit stay disabled.  The lock is not macOS login.
+      the local PIN, or optionally with Touch ID when available.  Until
+      unlocked, Propose, Approve, Reject, Export, and Quit stay disabled.
+      The lock is not macOS login.  Touch ID is optional after the PIN.
     </div>
   </div>
 
@@ -1946,6 +1948,50 @@
     });
   }
 
+  // ── T226 — Optional Touch ID unlock, mock in CI ──
+  window.unlockWithTouchId = function () {
+    var sl = el("session-lock-label");
+    if (!engineOnline) {
+      if (sl) { sl.textContent = "Engine offline — start the server, then refresh"; sl.className = "muted err"; }
+      return;
+    }
+    var t = (el("tenant") && el("tenant").value) || "local";
+    if (sl) { sl.textContent = "Touch ID…"; sl.className = "muted"; }
+    post("/api/v1/twin/session/unlock-touch-id/" + encodeURIComponent(t), { tenant_id: t }, function (err, data, status) {
+      if (err || status !== 200) {
+        if (sl) { sl.textContent = "Touch ID unlock failed"; sl.className = "muted err"; }
+        return;
+      }
+      if (data && data.code === "TOUCH_ID_UNAVAILABLE") {
+        if (sl) { sl.textContent = "Touch ID unavailable"; sl.className = "muted err"; }
+        return;
+      }
+      if (data && data.code === "TOUCH_ID_CANCELLED") {
+        if (sl) { sl.textContent = "Touch ID cancelled — staying locked"; sl.className = "muted err"; }
+        return;
+      }
+      if (data && data.code === "TOUCH_ID_FAILED") {
+        if (sl) { sl.textContent = "Touch ID failed — staying locked"; sl.className = "muted err"; }
+        return;
+      }
+      if (data && data.code === "NOT_LOCKED") {
+        if (sl) { sl.textContent = "Not locked"; sl.className = "muted"; }
+        return;
+      }
+      if (sl) { sl.textContent = "Unlocked via Touch ID"; sl.className = "muted"; }
+      applyLockState(false);
+    });
+  };
+
+  function loadTouchIdAvailability() {
+    var t = (el("tenant") && el("tenant").value) || "local";
+    get("/api/v1/twin/session/touch-id-available/" + encodeURIComponent(t), function (err, data, status) {
+      if (err || !data || status !== 200) { return; }
+      var btn = el("btn-touch-id-unlock");
+      if (btn) { btn.style.display = (data.available === true) ? "inline-block" : "none"; }
+    });
+  }
+
   // ── Init ──
   checkHealth();
   loadQueue();
@@ -1955,6 +2001,7 @@
   loadTenantChip();
   loadStandingOrderPin();
   loadSessionLockState();
+  loadTouchIdAvailability();
 })();
 </script>
 </body>

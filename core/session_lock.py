@@ -399,6 +399,93 @@ def forget_pin(tenant_id: str) -> dict[str, Any]:
     }
 
 
+def touch_id_available() -> bool:
+    """Return True when the Touch ID adapter (Darwin) or mock (CI) is available.
+
+    T226 — Touch ID is optional *after* the T220/T222 PIN is already set.
+    Failed or cancelled biometrics returns to the PIN — no silent unlock.
+    Execution still requires a separate Approve.
+    """
+    from core.local_auth import is_available as _touch_id_is_available
+
+    return _touch_id_is_available()
+
+
+def unlock_with_touch_id(tenant_id: str) -> dict[str, Any]:
+    """Unlock the session for *tenant_id* via optional Touch ID (T226).
+
+    Touch ID is optional *after* the T220/T222 session lock + Keychain PIN.
+    On Darwin the adapter may call LocalAuthentication; in CI and on Linux
+    the adapter is a typed mock returning ``mock_ok`` / ``mock_cancel`` /
+    ``mock_unavailable``.
+
+    * A successful biometric unlock unlocks the session lock only — it does
+      **not** execute anything.  A separate Approve is still required.
+    * A cancel or unavailable result stays locked with a typed message.
+    * No silent unlock.  No face/voice capture or onboarding.
+    """
+    from core.local_auth import (  # noqa: I001
+        authenticate as _touch_id_authenticate,
+        is_available as _touch_id_is_available,
+        is_cancel as _is_cancel,
+        is_success as _is_success,
+        is_unavailable as _is_unavailable,
+    )
+
+    _check_idle_and_auto_lock(tenant_id)
+    with _idle_lock:
+        if tenant_id not in _locked_at:
+            persisted = _read_persisted_lock(tenant_id)
+            if not persisted:
+                return {
+                    "tenant_id": tenant_id,
+                    "locked": False,
+                    "unlocked": False,
+                    "code": "NOT_LOCKED",
+                }
+            _locked_at[tenant_id] = persisted
+        if not _touch_id_is_available():
+            return {
+                "tenant_id": tenant_id,
+                "locked": True,
+                "unlocked": False,
+                "code": "TOUCH_ID_UNAVAILABLE",
+            }
+        result = _touch_id_authenticate("unlock session")
+        if _is_unavailable(result):
+            return {
+                "tenant_id": tenant_id,
+                "locked": True,
+                "unlocked": False,
+                "code": "TOUCH_ID_UNAVAILABLE",
+            }
+        if _is_cancel(result):
+            return {
+                "tenant_id": tenant_id,
+                "locked": True,
+                "unlocked": False,
+                "code": "TOUCH_ID_CANCELLED",
+            }
+        if not _is_success(result):
+            return {
+                "tenant_id": tenant_id,
+                "locked": True,
+                "unlocked": False,
+                "code": "TOUCH_ID_FAILED",
+            }
+        # Success — unlock the session lock only (no execute).
+        _locked_at.pop(tenant_id, None)
+        _write_persisted_lock(tenant_id, None)
+        _clear_lockout(tenant_id)
+        _last_activity[tenant_id] = _now()
+        return {
+            "tenant_id": tenant_id,
+            "locked": False,
+            "unlocked": True,
+            "code": "SESSION_UNLOCKED_TOUCH_ID",
+        }
+
+
 def reset_for_tests() -> None:
     """Clear all in-memory state — test helper only."""
     with _idle_lock:
