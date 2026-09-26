@@ -1,35 +1,26 @@
-T220 — operator idle session lock + local PIN (Keychain Darwin / mock CI)
-This is instruction 1 of 3 (session-lock → Telegram sidecar → SMTP sidecar).
-Do not start T221 or T222. Do not touch Stripe, shop, live keys, notarize, README Author, LICENSE.
-No seventh agent. No card form. No Safari open from scripts. Echo remains default.
+T227 — stranger install without terminal
+This is instruction 5 of 5. After 100% pass stop. Do not start T228. Do not start live Stripe keys. Do not touch Author, LICENSE, notarize claim.
 
 GOAL
-Lock the local operator page after idle so a stranger at the unlocked laptop cannot Approve/Reject/Propose/export without a local PIN. PIN lives in macOS Keychain on Darwin. CI uses an in-process mock. Core execute path never sees the PIN. Forget/purge must drop that tenant's lock material the same way other tenant stores drop.
+A stranger Mac user can start the local operator without opening Terminal, VS Code, Hermes, or git. Double-click path only. Data stays in that account $HOME/.aegis. Script still must not open Safari.
 
 IN SCOPE
-1. Idle lock on the operator HTML page after a documented idle timeout (default 15 minutes, override AEGIS_SESSION_IDLE_SECONDS, min 60, max 86400).
-2. Unlock only with local PIN verify. Wrong PIN typed fail. Lockout after 5 failures for 5 minutes, typed.
-3. Store PIN verifier in Keychain service "aegis-operator-session" account "{tenant_id}" on Darwin. Never write the raw PIN to AEGIS_DATA_DIR, git, logs, audit JSONL, receipts, or propose text.
-4. CI / non-Darwin: mock keychain module already used by T196 pattern. Tests must not need a real Keychain.
-5. Start Session after cold start still works. If no PIN has been set, first-run page offers optional "Set session PIN" — not required to propose. If PIN is set, locked page blocks Propose/Approve/Reject/Export/Quit-engine until unlock.
-6. Tests:
-   - idle then lock; unlock with correct PIN; wrong PIN typed fail
-   - neighbor tenant cannot unlock this tenant
-   - Forget tenant drops Keychain/mock item for that tenant only
-   - audit/propose/export contain no PIN digits
-   - start_operator.sh still sole start; script does not open Safari
-7. STATUS one honest paragraph. README Now may say "optional local session PIN" only if tests prove it. Do not claim biometrics. Do not claim Face ID.
+1. Reuse T149/T172 Install.command + Aegis Operator.app at pack root. Do not invent a second installer brand.
+2. Double-click Install.command or the .app starts the engine with AEGIS_DATA_DIR=$HOME/.aegis port 8741. If python3.11 missing, typed message names the official 3.11.9 macos11.pkg URL only. Do not auto-download.
+3. No repo, no .git, no Hermes, no VS Code required on the stranger account. Pack must not copy builder .aegis PII.
+4. Tests tests/test_t227_stranger_install.py:
+   - pack root has Install.command and app or documented wrapper
+   - start path sets AEGIS_DATA_DIR to operator home not repo
+   - missing python typed miss (not crash)
+   - script does not contain open -a Safari
+   - no stripe token in core/
+   - README Now one bullet only if tests prove double-click path exists; do not claim notarized
+5. STATUS one honest line. Both app.html copies stay byte-sync if touched.
 
 OUT OF SCOPE
-Telegram, SMTP, Stripe, live shop, notarize claim, LocalAuthentication/Touch ID (later), voice interview, new agent, changing Author/LICENSE, Archive promote, two-week twin claim.
-
-FILES
-Reuse T196 keychain helper if present. New small module under core/ for session lock state. Operator HTML: lock overlay + PIN field + Set PIN. Tests tests/test_t220_session_lock.py. Do not rewrite desktop app.html and repo app.html out of sync — both must parse (T209_FIX lesson).
+Live Apple notarize rewrite, live Stripe keys, amin double-click on this slice (owner laptop after pack), seventh agent, Touch ID rewrite.
 
 PROOF
-Print:
-- git rev-parse HEAD
-- pytest -q  (0 failed)
-- six booleans: idle_lock, wrong_pin_typed, neighbor_denied, forget_drops, no_pin_in_audit, start_script_unchanged
-Commit and push origin main. Stop.
-Do not start T221.
+Print HEAD, pytest -q (0 failed), booleans:
+pack_root_install, data_dir_home, missing_python_typed, no_safari_open, no_stripe_in_core, readme_not_notarized
+Commit and push origin main. Stop. Do not start T228.

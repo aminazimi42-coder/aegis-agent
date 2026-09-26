@@ -68,6 +68,10 @@ cp -R "$SRC" "$DEST"
 
 # --- create venv when missing -----------------------------------------
 if [ ! -d "$DEST/.venv" ]; then
+    if ! command -v python3.11 >/dev/null 2>&1; then
+        echo "Install.command: python3.11 not found — install the official Python 3.11.9 macos11.pkg from https://www.python.org/ftp/python/3.11.9/python-3.11.9-macos11.pkg"
+        exit 1
+    fi
     echo "Creating venv in $DEST/.venv with python3.11 ..."
     (cd "$DEST" && python3.11 -m venv .venv)
     echo "Installing dependencies with pip install -e . ..."
@@ -148,6 +152,7 @@ cat > "$OUT/INSTALL.md" <<'INSTALL_MD_EOF'
 2. Run `Install.command`. Need Python 3.11 on the Mac.
    - `Install.command` copies `aegis-local-operator` into `$HOME/aegis-local-operator` if missing.
    - If `$HOME/aegis-local-operator/.venv` is missing, it creates the venv with `python3.11 -m venv` and runs `pip install -e .`.
+   - If `python3.11` is not on the Mac, it prints the official 3.11.9 macos11.pkg URL and exits 1 — it does not auto-download.
 3. Start the engine: `$HOME/aegis-local-operator/start_operator.sh`
 4. Open `http://127.0.0.1:8741/` yourself in a browser — the script does not open Safari.
 
