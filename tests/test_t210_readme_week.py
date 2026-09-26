@@ -12,8 +12,8 @@ Covers:
   use the forbidden twin-phrase.
 * ``test_readme_does_not_contain_notarized`` — the README does not
   contain the forbidden app-store word.
-* ``test_readme_does_not_name_ricardo`` — the README does not name a
-  specific friend.
+* ``test_readme_names_ricardo`` — T213 supersedes T210: the README Now
+  names Ricardo as a separate Mac person.
 * ``test_status_has_t210_line`` — STATUS.md has a T210 line.
 * ``test_core_tree_has_no_stripe_token`` — no ``stripe`` token in any
   ``core/*.py`` file.
@@ -73,10 +73,11 @@ class TestT210ReadmeWeek(unittest.TestCase):
         rl = _README.read_text(encoding="utf-8").lower()
         self.assertNotIn(_NT, rl)
 
-    def test_readme_does_not_name_ricardo(self) -> None:
-        """The README does not name a specific friend."""
+    def test_readme_names_ricardo(self) -> None:
+        """T213 supersedes T210: the README Now names Ricardo as a
+        separate Mac person."""
         rl = _README.read_text(encoding="utf-8").lower()
-        self.assertNotIn(_RD, rl)
+        self.assertIn("ricardo", rl)
 
     def test_status_has_t210_line(self) -> None:
         """STATUS.md has a T210 line."""

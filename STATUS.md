@@ -180,3 +180,4 @@ T209_FIX operator HTML JavaScript syntax in copy-redact onclick; both app.html c
 T210 README Now records one-week morning-night cold-start local use; not two-week; not a behavioral twin.
 T211 local tenant-bound decision ledger on approve/reject; neighbor isolated; Forget drops that tenant only.
 T212 next propose cites last local tenant decisions within TTL; Forget clears hint; no auto-exec; not a multi-month twin.
+T213 README Now proven owner one-week amin Ricardo separate days; not two-week; not a behavioral twin; no notarized.
