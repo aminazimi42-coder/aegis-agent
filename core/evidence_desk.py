@@ -264,3 +264,131 @@ def build_evidence_pack(tenant_id: str) -> dict[str, Any]:
         "path": str(final_path),
         "sha256": sha,
     }
+
+
+# ---------------------------------------------------------------------------#
+# Tenant-scoped session evidence zip (T225)
+# ---------------------------------------------------------------------------#
+
+
+def _tenant_export_dir(tenant_id: str) -> Path:
+    """Return ``AEGIS_DATA_DIR/{tenant}/export/`` (created if absent)."""
+    tenant_root = data_root() / tenant_id
+    export = tenant_root / "export"
+    export.mkdir(parents=True, exist_ok=True)
+    return export
+
+
+def _last_receipt_digest(tenant_id: str) -> str:
+    """Return the sha256 prefix (12 chars) of the latest receipt for *tenant_id*.
+
+    Reuses the T189 receipt-chain logic: finds the latest executed action and
+    reads its ``receipt_sha`` from the receipt file.  Returns ``""`` when no
+    executed action or no receipt exists.
+    """
+    from core.twin_actions import list_actions
+
+    actions = list_actions(tenant_id)
+    executed = [a for a in actions if a.get("status") == "executed"]
+    if not executed:
+        return ""
+    latest = max(executed, key=lambda a: a.get("created_at", ""))
+    action_id = latest["action_id"]
+    receipts_dir = (
+        data_root() / "work_products" / tenant_id / "receipts"
+    )
+    md_path = receipts_dir / f"{action_id}.md"
+    if not md_path.is_file():
+        return ""
+    for line in md_path.read_text(encoding="utf-8").splitlines():
+        if line.startswith("receipt_sha:"):
+            return line.split("receipt_sha:", 1)[1].strip()[:12]
+    return ""
+
+
+def build_session_zip(tenant_id: str) -> dict[str, Any]:
+    """Build a tenant-scoped session evidence zip (T225).
+
+    Writes ``AEGIS_DATA_DIR/{tenant}/export/session_evidence_{utc}.zip``
+    containing at least:
+
+    * the last signed brief (``local_*.md``) and its sibling ``.sig``;
+    * the last receipt digest (``receipt_sha`` prefix);
+    * the verify-chain result (Intact/Tampered/Missing) from the T189
+      helper on the latest executed receipt.
+
+    Reuses T198 ``_newest_signed_brief`` + T189 ``_verify_chain_result`` +
+    T174 Intact/Tampered.  No cloud, no new tab, no execute.
+
+    Returns ``{tenant_id, path, sha256}``.
+    """
+    import tempfile
+
+    export_dir = _tenant_export_dir(tenant_id)
+    cage_path(export_dir)
+
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    final_name = f"session_evidence_{stamp}.zip"
+    final_path = cage_path(export_dir / final_name)
+
+    # 1) verify-chain result (T189).
+    vc_action_id, vc_result = _verify_chain_result(tenant_id)
+    vc_text = (
+        f"verify_chain: {vc_result}\n"
+        f"action_id: {vc_action_id}\n"
+        f"tenant_id: {tenant_id}\n"
+    )
+
+    # 2) last signed brief + .sig (T126/T190).
+    brief_path, sig_path = _newest_signed_brief()
+    brief_content: str | None = None
+    sig_content: str | None = None
+    if brief_path is not None and brief_path.is_file():
+        brief_content = brief_path.read_text(encoding="utf-8")
+        if sig_path is not None and sig_path.is_file():
+            sig_content = sig_path.read_text(encoding="utf-8")
+
+    # 3) last receipt digest (T189 receipt_sha prefix).
+    receipt_digest = _last_receipt_digest(tenant_id)
+    receipt_text = f"last_receipt_digest: {receipt_digest}\n"
+
+    # Write atomically (temp + fsync + os.replace).
+    tmp_fd, tmp_name = tempfile.mkstemp(
+        dir=str(export_dir), suffix=".tmp", prefix="session_"
+    )
+    tmp_path = Path(tmp_name)
+    try:
+        with os.fdopen(tmp_fd, "wb") as f:
+            with zipfile.ZipFile(f, "w", zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr("verify_chain.txt", vc_text)
+                if brief_content is not None:
+                    zf.writestr("brief.md", brief_content)
+                    if sig_content is not None:
+                        zf.writestr("brief.md.sig", sig_content)
+                else:
+                    zf.writestr(
+                        "missing_brief.txt",
+                        "missing_brief: no signed local brief found\n",
+                    )
+                zf.writestr("receipt_digest.txt", receipt_text)
+                zf.writestr(
+                    "manifest.txt",
+                    f"tenant_id: {tenant_id}\n"
+                    f"built_at: {stamp}\n",
+                )
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(str(tmp_path), str(final_path))
+    except BaseException:
+        try:
+            tmp_path.unlink(missing_ok=True)
+        except OSError:
+            pass
+        raise
+
+    sha = hashlib.sha256(final_path.read_bytes()).hexdigest()
+    return {
+        "tenant_id": tenant_id,
+        "path": str(final_path),
+        "sha256": sha,
+    }

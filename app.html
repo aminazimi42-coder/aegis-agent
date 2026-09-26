@@ -338,8 +338,10 @@
   <div class="card">
     <div class="row">
       <button id="btn-evidence-pack" type="button" onclick="exportEvidencePack()">Export evidence pack</button>
+      <button id="btn-session-zip" type="button" onclick="exportSessionZip()">Session zip</button>
       <button id="btn-today-digest" type="button" onclick="exportTodayDigest()">Today digest</button>
       <span class="muted" id="evidence-pack-label"></span>
+      <span class="muted" id="session-zip-label"></span>
       <span class="muted" id="today-digest-label"></span>
     </div>
   </div>
@@ -542,6 +544,9 @@
     // T198 — disable evidence pack while offline.
     var be = el("btn-evidence-pack");
     if (be) { be.disabled = true; }
+    // T225 — disable session zip while offline.
+    var bsz = el("btn-session-zip");
+    if (bsz) { bsz.disabled = true; }
     // T201 — disable observe mail/calendar while offline.
     var bom = el("btn-observe-mail");
     if (bom) { bom.disabled = true; }
@@ -586,6 +591,9 @@
     // T198 — evidence pack stays enabled while engine is up.
     var be = el("btn-evidence-pack");
     if (be) { be.disabled = false; }
+    // T225 — session zip stays enabled while engine is up.
+    var bsz = el("btn-session-zip");
+    if (bsz) { bsz.disabled = false; }
     // T201 — observe mail/calendar stays enabled while engine is up.
     var bom = el("btn-observe-mail");
     if (bom) { bom.disabled = false; }
@@ -1408,6 +1416,36 @@
         var shaPref = (data && data.sha256) ? data.sha256.slice(0, 12) : "";
         ep.textContent = "Exported: " + outPath + (shaPref ? ("  sha256:" + shaPref + "…") : "");
         ep.className = "muted";
+      }
+    });
+  };
+
+  // ── Session evidence zip (T225) ──
+  // One click writes a tenant-scoped session evidence zip under
+  // AEGIS_DATA_DIR/{tenant}/export/.  Contains last signed brief+.sig,
+  // last receipt digest, and verify-chain result.  No cloud, no new tab.
+  window.exportSessionZip = function () {
+    var sz = el("session-zip-label");
+    if (!engineOnline) {
+      if (sz) { sz.textContent = "Engine offline — start the server, then refresh"; sz.className = "muted err"; }
+      return;
+    }
+    if (sz) { sz.textContent = "Building…"; sz.className = "muted"; }
+    var t = (el("tenant") && el("tenant").value) || "local";
+    post("/api/v1/twin/session-zip", { tenant_id: t }, function (err, data, status) {
+      if (err) {
+        if (sz) { sz.textContent = "zip_failed: network"; sz.className = "muted err"; }
+        return;
+      }
+      if (status !== 200) {
+        if (sz) { sz.textContent = "zip_failed: " + status; sz.className = "muted err"; }
+        return;
+      }
+      if (sz) {
+        var outPath = (data && data.path) ? data.path : "";
+        var shaPref = (data && data.sha256) ? data.sha256.slice(0, 12) : "";
+        sz.textContent = "Session zip: " + outPath + (shaPref ? ("  sha256:" + shaPref + "…") : "");
+        sz.className = "muted";
       }
     });
   };

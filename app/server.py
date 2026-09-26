@@ -2265,6 +2265,27 @@ def create_app() -> FastAPI:
                 },
             )
 
+    # --- T225 — Session evidence zip (tenant-scoped) --- #
+
+    @app.post("/api/v1/twin/session-zip", tags=["twin"], status_code=200)
+    def twin_session_zip(request: TwinEvidencePackRequest) -> Any:
+        """Build a tenant-scoped session evidence zip (T225).
+
+        Writes ``AEGIS_DATA_DIR/{tenant}/export/session_evidence_{utc}.zip``
+        containing the last signed brief+.sig, the last receipt digest, and
+        the verify-chain result.  No cloud, no new tab, no execute.
+        """
+        from core.evidence_desk import build_session_zip
+        from core.twin_local_view import PathDeniedError
+
+        try:
+            return build_session_zip(request.tenant_id)
+        except PathDeniedError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": exc.code},
+            )
+
     # --- T201 — Observe-only local mail/calendar propose --- #
 
     @app.post(
