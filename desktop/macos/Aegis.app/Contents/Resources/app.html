@@ -292,6 +292,9 @@
       <span class="muted">Engine: <span id="engine-line">—</span></span>
     </div>
     <div class="row">
+      <span class="muted" id="notify-line">Notify not configured</span>
+    </div>
+    <div class="row">
       <input id="engine-base-url" type="text" placeholder="local base URL" style="flex:1;min-width:0;">
       <button id="btn-engine-connect" type="button" onclick="connectEngine()">Connect local engine</button>
       <button id="btn-engine-echo" type="button" onclick="disconnectEngine()">Use Echo</button>
@@ -607,6 +610,13 @@
           eng.textContent = data2.engine;
         }
       });
+      // T217 — quiet notify sidecar label under Engine.
+      try {
+        var nl = el("notify-line");
+        if (nl) {
+          nl.textContent = "Notify not configured";
+        }
+      } catch (e) {}
     });
   }
 

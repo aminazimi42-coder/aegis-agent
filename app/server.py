@@ -1475,9 +1475,21 @@ def create_app() -> FastAPI:
             )
         except Exception:
             pass
+        # T217 — optional local notify sidecar after the receipt is written.
+        # Failure of the sidecar must not roll back the approval — the action
+        # stays approved.  Missing webhook returns not_configured, not an
+        # exception.  Execute and propose never call this.
+        try:
+            from core.notify_sidecar import handle_approved_event
+
+            digest = result.get("payload_sha256", "") or ""
+            sidecar_result = handle_approved_event(
+                request.tenant_id, action_id, digest
+            )
+            result["notify_status"] = sidecar_result.get("status", "")
+        except Exception:
+            result["notify_status"] = "sidecar_failed"
         # T216 — chain_state from the local verify-chain for this tenant.
-        # Reuses the T189 verify-chain logic: finds the latest executed
-        # receipt and reports Intact or Tampered.  No third label.
         chain_state = ""
         try:
             from core.twin_actions import list_actions, verify_chain
