@@ -577,6 +577,22 @@ class TwinSessionUnlockRequest(BaseModel):
     pin: str = ""
 
 
+class TwinEngineConnectRequest(BaseModel):
+    """Body for the optional local-engine Connect control (T215).
+
+    ``tenant_id`` identifies the caller.  ``base_url`` is an optional
+    local OpenAI-compatible base URL.  When set, the process override
+    ``AGENT_LLM_BASE_URL`` is activated via the existing adapter so
+    the Engine line may label HTTP.  When the endpoint is not
+    reachable the label stays ``Echo (fallback)`` — the default
+    remains Echo.  Disconnect clears the process override only and
+    returns Echo.  No secrets are written into git.
+    """
+
+    tenant_id: str
+    base_url: str = ""
+
+
 def _is_localhost(host: str) -> bool:
     """Return True when *host* is a loopback or test-client address.
 
@@ -2508,6 +2524,61 @@ def create_app() -> FastAPI:
         from core.session_lock import set_pin as _session_set_pin
 
         return _session_set_pin(tenant_id, request.pin)
+
+    # --- T215 — Optional local-engine Connect / Use Echo control --- #
+
+    @app.post("/api/v1/twin/engine/connect", tags=["twin"], status_code=200)
+    def twin_engine_connect(request: TwinEngineConnectRequest) -> Any:
+        """Connect the process to a local engine base URL.
+
+        T215 — sets ``AGENT_LLM_BASE_URL`` for this process via the
+        existing adapter so the Engine line may label HTTP.  When the
+        endpoint is not reachable the label stays ``Echo (fallback)``,
+        not silent.  The default remains Echo.  No secrets are written
+        into git.  Disconnect returns Echo.
+        """
+        import os as _os
+
+        base_url = (request.base_url or "").strip()
+        if base_url:
+            _os.environ["AGENT_LLM_BASE_URL"] = base_url
+            _os.environ["AEGIS_LLM_BASE_URL"] = base_url
+            _os.environ["AEGIS_LLM_PROVIDER"] = "http"
+        else:
+            _os.environ.pop("AGENT_LLM_BASE_URL", None)
+            _os.environ.pop("AEGIS_LLM_BASE_URL", None)
+            _os.environ.pop("AEGIS_LLM_PROVIDER", None)
+        from core.llm_provider import engine_label
+
+        label = engine_label()
+        return {
+            "tenant_id": request.tenant_id,
+            "engine": label,
+            "connected": bool(base_url),
+            "code": "engine_connect",
+        }
+
+    @app.post("/api/v1/twin/engine/disconnect", tags=["twin"], status_code=200)
+    def twin_engine_disconnect(request: TwinEngineConnectRequest) -> Any:
+        """Disconnect the process from a local engine — return Echo.
+
+        T215 — clears the process override only.  Does not write
+        secrets into git.  The default returns Echo.
+        """
+        import os as _os
+
+        _os.environ.pop("AGENT_LLM_BASE_URL", None)
+        _os.environ.pop("AEGIS_LLM_BASE_URL", None)
+        _os.environ.pop("AEGIS_LLM_PROVIDER", None)
+        from core.llm_provider import engine_label
+
+        label = engine_label()
+        return {
+            "tenant_id": request.tenant_id,
+            "engine": label,
+            "connected": False,
+            "code": "engine_disconnect",
+        }
 
     return app
 

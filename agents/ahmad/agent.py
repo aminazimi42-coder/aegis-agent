@@ -29,7 +29,7 @@ class AhmadAgent(BaseAgent):
     }
 
     def _propose_body(self, text: str) -> str:
-        return f"Security: what must not happen — {text}"
+        return f"Security: what must not happen — {text}\nMUST NOT execute without human approval."
 
     def handle(self, task: str) -> str:
         return (

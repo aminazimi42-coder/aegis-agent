@@ -181,3 +181,5 @@ T210 README Now records one-week morning-night cold-start local use; not two-wee
 T211 local tenant-bound decision ledger on approve/reject; neighbor isolated; Forget drops that tenant only.
 T212 next propose cites last local tenant decisions within TTL; Forget clears hint; no auto-exec; not a multi-month twin.
 T213 README Now proven owner one-week amin Ricardo separate days; not two-week; not a behavioral twin; no notarized.
+T214 operator idle lock and Keychain PIN; lock blocks Propose/Approve/Reject/Export/Quit; neighbor not affected; no face/voice.
+T215 optional Echo connect on operator page; Connect local engine sets AGENT_LLM_BASE_URL for this process; Use Echo returns Echo; fallback stays labeled; Ahmad propose card carries a must-not line; no seventh agent; no stripe in core.

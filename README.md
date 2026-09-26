@@ -133,6 +133,7 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 - **Ricardo separate-Mac trial** — Ricardo on a separate Mac ran the pack from `$HOME/aegis-local-operator` with python.org 3.11.9 and `start_operator.sh`, data at `/Users/ricardo/.aegis` on port 8741. Day-1 (2026-09-24) and Day-2 (2026-09-26) stranger loops were observed: profile persisted, Propose, Approve Alina, Reject others, and a signed export. Two days, not a fortnight.
 - **Local tenant-bound decision ledger** — each Approve or Reject on the local operator persists one tenant-bound decision row under `AEGIS_DATA_DIR`; neighbor tenants cannot read it. Forget removes that tenant's rows only.
 - **Next propose cites last local decisions** — the next propose card may cite the last local approve or reject rows for this tenant only; rows older than 168 hours (TTL) are ignored on read. Forget clears that tenant's hint. This is not a long-cycle behavioral model.
+- **Optional Echo connect on operator page** — the operator page has one optional Connect button next to the Engine line that sets `AGENT_LLM_BASE_URL` for this process via the existing adapter; the default stays Echo and Use Echo returns Echo. A connect without a reachable local base stays `Echo (fallback)` labeled, not silent. Ahmad propose card carries a must-not line; no seventh agent.
 
 ---
 

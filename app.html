@@ -291,6 +291,12 @@
     <div class="row">
       <span class="muted">Engine: <span id="engine-line">—</span></span>
     </div>
+    <div class="row">
+      <input id="engine-base-url" type="text" placeholder="local base URL" style="flex:1;min-width:0;">
+      <button id="btn-engine-connect" type="button" onclick="connectEngine()">Connect local engine</button>
+      <button id="btn-engine-echo" type="button" onclick="disconnectEngine()">Use Echo</button>
+      <span class="muted" id="engine-connect-label"></span>
+    </div>
     <pre id="health-json"></pre>
   </div>
 
@@ -522,6 +528,11 @@
     // T202 — disable Today filter while offline.
     var bt = el("btn-today");
     if (bt) { bt.disabled = true; }
+    // T215 — disable engine connect/echo while offline.
+    var bec = el("btn-engine-connect");
+    if (bec) { bec.disabled = true; }
+    var bee = el("btn-engine-echo");
+    if (bee) { bee.disabled = true; }
   }
   function setOnline() {
     engineOnline = true;
@@ -561,6 +572,11 @@
     // T202 — Today filter stays enabled while engine is up.
     var bt2 = el("btn-today");
     if (bt2) { bt2.disabled = false; }
+    // T215 — engine connect/echo stay enabled while engine is up.
+    var bec2 = el("btn-engine-connect");
+    if (bec2) { bec2.disabled = false; }
+    var bee2 = el("btn-engine-echo");
+    if (bee2) { bee2.disabled = false; }
   }
   function checkHealth() {
     get("/health", function (err, data, status) {
@@ -1505,6 +1521,51 @@
         return;
       }
       if (ql) { ql.textContent = "Engine stopping"; ql.className = "muted"; }
+    });
+  };
+
+  // ── T215 — Optional local-engine Connect / Use Echo ──
+  window.connectEngine = function () {
+    var cl = el("engine-connect-label");
+    if (!engineOnline) {
+      if (cl) { cl.textContent = "Engine offline — start the server, then refresh"; cl.className = "muted err"; }
+      return;
+    }
+    var t = (el("tenant") && el("tenant").value) || "local";
+    var urlInput = el("engine-base-url");
+    var url = (urlInput && urlInput.value) || "";
+    if (cl) { cl.textContent = "Connecting…"; cl.className = "muted"; }
+    post("/api/v1/twin/engine/connect", { tenant_id: t, base_url: url }, function (err, data, status) {
+      if (err || status !== 200) {
+        if (cl) { cl.textContent = "connect_failed: " + (status || "network"); cl.className = "muted err"; }
+        return;
+      }
+      if (data && data.engine) {
+        var eng = el("engine-line");
+        if (eng) { eng.textContent = data.engine; }
+        if (cl) { cl.textContent = data.engine; cl.className = "muted"; }
+      }
+    });
+  };
+
+  window.disconnectEngine = function () {
+    var cl = el("engine-connect-label");
+    if (!engineOnline) {
+      if (cl) { cl.textContent = "Engine offline — start the server, then refresh"; cl.className = "muted err"; }
+      return;
+    }
+    var t = (el("tenant") && el("tenant").value) || "local";
+    if (cl) { cl.textContent = "Disconnecting…"; cl.className = "muted"; }
+    post("/api/v1/twin/engine/disconnect", { tenant_id: t }, function (err, data, status) {
+      if (err || status !== 200) {
+        if (cl) { cl.textContent = "disconnect_failed: " + (status || "network"); cl.className = "muted err"; }
+        return;
+      }
+      if (data && data.engine) {
+        var eng = el("engine-line");
+        if (eng) { eng.textContent = data.engine; }
+        if (cl) { cl.textContent = data.engine; cl.className = "muted"; }
+      }
     });
   };
 
