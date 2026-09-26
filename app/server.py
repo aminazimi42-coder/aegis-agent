@@ -515,6 +515,19 @@ class TwinStandingOrderPinRequest(BaseModel):
     pin: str = ""
 
 
+class TwinStandingOrderSpecialistRequest(BaseModel):
+    """Body for pinning a specialist as security reviewer (T219).
+
+    ``specialist_name`` must be one of the six names (Alina, Kian,
+    Bita, Aylin, Ahmad, Amin).  An unknown name is a typed deny
+    ``STANDING_ORDER_UNKNOWN``.  The pin never auto-approves and
+    never auto-executes — it only surfaces as
+    ``standing_order_hint`` on the next Propose.
+    """
+
+    specialist_name: str = ""
+
+
 class TwinTenantSwitchRequest(BaseModel):
     """Body for a typed tenant switch (T208).
 
@@ -1981,6 +1994,18 @@ def create_app() -> FastAPI:
             "count": len(proposals),
             "batch_id": batch_id,
         }
+        # T219 — attach standing_order_hint when a specialist pin
+        # exists for this tenant.  The hint is advisory text only;
+        # it never auto-approves or auto-executes.  Ahmad pin does
+        # not silence the other five rows — all six specialists ran.
+        try:
+            from core.standing_order import specialist_pin_hint
+
+            result["standing_order_hint"] = specialist_pin_hint(
+                request.tenant_id
+            )
+        except Exception:
+            result["standing_order_hint"] = ""
         # T212 — attach a short last-decisions hint from the local
         # tenant-bound decision ledger so the next propose card cites
         # recent local approve/reject rows for this tenant only.  Rows
@@ -2437,7 +2462,90 @@ def create_app() -> FastAPI:
             "pin": get_pin(tenant_id),
         }
 
-    # --- T208 — Typed tenant switch --- #
+    # --- T219 — Today desk digest --- #
+
+    @app.get(
+        "/api/v1/twin/today-digest/{tenant_id}", tags=["twin"], status_code=200
+    )
+    def twin_today_digest(tenant_id: str) -> Any:
+        """Build a today-desk-digest markdown file under the data dir.
+
+        T219 — lists this session's propose/approve/reject counts plus
+        the last Intact state.  Writes ``export/today_<utc>.md`` only.
+        No cloud, no execute, no approve, no send.
+        """
+        from core.today_digest import build_today_digest
+        from core.twin_local_view import PathDeniedError
+
+        try:
+            return build_today_digest(tenant_id)
+        except PathDeniedError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": exc.code, "code": exc.code},
+            )
+
+    # --- T219 — Standing-order specialist pin (tenant-bound SQLite) --- #
+
+    @app.post(
+        "/api/v1/twin/standing-order/{tenant_id}", tags=["twin"], status_code=200
+    )
+    def twin_standing_order_specialist(
+        tenant_id: str, request: TwinStandingOrderSpecialistRequest
+    ) -> Any:
+        """Pin a specialist as security reviewer for *tenant_id*.
+
+        T219 — *specialist_name* must be one of the six names
+        (Alina, Kian, Bita, Aylin, Ahmad, Amin).  An unknown name
+        is a typed deny ``STANDING_ORDER_UNKNOWN``.  The pin never
+        auto-approves and never auto-executes — it only surfaces as
+        ``standing_order_hint`` on the next Propose.
+
+        An empty ``specialist_name`` clears the pin (Forget).
+        """
+        from core.standing_order import (
+            StandingOrderUnknownError,
+            clear_specialist_pin,
+            set_specialist_pin,
+        )
+
+        name = (request.specialist_name or "").strip()
+        if not name:
+            clear_specialist_pin(tenant_id)
+            return {
+                "tenant_id": tenant_id,
+                "specialist": "",
+                "code": "pin_cleared",
+            }
+        try:
+            stored = set_specialist_pin(tenant_id, name)
+        except StandingOrderUnknownError as exc:
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "detail": exc.code,
+                    "code": exc.code,
+                    "tenant_id": tenant_id,
+                    "specialist": name,
+                },
+            )
+        return {
+            "tenant_id": tenant_id,
+            "specialist": stored,
+            "code": "pin_saved",
+        }
+
+    @app.get(
+        "/api/v1/twin/standing-order/{tenant_id}", tags=["twin"], status_code=200
+    )
+    def twin_standing_order_get(tenant_id: str) -> Any:
+        """Return the pinned specialist for *tenant_id* (or empty)."""
+        from core.standing_order import get_specialist_pin
+
+        return {
+            "tenant_id": tenant_id,
+            "specialist": get_specialist_pin(tenant_id),
+        }
 
     @app.post("/api/v1/twin/switch-tenant", tags=["twin"], status_code=200)
     def twin_switch_tenant(request: TwinTenantSwitchRequest) -> Any:

@@ -78,3 +78,121 @@ def pin_suffix(tenant_id: str) -> str:
     if not pin:
         return ""
     return f" [pin: {pin}]"
+
+
+# ---------------------------------------------------------------------------#
+# T219 — Specialist-name standing-order pin (tenant-bound SQLite)
+# ---------------------------------------------------------------------------#
+
+# The six specialist names — no seventh agent.
+SPECIALIST_NAMES: tuple[str, ...] = (
+    "Alina",
+    "Kian",
+    "Bita",
+    "Aylin",
+    "Ahmad",
+    "Amin",
+)
+
+
+class StandingOrderUnknownError(ValueError):
+    """Typed rejection when *specialist_name* is not one of the six names.
+
+    T219 — the stable ``code`` attribute is ``"STANDING_ORDER_UNKNOWN"``.
+    """
+
+    code: str = "STANDING_ORDER_UNKNOWN"
+
+
+def _ensure_pin_table() -> None:
+    """Create the ``standing_order_pins`` table if it does not exist."""
+    from core.persistence import get_connection
+
+    with get_connection() as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS standing_order_pins (
+                tenant_id   TEXT PRIMARY KEY,
+                specialist  TEXT    NOT NULL
+            )
+            """
+        )
+
+
+def get_specialist_pin(tenant_id: str) -> str:
+    """Return the pinned specialist name for *tenant_id*, or ``""``.
+
+    T219 — the pin is tenant-bound SQLite.  A neighbor tenant's pin
+    is never returned.  When no pin exists, returns an empty string.
+    """
+    _ensure_pin_table()
+    from core.persistence import execute_scalar
+
+    row = execute_scalar(
+        "SELECT specialist FROM standing_order_pins WHERE tenant_id = ?",
+        (tenant_id,),
+    )
+    return str(row) if row else ""
+
+
+def set_specialist_pin(tenant_id: str, specialist_name: str) -> str:
+    """Pin *specialist_name* as the security reviewer for *tenant_id*.
+
+    T219 — *specialist_name* must be one of the six names
+    (Alina, Kian, Bita, Aylin, Ahmad, Amin).  An unknown name raises
+    :class:`StandingOrderUnknownError` with ``code = "STANDING_ORDER_UNKNOWN"``.
+
+    The pin never auto-approves and never auto-executes.  It only
+    surfaces as ``standing_order_hint`` on the next Propose so the
+    operator sees the pinned specialist on the card.  Ahmad pin does
+    not silence the other five rows — all six specialists still run.
+
+    Returns the stored specialist name.
+    """
+    name = (specialist_name or "").strip()
+    if name not in SPECIALIST_NAMES:
+        raise StandingOrderUnknownError(
+            f"unknown specialist: {specialist_name!r}"
+        )
+    _ensure_pin_table()
+    from core.persistence import get_connection
+
+    with get_connection() as conn:
+        conn.execute(
+            "INSERT INTO standing_order_pins (tenant_id, specialist) "
+            "VALUES (?, ?) "
+            "ON CONFLICT(tenant_id) DO UPDATE SET specialist = ?",
+            (tenant_id, name, name),
+        )
+    return name
+
+
+def clear_specialist_pin(tenant_id: str) -> str:
+    """Clear the specialist pin for *tenant_id*.
+
+    T219 — Forget clears the pin.  Returns an empty string when
+    cleared (or when no pin existed).
+    """
+    _ensure_pin_table()
+    from core.persistence import get_connection
+
+    with get_connection() as conn:
+        conn.execute(
+            "DELETE FROM standing_order_pins WHERE tenant_id = ?",
+            (tenant_id,),
+        )
+    return ""
+
+
+def specialist_pin_hint(tenant_id: str) -> str:
+    """Return the standing-order hint for the next Propose, or ``""``.
+
+    T219 — when a specialist pin exists for *tenant_id*, returns a
+    short hint string like ``"Ahmad is the pinned security reviewer"``.
+    When no pin exists, returns an empty string.  The hint is advisory
+    text only — it never auto-approves or auto-executes.
+    """
+    name = get_specialist_pin(tenant_id)
+    if not name:
+        return ""
+    return f"{name} is the pinned security reviewer"

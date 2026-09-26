@@ -229,6 +229,21 @@
     </div>
   </div>
 
+  <!-- T219 — Standing-order specialist chip: Pin Ahmad / Clear pin -->
+  <div class="card">
+    <div class="row">
+      <span class="muted">Security reviewer pin</span>
+      <button id="btn-pin-ahmad" type="button" onclick="pinAhmadSpecialist()">Pin Ahmad</button>
+      <button id="btn-clear-pin" type="button" onclick="clearStandingOrderPin()">Clear pin</button>
+      <span class="muted" id="standing-order-chip-label"></span>
+    </div>
+    <div class="queue-meta muted">
+      Pin one specialist as the security reviewer for the next Propose.
+      The pin never auto-approves and never auto-executes.  Ahmad pin
+      does not silence the other five rows.  Clear forgets the pin.
+    </div>
+  </div>
+
   <!-- T207 — Training vs Live work flag on the propose form -->
   <h2>Propose a Task</h2>
   <div class="card">
@@ -317,7 +332,9 @@
   <div class="card">
     <div class="row">
       <button id="btn-evidence-pack" type="button" onclick="exportEvidencePack()">Export evidence pack</button>
+      <button id="btn-today-digest" type="button" onclick="exportTodayDigest()">Today digest</button>
       <span class="muted" id="evidence-pack-label"></span>
+      <span class="muted" id="today-digest-label"></span>
     </div>
   </div>
 
@@ -1375,6 +1392,36 @@
     });
   };
 
+  // ── Today desk digest (T219) ──
+  // Lists this session's propose/approve/reject counts plus last
+  // Intact state.  Writes export/today_<utc>.md only.
+  window.exportTodayDigest = function () {
+    var td = el("today-digest-label");
+    if (!engineOnline) {
+      if (td) { td.textContent = "Engine offline — start the server, then refresh"; td.className = "muted err"; }
+      return;
+    }
+    if (td) { td.textContent = "Building…"; td.className = "muted"; }
+    var t = (el("tenant") && el("tenant").value) || "local";
+    get("/api/v1/twin/today-digest/" + encodeURIComponent(t), function (err, data, status) {
+      if (err || status !== 200) {
+        if (td) { td.textContent = "digest_failed: " + (status || "network"); td.className = "muted err"; }
+        return;
+      }
+      if (td) {
+        var outPath = (data && data.path) ? data.path : "";
+        var counts = (data && data.counts) ? data.counts : {};
+        var intact = (data && data.last_intact) ? data.last_intact : "";
+        td.textContent = "Digest: " + outPath +
+          "  propose:" + (counts.propose || 0) +
+          " approve:" + (counts.approve || 0) +
+          " reject:" + (counts.reject || 0) +
+          "  Intact:" + intact;
+        td.className = "muted";
+      }
+    });
+  };
+
   // ── Observe local mail/calendar (T201) ──
   // Reads a local .eml or .ics file already inside AEGIS_DATA_DIR and
   // proposes six specialist cards.  A path outside the data dir is a
@@ -1691,6 +1738,45 @@
       if (inp) { inp.value = data.pin || ""; }
     });
   }
+
+  // ── T219 — Standing-order specialist chip: Pin Ahmad / Clear pin ──
+  window.pinAhmadSpecialist = function () {
+    var cl = el("standing-order-chip-label");
+    if (!engineOnline) {
+      if (cl) { cl.textContent = "Engine offline — start the server, then refresh"; cl.className = "muted err"; }
+      return;
+    }
+    if (cl) { cl.textContent = "Pinning…"; cl.className = "muted"; }
+    var t = (el("tenant") && el("tenant").value) || "local";
+    post("/api/v1/twin/standing-order/" + encodeURIComponent(t), { specialist_name: "Ahmad" }, function (err, data, status) {
+      if (err || status !== 200) {
+        if (cl) { cl.textContent = "Pin failed"; cl.className = "muted err"; }
+        return;
+      }
+      if (data && data.code === "STANDING_ORDER_UNKNOWN") {
+        if (cl) { cl.textContent = "Unknown specialist"; cl.className = "muted err"; }
+        return;
+      }
+      if (cl) { cl.textContent = "Ahmad pinned as security reviewer"; cl.className = "muted"; }
+    });
+  };
+
+  window.clearStandingOrderPin = function () {
+    var cl = el("standing-order-chip-label");
+    if (!engineOnline) {
+      if (cl) { cl.textContent = "Engine offline — start the server, then refresh"; cl.className = "muted err"; }
+      return;
+    }
+    if (cl) { cl.textContent = "Clearing…"; cl.className = "muted"; }
+    var t = (el("tenant") && el("tenant").value) || "local";
+    post("/api/v1/twin/standing-order/" + encodeURIComponent(t), {}, function (err, data, status) {
+      if (err || status !== 200) {
+        if (cl) { cl.textContent = "Clear failed"; cl.className = "muted err"; }
+        return;
+      }
+      if (cl) { cl.textContent = "Pin cleared"; cl.className = "muted"; }
+    });
+  };
 
   // ── T214 — Session lock ──
   window.setSessionPin = function () {
