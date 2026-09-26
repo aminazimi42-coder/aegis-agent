@@ -253,7 +253,7 @@ class TestT174LoopDepth(unittest.TestCase):
 
     def test_readme_does_not_claim_months_of_learning(self) -> None:
         """README does not claim months of learning; it says this is not a
-        multi-month behavioral twin."""
+        long-cycle behavioral twin."""
         readme = (REPO_ROOT / "README.md").read_text()
         self.assertNotIn(
             "months of learning",
@@ -261,9 +261,9 @@ class TestT174LoopDepth(unittest.TestCase):
             "README must not claim months of learning",
         )
         self.assertIn(
-            "not a multi-month",
+            "not a long-cycle",
             readme.lower(),
-            "README must say this is not a multi-month twin",
+            "README must say this is not a long-cycle twin",
         )
 
     # ------------------------------------------------------------------ #

@@ -25,7 +25,7 @@ Public API:
 from __future__ import annotations
 
 import threading
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from core.persistence import get_connection
@@ -115,6 +115,43 @@ def list(tenant_id: str) -> list[dict[str, Any]]:  # noqa: A001
             "ORDER BY id ASC LIMIT ?",
             (tenant_id, _MAX_ROWS),
         ).fetchall()
+    return [
+        {
+            "tenant_id": r["tenant_id"],
+            "action_id": r["action_id"],
+            "specialist": r["specialist"],
+            "decision": r["decision"],
+            "reason_code": r["reason_code"],
+            "digest_prefix": r["digest_prefix"],
+            "created_at": r["created_at"],
+        }
+        for r in rows
+    ]
+
+
+def recent(
+    tenant_id: str,
+    n: int = 8,
+    ttl_hours: int = 168,
+) -> list[dict[str, Any]]:
+    """Return at most *n* recent rows for *tenant_id* within the TTL.
+
+    Rows whose ``created_at`` is older than *ttl_hours* from now are
+    skipped — they stay on disk until :func:`forget` but are not
+    returned.  Newest last.  A neighbor tenant always returns ``[]``.
+    """
+    _ensure_schema()
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=ttl_hours)).isoformat()
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT tenant_id, action_id, specialist, decision, "
+            "       reason_code, digest_prefix, created_at "
+            "FROM decision_ledger "
+            "WHERE tenant_id = ? AND created_at >= ? "
+            "ORDER BY id DESC LIMIT ?",
+            (tenant_id, cutoff, n),
+        ).fetchall()
+    rows = rows[::-1]
     return [
         {
             "tenant_id": r["tenant_id"],

@@ -179,3 +179,4 @@ T209 desk-slip markdown under export; git observe-only status and last five subj
 T209_FIX operator HTML JavaScript syntax in copy-redact onclick; both app.html copies parse; T210 not started.
 T210 README Now records one-week morning-night cold-start local use; not two-week; not a behavioral twin.
 T211 local tenant-bound decision ledger on approve/reject; neighbor isolated; Forget drops that tenant only.
+T212 next propose cites last local tenant decisions within TTL; Forget clears hint; no auto-exec; not a multi-month twin.

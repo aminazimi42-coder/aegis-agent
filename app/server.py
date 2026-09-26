@@ -1857,6 +1857,31 @@ def create_app() -> FastAPI:
             "count": len(proposals),
             "batch_id": batch_id,
         }
+        # T212 — attach a short last-decisions hint from the local
+        # tenant-bound decision ledger so the next propose card cites
+        # recent local approve/reject rows for this tenant only.  Rows
+        # older than TTL hours are ignored on read.  An empty ledger
+        # yields an empty hint, not an error.  The hint is advisory text
+        # only; it does not auto-execute.
+        try:
+            from core.decision_ledger import recent as _ledger_recent
+
+            recent_rows = _ledger_recent(request.tenant_id)
+        except Exception:
+            recent_rows = []
+        if recent_rows:
+            parts_hint: list[str] = []
+            for _r in recent_rows:
+                _dec = _r.get("decision", "") or ""
+                _spec = _r.get("specialist", "") or ""
+                _reason = _r.get("reason_code", "") or ""
+                if _reason:
+                    parts_hint.append(f"{_dec} {_spec} {_reason}")
+                else:
+                    parts_hint.append(f"{_dec} {_spec}")
+            result["last_decisions_hint"] = "; ".join(parts_hint)
+        else:
+            result["last_decisions_hint"] = ""
         if last_reject_reason is not None:
             result["last_reject_reason"] = last_reject_reason
         if last_approve_note is not None:
