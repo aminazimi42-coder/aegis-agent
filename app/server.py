@@ -1537,6 +1537,28 @@ def create_app() -> FastAPI:
                 result["telegram_status"] = tg_status
         except Exception:
             result["telegram_status"] = "TELEGRAM_SIDECAR_FAILED"
+        # T222 — optional local SMTP sidecar after Approve only.
+        # Missing config → not_configured.  SMTP fail → typed
+        # SMTP_SIDECAR_FAILED.  The approval and receipt stay valid.
+        # Execute and propose never call this — no smtp import there.
+        try:
+            from core.smtp_sidecar import notify_approved as _smtp_notify
+
+            digest_prefix = result.get("payload_sha256", "") or ""
+            smtp_result = _smtp_notify(
+                request.tenant_id, action_id, digest_prefix
+            )
+            smtp_status = smtp_result.get("status", "")
+            if smtp_status == "sent":
+                result["smtp_status"] = "sent"
+            elif smtp_status == "not_configured":
+                result["smtp_status"] = "not_configured"
+            elif smtp_status == "smtp_sidecar_failed":
+                result["smtp_status"] = "SMTP_SIDECAR_FAILED"
+            else:
+                result["smtp_status"] = smtp_status
+        except Exception:
+            result["smtp_status"] = "SMTP_SIDECAR_FAILED"
         # T216 — chain_state from the local verify-chain for this tenant.
         chain_state = ""
         try:

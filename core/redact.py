@@ -109,6 +109,14 @@ _TG_ASSIGN_RE = re.compile(
     r"(?i)(?:token|chat_id)\s*[:=]\s*[\"']?[A-Za-z0-9_\-]{8,}",
 )
 
+# T222 — SMTP password assignment shapes: ``password=…``,
+# ``smtp_password=…``, ``AEGIS_SMTP_PASSWORD=…``.  Redact the value
+# after the assignment operator.
+_SMTP_PASSWORD_ASSIGN_RE = re.compile(
+    r"(?i)(?:smtp_password|aegis_smtp_password|password)"
+    r"\s*[:=]\s*[\"']?[A-Za-z0-9_\-]{6,}",
+)
+
 _SECRET_SHAPES: tuple[re.Pattern[str], ...] = (
     _SK_RE,
     _GH_RE,
@@ -123,6 +131,7 @@ _SECRET_SHAPES: tuple[re.Pattern[str], ...] = (
     _WEBHOOK_ASSIGN_RE,
     _TG_BOT_TOKEN_RE,
     _TG_ASSIGN_RE,
+    _SMTP_PASSWORD_ASSIGN_RE,
 )
 
 _REPLACEMENT = "[REDACTED]"

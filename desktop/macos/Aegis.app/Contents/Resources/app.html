@@ -313,6 +313,9 @@
       <span class="muted" id="telegram-line">Telegram notice: off</span>
     </div>
     <div class="row">
+      <span class="muted" id="smtp-line">Mail notice: off</span>
+    </div>
+    <div class="row">
       <input id="engine-base-url" type="text" placeholder="local base URL" style="flex:1;min-width:0;">
       <button id="btn-engine-connect" type="button" onclick="connectEngine()">Connect local engine</button>
       <button id="btn-engine-echo" type="button" onclick="disconnectEngine()">Use Echo</button>
@@ -642,6 +645,13 @@
         var tl = el("telegram-line");
         if (tl) {
           tl.textContent = "Telegram notice: off";
+        }
+      } catch (e) {}
+      // T222 — optional Mail notice label after Approve.
+      try {
+        var ml = el("smtp-line");
+        if (ml) {
+          ml.textContent = "Mail notice: off";
         }
       } catch (e) {}
     });
