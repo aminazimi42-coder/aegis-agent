@@ -1,9 +1,10 @@
-"""Operator idle lock and local Keychain PIN (T214).
+"""Operator idle session lock and local Keychain PIN (T220).
 
-After the operator page is idle for ``AEGIS_IDLE_LOCK_MINUTES`` minutes (default
-15) of no operator mutation, the session locks on that tenant only.  Unlock is a
-local PIN stored in the macOS Keychain on Darwin, or a mock store on CI/other
-platforms — the same store abstraction as :mod:`core.llm_keychain`.
+After the operator page is idle for ``AEGIS_SESSION_IDLE_SECONDS`` seconds
+(default 900, min 60, max 86400) of no operator mutation, the session locks on
+that tenant only.  Unlock is a local PIN stored in the macOS Keychain on
+Darwin, or a mock store on CI/other platforms — the same store abstraction as
+:mod:`core.llm_keychain`.
 
 * ``lock(tenant_id)`` — force-lock this tenant now.
 * ``unlock(tenant_id, pin)`` — unlock when the PIN matches.
@@ -13,8 +14,12 @@ platforms — the same store abstraction as :mod:`core.llm_keychain`.
 * ``record_operator_activity(tenant_id)`` — reset the idle timer.
 * ``forget_pin(tenant_id)`` — drop the PIN handle for this tenant.
 
+Lockout after 5 wrong PINs for 5 minutes — a typed deny with code
+``PIN_LOCKOUT`` and a ``retry_after`` seconds field.  A correct PIN
+during lockout is also denied until the lockout window expires.
+
 The PIN is never written into SQLite plaintext, audit JSONL, receipts, or
-logs.  The PIN value is never printed or returned by any public function.  The
+logs.  The PIN value is never printed or returned by any public function. The
 lock is not macOS login and not a new identity product.
 """
 
@@ -27,8 +32,8 @@ from typing import Any
 
 from core.llm_keychain import _KeychainStore, get_store
 
-_SERVICE = "AegisOperator"
-_ACCOUNT_PREFIX = "session-pin-"
+_SERVICE = "aegis-operator-session"
+_ACCOUNT_PREFIX = ""  # account == tenant_id exactly (T220)
 
 _idle_lock = threading.Lock()
 
@@ -39,15 +44,28 @@ _locked_at: dict[str, str] = {}
 # In-memory last-activity timestamp: tenant_id → ISO str of last mutation.
 _last_activity: dict[str, str] = {}
 
+# Lockout state: tenant_id → (failures int, lockout_until ISO str | None)
+_lockout: dict[str, dict[str, Any]] = {}
 
-def _idle_minutes() -> int:
-    """Return the configured idle timeout, minimum 1."""
-    raw = os.getenv("AEGIS_IDLE_LOCK_MINUTES", "15")
+_MAX_FAILURES = 5
+_LOCKOUT_SECONDS = 300  # 5 minutes
+
+
+def _idle_seconds() -> int:
+    """Return the configured idle timeout in seconds.
+
+    Default 900 (15 minutes).  Min 60, max 86400.
+    """
+    raw = os.getenv("AEGIS_SESSION_IDLE_SECONDS", "900")
     try:
         val = int(raw)
     except (ValueError, TypeError):
-        return 15
-    return val if val >= 1 else 15
+        return 900
+    if val < 60:
+        return 60
+    if val > 86400:
+        return 86400
+    return val
 
 
 def _now() -> str:
@@ -55,7 +73,7 @@ def _now() -> str:
 
 
 def _account(tenant_id: str) -> str:
-    """Return the Keychain account name for *tenant_id*."""
+    """Return the Keychain account name for *tenant_id* (T220: bare tenant_id)."""
     return _ACCOUNT_PREFIX + tenant_id
 
 
@@ -133,7 +151,7 @@ def _check_idle_and_auto_lock(tenant_id: str) -> None:
         except (ValueError, TypeError):
             return
         elapsed = datetime.now(timezone.utc) - last_dt
-        threshold = timedelta(minutes=_idle_minutes())
+        threshold = timedelta(seconds=_idle_seconds())
         if elapsed >= threshold:
             locked_at = _now()
             _locked_at[tenant_id] = locked_at
@@ -147,6 +165,53 @@ def record_operator_activity(tenant_id: str) -> None:
         # If the tenant was locked, recording activity does NOT unlock —
         # only the correct PIN unlocks.  Activity just resets the timer
         # so the lock does not re-engage immediately after unlock.
+
+
+def _lockout_active(tenant_id: str) -> str | None:
+    """Return the lockout_until ISO str if lockout is active, else None."""
+    state = _lockout.get(tenant_id)
+    if not state:
+        return None
+    lockout_until = state.get("lockout_until")
+    if not lockout_until:
+        return None
+    try:
+        until_dt = datetime.fromisoformat(lockout_until)
+    except (ValueError, TypeError):
+        _lockout.pop(tenant_id, None)
+        return None
+    if datetime.now(timezone.utc) >= until_dt:
+        # Lockout expired — clear it.
+        _lockout.pop(tenant_id, None)
+        return None
+    return lockout_until
+
+
+def _lockout_retry_after(tenant_id: str) -> int:
+    """Return seconds remaining in the lockout window (0 if expired)."""
+    until = _lockout_active(tenant_id)
+    if not until:
+        return 0
+    try:
+        until_dt = datetime.fromisoformat(until)
+    except (ValueError, TypeError):
+        return 0
+    delta = until_dt - datetime.now(timezone.utc)
+    return max(1, int(delta.total_seconds()))
+
+
+def _record_failure(tenant_id: str) -> None:
+    """Record a failed PIN attempt; engage lockout after _MAX_FAILURES."""
+    state = _lockout.setdefault(tenant_id, {"failures": 0, "lockout_until": None})
+    state["failures"] = state.get("failures", 0) + 1
+    if state["failures"] >= _MAX_FAILURES:
+        until = (datetime.now(timezone.utc) + timedelta(seconds=_LOCKOUT_SECONDS)).isoformat()
+        state["lockout_until"] = until
+
+
+def _clear_lockout(tenant_id: str) -> None:
+    """Clear lockout state for *tenant_id* on a successful unlock."""
+    _lockout.pop(tenant_id, None)
 
 
 def is_locked(tenant_id: str) -> bool:
@@ -196,7 +261,10 @@ def lock(tenant_id: str) -> dict[str, Any]:
 def unlock(tenant_id: str, pin: str) -> dict[str, Any]:
     """Unlock the session for *tenant_id* when *pin* matches the stored PIN.
 
-    A wrong or absent PIN is a typed deny — no lockout product this slice.
+    Lockout after 5 wrong PINs for 5 minutes — a typed deny with code
+    ``PIN_LOCKOUT`` and a ``retry_after`` seconds field.  A correct PIN
+    during lockout is also denied until the lockout window expires.
+
     The PIN value is never returned or logged.
     """
     _check_idle_and_auto_lock(tenant_id)
@@ -212,6 +280,16 @@ def unlock(tenant_id: str, pin: str) -> dict[str, Any]:
                     "code": "NOT_LOCKED",
                 }
             _locked_at[tenant_id] = persisted
+        # Check lockout first — even a correct PIN is denied during lockout.
+        lockout_until = _lockout_active(tenant_id)
+        if lockout_until:
+            return {
+                "tenant_id": tenant_id,
+                "locked": True,
+                "unlocked": False,
+                "code": "PIN_LOCKOUT",
+                "retry_after": _lockout_retry_after(tenant_id),
+            }
         if not pin or not pin.strip():
             return {
                 "tenant_id": tenant_id,
@@ -221,7 +299,7 @@ def unlock(tenant_id: str, pin: str) -> dict[str, Any]:
             }
         store: _KeychainStore = get_store()
         stored = store.get(_SERVICE, _account(tenant_id))
-        if stored is None:
+        if stored is None or not stored.strip():
             return {
                 "tenant_id": tenant_id,
                 "locked": True,
@@ -229,6 +307,16 @@ def unlock(tenant_id: str, pin: str) -> dict[str, Any]:
                 "code": "PIN_NOT_SET",
             }
         if pin.strip() != stored.strip():
+            _record_failure(tenant_id)
+            # Check if this triggered a lockout.
+            if _lockout.get(tenant_id, {}).get("lockout_until"):
+                return {
+                    "tenant_id": tenant_id,
+                    "locked": True,
+                    "unlocked": False,
+                    "code": "PIN_LOCKOUT",
+                    "retry_after": _lockout_retry_after(tenant_id),
+                }
             return {
                 "tenant_id": tenant_id,
                 "locked": True,
@@ -238,6 +326,7 @@ def unlock(tenant_id: str, pin: str) -> dict[str, Any]:
         # Correct PIN — unlock.
         _locked_at.pop(tenant_id, None)
         _write_persisted_lock(tenant_id, None)
+        _clear_lockout(tenant_id)
         # Reset the idle timer on unlock.
         _last_activity[tenant_id] = _now()
         return {
@@ -277,7 +366,8 @@ def set_pin(tenant_id: str, pin: str) -> dict[str, Any]:
 def has_pin(tenant_id: str) -> bool:
     """Return ``True`` when a PIN is set for *tenant_id*."""
     store: _KeychainStore = get_store()
-    return store.get(_SERVICE, _account(tenant_id)) is not None
+    stored = store.get(_SERVICE, _account(tenant_id))
+    return stored is not None and bool(stored.strip())
 
 
 def forget_pin(tenant_id: str) -> dict[str, Any]:
@@ -289,6 +379,7 @@ def forget_pin(tenant_id: str) -> dict[str, Any]:
     with _idle_lock:
         _locked_at.pop(tenant_id, None)
         _last_activity.pop(tenant_id, None)
+        _lockout.pop(tenant_id, None)
         _write_persisted_lock(tenant_id, None)
     # Remove the PIN from the store.  The store interface does not have a
     # delete method, so we set it to an empty string which the unlock path
@@ -313,3 +404,4 @@ def reset_for_tests() -> None:
     with _idle_lock:
         _locked_at.clear()
         _last_activity.clear()
+        _lockout.clear()

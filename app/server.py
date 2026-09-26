@@ -579,7 +579,7 @@ class TwinGitObserveRequest(BaseModel):
 
 
 class TwinSessionPinRequest(BaseModel):
-    """Body for setting the local session PIN (T214).
+    """Body for setting the local session PIN (T220).
 
     ``tenant_id`` identifies the caller.  ``pin`` is the local PIN to
     store — a string of at least 6 digits.  Stored via the existing
@@ -592,11 +592,11 @@ class TwinSessionPinRequest(BaseModel):
 
 
 class TwinSessionUnlockRequest(BaseModel):
-    """Body for unlocking the session (T214).
+    """Body for unlocking the session (T220).
 
     ``tenant_id`` identifies the caller.  ``pin`` is the local PIN to
     verify against the Keychain/mock store.  A wrong PIN is a typed
-    deny — no lockout product this slice.
+    deny.  After 5 wrong PINs a 5-minute lockout engages.
     """
 
     tenant_id: str
@@ -1459,7 +1459,7 @@ def create_app() -> FastAPI:
         "/api/v1/twin/actions/{action_id}/approve", tags=["twin"], status_code=200
     )
     def twin_actions_approve(action_id: str, request: TwinActionApproveRequest) -> Any:
-        # T214 — Session lock: block approve when locked for this tenant.
+        # T220 — Session lock: block approve when locked for this tenant.
         from core.session_lock import is_locked as _session_is_locked
 
         if _session_is_locked(request.tenant_id):
@@ -1538,7 +1538,7 @@ def create_app() -> FastAPI:
         "/api/v1/twin/actions/{action_id}/reject", tags=["twin"], status_code=200
     )
     def twin_actions_reject(action_id: str, request: TwinActionRejectRequest) -> Any:
-        # T214 — Session lock: block reject when locked for this tenant.
+        # T220 — Session lock: block reject when locked for this tenant.
         from core.session_lock import is_locked as _session_is_locked
 
         if _session_is_locked(request.tenant_id):
@@ -1821,7 +1821,7 @@ def create_app() -> FastAPI:
         """
         # T207 — Quiet mode: block propose and weekly brief until the
         # next Start Session for this tenant.
-        # T214 — Session lock: block propose when the operator page is
+        # T220 — Session lock: block propose when the operator page is
         # locked for this tenant.  The lock is tenant-bound — a neighbor
         # tenant is never affected.
         from core.session_lock import is_locked as _session_is_locked
@@ -2070,7 +2070,7 @@ def create_app() -> FastAPI:
         ``$HOME/.aegis/export/``) — never into the git worktree.  An
         empty profile or empty brief returns a typed 400, no file.
         """
-        # T214 — Session lock: block export when locked for this tenant.
+        # T220 — Session lock: block export when locked for this tenant.
         from core.session_lock import is_locked as _session_is_locked
 
         if _session_is_locked(request.tenant_id):
@@ -2638,7 +2638,7 @@ def create_app() -> FastAPI:
         caller is a typed deny; when port 8741 is already free the
         engine is reported as already stopped.
         """
-        # T214 — Session lock: block quit when locked for this tenant.
+        # T220 — Session lock: block quit when locked for this tenant.
         from core.session_lock import is_locked as _session_is_locked
 
         if _session_is_locked(request.tenant_id):
@@ -2666,16 +2666,17 @@ def create_app() -> FastAPI:
         _send_quit_sigterm()
         return {"detail": "engine stopping", "code": "engine_stopping"}
 
-    # --- T214 — Operator idle lock and local Keychain PIN --- #
+    # --- T220 — Operator idle session lock and local Keychain PIN --- #
 
     @app.post("/api/v1/twin/session/lock/{tenant_id}", tags=["twin"], status_code=200)
     def twin_session_lock(tenant_id: str) -> Any:
         """Force-lock the session for *tenant_id* now.
 
-        T214 — after the operator page is idle, the session locks on
-        that tenant only.  Until unlocked: Propose, Approve, Reject,
-        Export, and Quit engine stay disabled.  The lock is not macOS
-        login and not a new identity product.
+        T220 — after the operator page is idle for
+        ``AEGIS_SESSION_IDLE_SECONDS`` (default 900, min 60, max 86400),
+        the session locks on that tenant only.  Until unlocked: Propose,
+        Approve, Reject, Export, and Quit engine stay disabled.  The lock
+        is not macOS login and not a new identity product.
         """
         from core.session_lock import lock as _session_lock
 
@@ -2685,9 +2686,10 @@ def create_app() -> FastAPI:
     def twin_session_unlock(tenant_id: str, request: TwinSessionUnlockRequest) -> Any:
         """Unlock the session for *tenant_id* with the local PIN.
 
-        T214 — a wrong PIN is a typed deny — no lockout product this
-        slice.  The PIN value is never returned or logged.  A neighbor
-        tenant cannot unlock this tenant.
+        T220 — a wrong PIN is a typed deny.  After 5 wrong PINs a 5-minute
+        lockout engages (code ``PIN_LOCKOUT`` with ``retry_after`` seconds).
+        The PIN value is never returned or logged.  A neighbor tenant cannot
+        unlock this tenant.
         """
         from core.session_lock import unlock as _session_unlock
 
@@ -2704,7 +2706,7 @@ def create_app() -> FastAPI:
     def twin_session_pin_set(tenant_id: str, request: TwinSessionPinRequest) -> Any:
         """Set the local PIN for *tenant_id*.
 
-        T214 — the PIN is a string of at least 6 digits, stored via the
+        T220 — the PIN is a string of at least 6 digits, stored via the
         existing T196 Keychain helper or a mock store on CI.  Never
         written into SQLite plaintext.  Never logged.  Never returned.
         """

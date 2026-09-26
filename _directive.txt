@@ -1,44 +1,35 @@
-T219 — instruction 7 of 7 last of this pack
-Today desk digest + standing-order pin. Local only.
-
-HARD STOP
-Read this file only. Do not read task_instruction.txt.
-Do not start T220. Do not edit Author or LICENSE.
-Do not write Stripe into core. Do not add a seventh agent.
-Do not auto-execute. Do not open Safari from the start script.
-Do not claim a multi-month twin. Standing-order does not execute.
+T220 — operator idle session lock + local PIN (Keychain Darwin / mock CI)
+This is instruction 1 of 3 (session-lock → Telegram sidecar → SMTP sidecar).
+Do not start T221 or T222. Do not touch Stripe, shop, live keys, notarize, README Author, LICENSE.
+No seventh agent. No card form. No Safari open from scripts. Echo remains default.
 
 GOAL
-Home grows two small local controls that already have nearby code:
-1) Today digest: one button that lists this session's propose/approve/reject counts plus last Intact state. Writes export/today_<utc>.md only.
-2) Standing-order pin: operator may pin Ahmad as the security reviewer for the next propose of this tenant. Pin is tenant-bound SQLite. Forget clears the pin. Pin never auto-approves and never auto-executes.
+Lock the local operator page after idle so a stranger at the unlocked laptop cannot Approve/Reject/Propose/export without a local PIN. PIN lives in macOS Keychain on Darwin. CI uses an in-process mock. Core execute path never sees the PIN. Forget/purge must drop that tenant's lock material the same way other tenant stores drop.
 
-BEHAVIOR
-1) Reuse T198 evidence desk patterns for the markdown write. Path stays under AEGIS_DATA_DIR/export.
-2) Reuse T208 standing_order if present. If missing, add core/standing_order.py with get/set/clear for tenant_id + specialist_name allow-list of the six names only.
-3) Propose includes standing_order_hint when a pin exists. Ahmad pin does not silence the other five rows.
-4) GET /api/v1/twin/today-digest/{tenant_id} session-bound.
-5) POST /api/v1/twin/standing-order/{tenant_id} typed specialist. Unknown name STANDING_ORDER_UNKNOWN.
+IN SCOPE
+1. Idle lock on the operator HTML page after a documented idle timeout (default 15 minutes, override AEGIS_SESSION_IDLE_SECONDS, min 60, max 86400).
+2. Unlock only with local PIN verify. Wrong PIN typed fail. Lockout after 5 failures for 5 minutes, typed.
+3. Store PIN verifier in Keychain service "aegis-operator-session" account "{tenant_id}" on Darwin. Never write the raw PIN to AEGIS_DATA_DIR, git, logs, audit JSONL, receipts, or propose text.
+4. CI / non-Darwin: mock keychain module already used by T196 pattern. Tests must not need a real Keychain.
+5. Start Session after cold start still works. If no PIN has been set, first-run page offers optional "Set session PIN" — not required to propose. If PIN is set, locked page blocks Propose/Approve/Reject/Export/Quit-engine until unlock.
+6. Tests:
+   - idle then lock; unlock with correct PIN; wrong PIN typed fail
+   - neighbor tenant cannot unlock this tenant
+   - Forget tenant drops Keychain/mock item for that tenant only
+   - audit/propose/export contain no PIN digits
+   - start_operator.sh still sole start; script does not open Safari
+7. STATUS one honest paragraph. README Now may say "optional local session PIN" only if tests prove it. Do not claim biometrics. Do not claim Face ID.
 
-OPERATOR PAGE
-- Today digest button next to evidence pack.
-- Standing-order chip: Pin Ahmad / Clear pin. No extra agents.
+OUT OF SCOPE
+Telegram, SMTP, Stripe, live shop, notarize claim, LocalAuthentication/Touch ID (later), voice interview, new agent, changing Author/LICENSE, Archive promote, two-week twin claim.
 
-TESTS tests/test_t219_today_standing.py
-- today digest file under export
-- pin Ahmad visible on next propose hint
-- unknown specialist typed deny
-- Forget clears pin
-- neighbor pin does not leak
-- no auto-exec
-- core/ has no stripe token
+FILES
+Reuse T196 keychain helper if present. New small module under core/ for session lock state. Operator HTML: lock overlay + PIN field + Set PIN. Tests tests/test_t220_session_lock.py. Do not rewrite desktop app.html and repo app.html out of sync — both must parse (T209_FIX lesson).
 
 PROOF
-ruff on touched py.
-pytest -q full suite 0 failed.
-Print HEAD SHA.
-Print six booleans: today_file, pin_hint, unknown_deny, forget_clears, neighbor_denied, no_stripe.
-Commit: feat(t219): today digest and standing-order pin
-Push origin main.
-Print SHA. Stop. Do not start T220.
-This pack T213–T219 closes after this SHA.
+Print:
+- git rev-parse HEAD
+- pytest -q  (0 failed)
+- six booleans: idle_lock, wrong_pin_typed, neighbor_denied, forget_drops, no_pin_in_audit, start_script_unchanged
+Commit and push origin main. Stop.
+Do not start T221.

@@ -171,6 +171,7 @@ def forget_all(tenant_id: str) -> dict[str, Any]:
     - All forgotten-field rows for this tenant (``forgotten`` table).
     - The visible memory listing (``work_products/{tenant_id}/memory.md``).
     - All ``twin_actions`` rows for this tenant.
+    - Session lock material (Keychain/mock PIN, lock state, lockout) (T220).
 
     Neighbour tenants are never touched.
 
@@ -216,7 +217,13 @@ def forget_all(tenant_id: str) -> dict[str, Any]:
             (tenant_id,),
         )
 
-    # 4. Write the deletion receipt.
+    # 4. T220 — Drop the session lock material for this tenant only.
+    #    forget_pin clears the Keychain/mock PIN, lock state, and lockout.
+    from core.session_lock import forget_pin as _forget_session_pin
+
+    _forget_session_pin(tenant_id)
+
+    # 5. Write the deletion receipt.
     out_dir.mkdir(parents=True, exist_ok=True)
     receipt_path = out_dir / "deletion_receipt.md"
     now_utc = datetime.now(timezone.utc).isoformat()

@@ -183,3 +183,8 @@ T212 next propose cites last local tenant decisions within TTL; Forget clears hi
 T213 README Now proven owner one-week amin Ricardo separate days; not two-week; not a behavioral twin; no notarized.
 T214 operator idle lock and Keychain PIN; lock blocks Propose/Approve/Reject/Export/Quit; neighbor not affected; no face/voice.
 T215 optional Echo connect on operator page; Connect local engine sets AGENT_LLM_BASE_URL for this process; Use Echo returns Echo; fallback stays labeled; Ahmad propose card carries a must-not line; no seventh agent; no stripe in core.
+T216 chain state Intact/Tampered on Approved cards; no Missing label; T217 not started.
+T217 quiet notify sidecar label under Engine; T218 not started.
+T218 caged inbox image to local signed PDF; T219 not started.
+T219 today digest and standing-order pin; T220 not started.
+T220 operator idle session lock AEGIS_SESSION_IDLE_SECONDS (default 900, min 60, max 86400); lockout after 5 wrong PINs for 5 minutes; Keychain service aegis-operator-session account {tenant_id}; forget_all drops lock material; no biometrics.
