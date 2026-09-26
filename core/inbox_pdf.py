@@ -1,18 +1,20 @@
-"""Caged inbox image to local signed PDF (T218).
+"""Caged inbox image to tenant-scoped local signed PDF (T224).
 
-``build_signed_inbox_pdf(tenant_id, image_relpath)`` reads a single
-image that already sits under ``AEGIS_DATA_DIR/inbox/<name>`` and writes
-a one-page signed PDF under ``AEGIS_DATA_DIR/export/`` plus a detached
-``.sig`` sibling.
+``build_signed_inbox_pdf(tenant_id, image_relpath)`` reads a single image
+that already sits under ``AEGIS_DATA_DIR/{tenant}/…`` and writes a one-page
+signed PDF under ``AEGIS_DATA_DIR/{tenant}/export/inbox_{utc}.pdf`` plus a
+detached ``.sig`` sibling.
 
 No network fetch of images.  No renderer that shells out to ``curl``.
 The PDF body is local bytes only — a minimal one-page PDF with text
 lines showing the caged source path, the sha256 of the image bytes, and
 the word ``Intact`` after the write completes.
 
-A path outside ``AEGIS_DATA_DIR`` is a typed deny
-(:class:`PathDeniedError`).  A missing inbox file is a typed
-``ValueError("INBOX_MISSING")``.
+A path outside ``AEGIS_DATA_DIR/{tenant}`` is a typed deny
+(:class:`OutsideCageError`, code ``OUTSIDE_CAGE``).  A missing file is a
+typed ``:class:`InboxMissingError` (code ``MISSING``).  An unsupported
+image type (not png / jpg / jpeg / webp) is a typed
+:class:`UnsupportedTypeError` (code ``UNSUPPORTED``).
 """
 
 from __future__ import annotations
@@ -22,27 +24,47 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from core.twin_local_view import PathDeniedError, cage_path, data_root
+from core.twin_local_view import data_root
+
+# ---------------------------------------------------------------------------#
+# Typed errors
+# ---------------------------------------------------------------------------#
+
+
+class OutsideCageError(ValueError):
+    """Typed rejection when the resolved path escapes the tenant cage."""
+
+    code: str = "OUTSIDE_CAGE"
+
+
+class InboxMissingError(ValueError):
+    """Typed rejection when the inbox image file does not exist."""
+
+    code: str = "MISSING"
+
+
+class UnsupportedTypeError(ValueError):
+    """Typed rejection when the image type is not png/jpg/jpeg/webp."""
+
+    code: str = "UNSUPPORTED"
+
+
+_SUPPORTED_SUFFIXES: frozenset[str] = frozenset({".png", ".jpg", ".jpeg", ".webp"})
+
 
 # ---------------------------------------------------------------------------#
 # Helpers
 # ---------------------------------------------------------------------------#
 
 
-class InboxMissingError(ValueError):
-    """Typed rejection when the inbox image file does not exist."""
-
-    code: str = "INBOX_MISSING"
-
-
-def _inbox_dir() -> Path:
-    """Return the inbox directory under the data root."""
-    return data_root() / "inbox"
+def _tenant_dir(tenant_id: str) -> Path:
+    """Return the tenant directory under the data root."""
+    return data_root() / tenant_id
 
 
-def _export_dir() -> Path:
-    """Return the export directory under the data root."""
-    return data_root() / "export"
+def _export_dir(tenant_id: str) -> Path:
+    """Return the tenant export directory under the data root."""
+    return _tenant_dir(tenant_id) / "export"
 
 
 def _escape_pdf_text(text: str) -> str:
@@ -58,7 +80,6 @@ def _build_one_page_pdf(lines: list[str]) -> bytes:
     assets, no embedded images, no compression — just the raw content
     stream and cross-reference table.
     """
-    # Build the content stream: set font, then show each line.
     content_ops: list[str] = ["BT", "/F1 12 Tf", "1 0 0 1 50 750 Tm"]
     for i, line in enumerate(lines):
         y = 750 - i * 20
@@ -68,26 +89,8 @@ def _build_one_page_pdf(lines: list[str]) -> bytes:
     content_ops.append("ET")
     content_stream = "\n".join(content_ops) + "\n"
 
-    # Build the PDF objects.
-    # Object 1: Catalog
-    # Object 2: Pages
-    # Object 3: Page
-    # Object 4: Font
-    # Object 5: Contents
-    objects: list[bytes] = []
-    offsets: list[int] = []
-
     header = b"%PDF-1.4\n"
 
-    def add_obj(body: str) -> int:
-        """Append an object body and return its number (1-indexed)."""
-        obj_num = len(objects) + 1
-        obj_bytes = f"{obj_num} 0 obj\n{body}\nendobj\n".encode("latin-1")
-        objects.append(obj_bytes)
-        return obj_num
-
-    # Object numbers are fixed: 1=Catalog, 2=Pages, 3=Page,
-    # 4=Font, 5=Contents.
     pages_num = 2
     page_num = 3
     font_num = 4
@@ -119,13 +122,12 @@ def _build_one_page_pdf(lines: list[str]) -> bytes:
         contents_body,
     ]
 
-    # Now assemble the full PDF.
     pdf_bytes = header
+    offsets: list[int] = []
     for i, body in enumerate(obj_bodies, start=1):
         offsets.append(len(pdf_bytes))
         pdf_bytes += f"{i} 0 obj\n{body}\nendobj\n".encode("latin-1")
 
-    # Cross-reference table.
     xref_offset = len(pdf_bytes)
     xref_lines = ["xref", f"0 {len(obj_bodies) + 1}", "0000000000 65535 f "]
     for off in offsets:
@@ -133,7 +135,6 @@ def _build_one_page_pdf(lines: list[str]) -> bytes:
     xref_table = "\n".join(xref_lines) + "\n"
     pdf_bytes += xref_table.encode("latin-1")
 
-    # Trailer.
     trailer = (
         f"trailer\n<< /Size {len(obj_bodies) + 1} /Root 1 0 R >>\n"
         f"startxref\n{xref_offset}\n%%EOF\n"
@@ -143,63 +144,73 @@ def _build_one_page_pdf(lines: list[str]) -> bytes:
     return pdf_bytes
 
 
+def _cage_tenant_path(tenant_id: str, path: str | Path) -> Path:
+    """Resolve *path* and return it only when it stays inside the tenant dir.
+
+    Raises :class:`OutsideCageError` when the resolved path escapes
+    ``AEGIS_DATA_DIR/{tenant_id}``.
+    """
+    tenant_root = _tenant_dir(tenant_id).resolve()
+    raw = Path(path)
+    if not raw.is_absolute():
+        raw = tenant_root / raw
+    resolved = raw.resolve()
+    try:
+        resolved.relative_to(tenant_root)
+    except ValueError:
+        raise OutsideCageError("path outside AEGIS_DATA_DIR/tenant") from None
+    return resolved
+
+
 # ---------------------------------------------------------------------------#
 # Public API
 # ---------------------------------------------------------------------------#
 
 
 def build_signed_inbox_pdf(tenant_id: str, image_relpath: str) -> dict[str, Any]:
-    """Build a one-page signed PDF from a caged inbox image.
+    """Build a one-page signed PDF from a caged tenant image.
 
     *tenant_id* identifies the caller.  *image_relpath* is a path
-    relative to ``AEGIS_DATA_DIR/inbox/`` (or an absolute path inside
-    that directory).  The image must already sit under
-    ``AEGIS_DATA_DIR/inbox/`` — no network fetch.
+    relative to ``AEGIS_DATA_DIR/{tenant_id}/`` (or an absolute path
+    inside that directory).  The image must already sit under the tenant
+    cage — no network fetch.
 
-    Writes ``export/inbox_<utc>.pdf`` and ``inbox_<utc>.pdf.sig``
-    under ``AEGIS_DATA_DIR/export/``.
+    Writes ``AEGIS_DATA_DIR/{tenant_id}/export/inbox_{utc}.pdf`` and a
+    detached ``.sig`` sibling.
 
-    Raises :class:`PathDeniedError` when the resolved image path
-    escapes ``AEGIS_DATA_DIR``.  Raises :class:`InboxMissingError`
-    when the file does not exist on disk.
+    Raises :class:`OutsideCageError` when the resolved image path
+    escapes ``AEGIS_DATA_DIR/{tenant_id}``.  Raises
+    :class:`InboxMissingError` when the file does not exist on disk.
+    Raises :class:`UnsupportedTypeError` when the file extension is not
+    png, jpg, jpeg, or webp.
 
     Returns ``{tenant_id, path, sha256, sig_path, verify}``.
     """
-    inbox = _inbox_dir()
-    inbox.mkdir(parents=True, exist_ok=True)
+    # Resolve the image path inside the tenant cage.
+    image_path = _cage_tenant_path(tenant_id, image_relpath)
 
-    # Resolve the image path relative to the inbox dir, then cage it
-    # against the data root.  A path outside AEGIS_DATA_DIR is a typed
-    # deny — never opened.
-    if Path(image_relpath).is_absolute():
-        image_path = cage_path(Path(image_relpath))
-    else:
-        image_path = cage_path(inbox / image_relpath)
-
-    # The caged path must also live under the inbox dir.
-    inbox_resolved = inbox.resolve()
-    image_resolved = image_path.resolve()
-    try:
-        image_resolved.relative_to(inbox_resolved)
-    except ValueError:
-        raise PathDeniedError("path outside AEGIS_DATA_DIR/inbox") from None
+    # Validate the image type before reading.
+    suffix = image_path.suffix.lower()
+    if suffix not in _SUPPORTED_SUFFIXES:
+        raise UnsupportedTypeError("UNSUPPORTED")
 
     if not image_path.is_file():
-        raise InboxMissingError("INBOX_MISSING")
+        raise InboxMissingError("MISSING")
 
     # Read the image bytes (local only) and compute sha256.
     image_bytes = image_path.read_bytes()
     image_sha = hashlib.sha256(image_bytes).hexdigest()
 
     # Build the PDF page text: path + sha256 + Intact.
-    export = _export_dir()
+    root = data_root()
+    export = _export_dir(tenant_id)
     export.mkdir(parents=True, exist_ok=True)
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     pdf_name = f"inbox_{stamp}.pdf"
-    pdf_path = cage_path(export / pdf_name)
+    pdf_path = export / pdf_name
 
-    rel_path = str(image_path.relative_to(data_root()))
+    rel_path = str(image_path.relative_to(root.resolve()))
     page_lines: list[str] = [
         f"Inbox image export - {tenant_id}",
         "",
@@ -211,10 +222,7 @@ def build_signed_inbox_pdf(tenant_id: str, image_relpath: str) -> dict[str, Any]
     pdf_bytes = _build_one_page_pdf(page_lines)
     pdf_path.write_bytes(pdf_bytes)
 
-    # Detached .sig sibling (like the T178 brief export).  The .sig
-    # stores the sha256 of the **PDF file bytes** so the verify step
-    # recomputes sha256(pdf) and compares — the same pattern as the
-    # text-based brief export, adapted for a binary PDF.
+    # Detached .sig sibling — sha256 of the PDF file bytes.
     if not pdf_path.is_file():
         raise ValueError("missing_file")
     pdf_sha = hashlib.sha256(pdf_path.read_bytes()).hexdigest()
@@ -222,10 +230,7 @@ def build_signed_inbox_pdf(tenant_id: str, image_relpath: str) -> dict[str, Any]
     sig_content = f"sha256: {pdf_sha}\nsigner: aegis-local\n"
     sig_path.write_text(sig_content, encoding="utf-8")
 
-    # Verify after write — recompute sha256 of the PDF bytes and compare
-    # against the value stored in the .sig sibling.  Reports Intact
-    # when they match, Tampered when they do not, Missing when either
-    # file is absent.
+    # Verify after write — recompute sha256 and compare.
     verify_status: str
     if not pdf_path.is_file():
         verify_status = "export_verify_failed: missing_file"
@@ -249,4 +254,21 @@ def build_signed_inbox_pdf(tenant_id: str, image_relpath: str) -> dict[str, Any]
         "sha256": image_sha,
         "sig_path": str(sig_path),
         "verify": verify_status,
+    }
+
+
+def forget_tenant_export(tenant_id: str) -> dict[str, Any]:
+    """Remove the tenant export directory under ``AEGIS_DATA_DIR/{tenant}``.
+
+    Returns ``{tenant_id, export_dir, cleared: True}``.
+    """
+    export = _export_dir(tenant_id)
+    if export.exists():
+        import shutil
+
+        shutil.rmtree(export)
+    return {
+        "tenant_id": tenant_id,
+        "export_dir": str(export),
+        "cleared": True,
     }

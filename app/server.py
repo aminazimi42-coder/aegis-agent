@@ -541,12 +541,14 @@ class TwinTenantSwitchRequest(BaseModel):
 
 
 class TwinInboxToPdfRequest(BaseModel):
-    """Body for T218 — caged inbox image to local signed PDF.
+    """Body for T224 — caged inbox image to tenant-scoped local signed PDF.
 
     ``tenant_id`` identifies the caller.  ``image_relpath`` is a path
-    relative to ``AEGIS_DATA_DIR/inbox/`` (or an absolute path inside
-    that directory).  A path outside the data dir is a typed deny.
-    The PDF is local bytes only — no network fetch, no curl.
+    relative to ``AEGIS_DATA_DIR/{tenant_id}/`` (or an absolute path
+    inside that directory).  A path outside the tenant cage is a typed
+    ``OUTSIDE_CAGE`` deny.  A missing file is typed ``MISSING``.  An
+    unsupported image type is typed ``UNSUPPORTED``.  The PDF is local
+    bytes only — no network fetch, no curl.
     """
 
     tenant_id: str
@@ -2230,33 +2232,31 @@ def create_app() -> FastAPI:
                 content={"detail": exc.code},
             )
 
-    # --- T218 — Caged inbox image to local signed PDF --- #
+    # --- T224 — Caged inbox image to tenant-scoped local signed PDF ---
 
     @app.post("/api/v1/twin/inbox/to-pdf", tags=["twin"], status_code=200)
     def twin_inbox_to_pdf(request: TwinInboxToPdfRequest) -> Any:
         """Export a caged inbox image as a one-page signed local PDF.
 
-        The image must already sit under ``AEGIS_DATA_DIR/inbox/`` — no
-        network fetch.  A path outside the data dir is a typed deny.
-        The PDF is local bytes only with a detached ``.sig`` sibling.
-        Missing file typed ``INBOX_MISSING``.
+        The image must already sit under ``AEGIS_DATA_DIR/{tenant}/…`` —
+        no network fetch.  A path outside the tenant cage is a typed
+        ``OUTSIDE_CAGE`` deny.  A missing file is typed ``MISSING``.
+        An unsupported image type is typed ``UNSUPPORTED``.  The PDF is
+        local bytes only with a detached ``.sig`` sibling written under
+        ``AEGIS_DATA_DIR/{tenant}/export/``.
         """
-        from core.inbox_pdf import InboxMissingError, build_signed_inbox_pdf
-        from core.twin_local_view import PathDeniedError
+        from core.inbox_pdf import (
+            InboxMissingError,
+            OutsideCageError,
+            UnsupportedTypeError,
+            build_signed_inbox_pdf,
+        )
 
         try:
             return build_signed_inbox_pdf(
                 request.tenant_id, request.image_relpath
             )
-        except PathDeniedError as exc:
-            return JSONResponse(
-                status_code=400,
-                content={
-                    "detail": exc.code,
-                    "code": exc.code,
-                },
-            )
-        except InboxMissingError as exc:
+        except (OutsideCageError, InboxMissingError, UnsupportedTypeError) as exc:
             return JSONResponse(
                 status_code=400,
                 content={

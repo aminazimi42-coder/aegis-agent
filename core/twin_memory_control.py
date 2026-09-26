@@ -223,7 +223,12 @@ def forget_all(tenant_id: str) -> dict[str, Any]:
 
     _forget_session_pin(tenant_id)
 
-    # 5. Write the deletion receipt.
+    # 5. T224 — Drop the tenant's inbox PDF export directory.
+    from core.inbox_pdf import forget_tenant_export as _forget_tenant_export
+
+    _forget_tenant_export(tenant_id)
+
+    # 6. Write the deletion receipt.
     out_dir.mkdir(parents=True, exist_ok=True)
     receipt_path = out_dir / "deletion_receipt.md"
     now_utc = datetime.now(timezone.utc).isoformat()
