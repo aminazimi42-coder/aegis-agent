@@ -177,3 +177,4 @@ T207 Quiet mode until next Start Session; Training vs Live work flag on propose;
 T208 standing-order pin; tenant chip and typed switch; neighbor queues do not merge; T209 not started.
 T209 desk-slip markdown under export; git observe-only status and last five subjects under AEGIS_DATA_DIR/work; eight-slice pack closed.
 T209_FIX operator HTML JavaScript syntax in copy-redact onclick; both app.html copies parse; T210 not started.
+T210 README Now records one-week morning-night cold-start local use; not two-week; not a behavioral twin.
