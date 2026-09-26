@@ -1515,6 +1515,28 @@ def create_app() -> FastAPI:
             result["notify_status"] = sidecar_result.get("status", "")
         except Exception:
             result["notify_status"] = "sidecar_failed"
+        # T221 — optional Telegram sidecar after Approve only.
+        # Missing token → not_configured.  Network fail → typed
+        # TELEGRAM_SIDECAR_FAILED.  The approval and receipt stay valid.
+        # Execute and propose never call this — no telegram import there.
+        try:
+            from core.telegram_sidecar import notify_approved
+
+            digest_prefix = result.get("payload_sha256", "") or ""
+            tg_result = notify_approved(
+                request.tenant_id, action_id, digest_prefix
+            )
+            tg_status = tg_result.get("status", "")
+            if tg_status == "sent":
+                result["telegram_status"] = "sent"
+            elif tg_status == "not_configured":
+                result["telegram_status"] = "not_configured"
+            elif tg_status == "telegram_sidecar_failed":
+                result["telegram_status"] = "TELEGRAM_SIDECAR_FAILED"
+            else:
+                result["telegram_status"] = tg_status
+        except Exception:
+            result["telegram_status"] = "TELEGRAM_SIDECAR_FAILED"
         # T216 — chain_state from the local verify-chain for this tenant.
         chain_state = ""
         try:

@@ -98,6 +98,17 @@ _WEBHOOK_ASSIGN_RE = re.compile(
     r"\s*[:=]\s*[\"']?[A-Za-z0-9_\-]{8,}",
 )
 
+# T221 — Telegram bot token shape: ``<digits>:<token>`` (e.g.
+# ``1234567890:AAHxxx...``).  Redact the token value after the colon.
+_TG_BOT_TOKEN_RE = re.compile(
+    r"\b\d{6,12}:[A-Za-z0-9_-]{20,}\b",
+)
+
+# T221 — bare ``token=…`` / ``chat_id=…`` assignment shapes (no query-prefix).
+_TG_ASSIGN_RE = re.compile(
+    r"(?i)(?:token|chat_id)\s*[:=]\s*[\"']?[A-Za-z0-9_\-]{8,}",
+)
+
 _SECRET_SHAPES: tuple[re.Pattern[str], ...] = (
     _SK_RE,
     _GH_RE,
@@ -110,6 +121,8 @@ _SECRET_SHAPES: tuple[re.Pattern[str], ...] = (
     _WEBHOOK_SECRET_RE,
     _WHSEC_PREFIX_RE,
     _WEBHOOK_ASSIGN_RE,
+    _TG_BOT_TOKEN_RE,
+    _TG_ASSIGN_RE,
 )
 
 _REPLACEMENT = "[REDACTED]"

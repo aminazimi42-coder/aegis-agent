@@ -188,3 +188,4 @@ T217 quiet notify sidecar label under Engine; T218 not started.
 T218 caged inbox image to local signed PDF; T219 not started.
 T219 today digest and standing-order pin; T220 not started.
 T220 operator idle session lock AEGIS_SESSION_IDLE_SECONDS (default 900, min 60, max 86400); lockout after 5 wrong PINs for 5 minutes; Keychain service aegis-operator-session account {tenant_id}; forget_all drops lock material; no biometrics.
+T221 optional Telegram sidecar after Approve only; Keychain service aegis-operator-telegram; AEGIS_TELEGRAM_BOT_TOKEN env optional; missing token → not_configured; network fail → TELEGRAM_SIDECAR_FAILED; execute/propose never import telegram; no claim Aegis is a messenger.
