@@ -1475,6 +1475,25 @@ def create_app() -> FastAPI:
             )
         except Exception:
             pass
+        # T216 — chain_state from the local verify-chain for this tenant.
+        # Reuses the T189 verify-chain logic: finds the latest executed
+        # receipt and reports Intact or Tampered.  No third label.
+        chain_state = ""
+        try:
+            from core.twin_actions import list_actions, verify_chain
+
+            actions = list_actions(request.tenant_id)
+            executed = [a for a in actions if a.get("status") == "executed"]
+            if executed:
+                latest_action = max(
+                    executed, key=lambda a: a.get("created_at", "")
+                )
+                chain_state = verify_chain(
+                    request.tenant_id, latest_action["action_id"]
+                )
+        except Exception:
+            pass
+        result["chain_state"] = chain_state
         return result
 
     @app.post(

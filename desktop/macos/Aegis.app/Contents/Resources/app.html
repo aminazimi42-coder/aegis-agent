@@ -880,20 +880,26 @@
   }
 
   // T137 — render one approved row in the Approved strip.
-  // T202 — each Approved card shows a short digest prefix and Intact or
-  // Tampered or Missing from the local verify-chain helper.
+  // T202/T216 — each Approved card shows a short digest prefix and
+  // chain Intact or Tampered from the local verify-chain helper.  No
+  // third label (Missing is not shown).
   function renderApprovedRow(a) {
     var agent = a.agent || "";
     var title = a.title || a.action_id || "";
     var digestPrefix = a.digest_prefix || "";
     var approvedAt = a.approved_at || "";
-    // T202 — verify status from the local receipt chain.
-    var verifyStatus = a.verify_status || "Missing";
+    // T216 — chain state from the local receipt chain (Intact/Tampered only).
+    var chainState = a.chain_state || a.verify_status || "";
+    var chainLine = "";
+    if (chainState === "Intact" || chainState === "Tampered") {
+      chainLine = ' · chain: ' + esc(chainState);
+    }
     var html = '<div class="queue-item">'
       + '<div class="queue-title">' + esc(title) + '</div>'
       + '<div class="queue-meta">' + esc(agent) + ' · approved · ' + esc(a.kind || "") + ' · ' + esc(a.action_id || "") + '</div>'
-      + '<div class="queue-meta">digest: <code>' + esc(digestPrefix) + '</code> · approved: ' + esc(approvedAt) + '</div>'
-      + '<div class="queue-meta">verify: ' + esc(verifyStatus) + '</div>'
+      + '<div class="queue-meta">digest: <code>' + esc(digestPrefix) + '</code> · approved: ' + esc(approvedAt) + chainLine + '</div>'
+      + '<div class="row"><button class="btn-copy-redact" onclick="copyRedactCard(\'' + esc(a.action_id || "") + '\')">Copy redact</button>'
+      + '<span class="muted" id="copy-redact-label-' + esc(a.action_id || "") + '"></span></div>'
       + '</div>';
     return html;
   }
