@@ -1,26 +1,36 @@
-T227 — stranger install without terminal
-This is instruction 5 of 5. After 100% pass stop. Do not start T228. Do not start live Stripe keys. Do not touch Author, LICENSE, notarize claim.
+T229 — purchase receipt chained to one Approve. No card in core.
+This is instruction 2 of 5. After 100% pass the owner says put instruction 3 of 5. Do not start T230. Do not start live shop. Do not start Microsoft. Do not write Microsoft, Partner Center, or partnership into README, STATUS, RELEASES, or operator UI.
 
-GOAL
-A stranger Mac user can start the local operator without opening Terminal, VS Code, Hermes, or git. Double-click path only. Data stays in that account $HOME/.aegis. Script still must not open Safari.
+Goal
+A local purchase receipt can be stored and later cited by one Approve on the same tenant. The receipt does not unlock execute. Expiry and cancel stay Echo-limited from T228. No card form. No Stripe in core. No seventh agent.
 
-IN SCOPE
-1. Reuse T149/T172 Install.command + Aegis Operator.app at pack root. Do not invent a second installer brand.
-2. Double-click Install.command or the .app starts the engine with AEGIS_DATA_DIR=$HOME/.aegis port 8741. If python3.11 missing, typed message names the official 3.11.9 macos11.pkg URL only. Do not auto-download.
-3. No repo, no .git, no Hermes, no VS Code required on the stranger account. Pack must not copy builder .aegis PII.
-4. Tests tests/test_t227_stranger_install.py:
-   - pack root has Install.command and app or documented wrapper
-   - start path sets AEGIS_DATA_DIR to operator home not repo
-   - missing python typed miss (not crash)
-   - script does not contain open -a Safari
-   - no stripe token in core/
-   - README Now one bullet only if tests prove double-click path exists; do not claim notarized
-5. STATUS one honest line. Both app.html copies stay byte-sync if touched.
+Locks
+- Six specialists only: Alina, Kian, Bita, Aylin, Ahmad, Amin. No seventh agent.
+- Approve before execute. No auto-execute.
+- Echo default. Missing, expired, or cancelled entitlement stays Echo-limited.
+- Stripe, checkout, and card stay outside execute. core/ must not gain a stripe token.
+- Author block and LICENSE untouched.
+- Do not open Safari. start_operator.sh remains the only operator start.
+- Do not write notarized. Do not write a shipped-payment claim.
+- Local data stays under AEGIS_DATA_DIR. No cloud receipt store.
+- Neighbor tenant must not read this receipt.
 
-OUT OF SCOPE
-Live Apple notarize rewrite, live Stripe keys, amin double-click on this slice (owner laptop after pack), seventh agent, Touch ID rewrite.
+Build
+1. Add a local purchase-receipt record outside the execute path. Fields: tenant_id, receipt_id, issued_at, plan_label, status (paid_local or void), sha256 of the canonical receipt bytes. Store under AEGIS_DATA_DIR. Do not call a card network.
+2. On Approve for that same tenant, attach the receipt_id to the approval note or receipt chain as a citation only. A missing receipt must not block Approve. A present receipt must not flip status to executed.
+3. Cross-tenant read of the receipt returns empty or typed deny. Void receipt stays void. Expiry and cancel still return Echo-limited and do not clear the local receipt file by themselves.
+4. Tests: same-tenant Approve cites receipt_id; other tenant cannot read it; missing receipt still allows Approve; receipt does not execute; core has no stripe token; Echo-limited still holds after cancel or expiry.
+5. Update STATUS or RELEASES with one honest line: local purchase receipt can be cited by Approve; not a live shop; not a card form. README only if a proof sentence already exists. No Microsoft. No revenue claim.
 
-PROOF
-Print HEAD, pytest -q (0 failed), booleans:
-pack_root_install, data_dir_home, missing_python_typed, no_safari_open, no_stripe_in_core, readme_not_notarized
-Commit and push origin main. Stop. Do not start T228.
+Out of scope
+Live shop keys. Card form. Webhook that unlocks execute. App update. Fourteen-day eval pack. T230. Microsoft.
+
+Verify
+ruff check.
+pytest -q. Zero failed.
+Proof: same-tenant cite True; cross-tenant deny True; no execute from receipt True; no stripe in core True.
+git add -A
+git commit -m "feat(t229): local purchase receipt cited by approve"
+git push origin main
+Print the new SHA and pytest summary.
+Stop. Do not start T230.

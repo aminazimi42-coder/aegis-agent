@@ -559,6 +559,23 @@ def approve(
                     )
                 except Exception:
                     pass
+            # T229 — cite a local purchase receipt on the approval note
+            # when one exists for this tenant.  The receipt is a citation
+            # only: it does not unlock execute, does not flip status, and
+            # does not block Approve when missing.  A void receipt stays
+            # void.  Cross-tenant read returns a typed deny so a neighbour
+            # tenant cannot read this receipt.
+            try:
+                from core.purchase_receipt import read_purchase_receipt
+
+                receipt = read_purchase_receipt(action_dict["tenant_id"])
+                if receipt.get("found") and receipt.get("receipt_id"):
+                    action_dict["purchase_receipt_id"] = receipt["receipt_id"]
+                    action_dict["purchase_receipt_status"] = receipt.get(
+                        "status", ""
+                    )
+            except Exception:
+                pass
             # T193 — write a local session receipt after a successful approve.
             try:
                 from core.session_receipt import write_session_receipt
