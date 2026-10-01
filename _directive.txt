@@ -1,8 +1,8 @@
-T229 — purchase receipt chained to one Approve. No card in core.
-This is instruction 2 of 5. After 100% pass the owner says put instruction 3 of 5. Do not start T230. Do not start live shop. Do not start Microsoft. Do not write Microsoft, Partner Center, or partnership into README, STATUS, RELEASES, or operator UI.
+T230 — app update leaves $HOME/.aegis untouched.
+This is instruction 3 of 5. After 100% pass the owner says put instruction 4 of 5. Do not start T231. Do not start live shop. Do not start Microsoft. Do not write Microsoft, Partner Center, or partnership into README, STATUS, RELEASES, or operator UI.
 
 Goal
-A local purchase receipt can be stored and later cited by one Approve on the same tenant. The receipt does not unlock execute. Expiry and cancel stay Echo-limited from T228. No card form. No Stripe in core. No seventh agent.
+An operator-pack update can replace the local app files and must not delete, move, or rewrite the operator data directory. Profile, actions, receipts, and export files under AEGIS_DATA_DIR stay byte-stable across the update. No card. No seventh agent.
 
 Locks
 - Six specialists only: Alina, Kian, Bita, Aylin, Ahmad, Amin. No seventh agent.
@@ -11,26 +11,26 @@ Locks
 - Stripe, checkout, and card stay outside execute. core/ must not gain a stripe token.
 - Author block and LICENSE untouched.
 - Do not open Safari. start_operator.sh remains the only operator start.
-- Do not write notarized. Do not write a shipped-payment claim.
-- Local data stays under AEGIS_DATA_DIR. No cloud receipt store.
-- Neighbor tenant must not read this receipt.
+- Do not write notarized. Do not write a shipped-update claim that a store already pushes updates.
+- Local data stays under AEGIS_DATA_DIR. Update code must not set AEGIS_DATA_DIR to the pack folder.
+- Neighbor tenant data must not be read or deleted.
 
 Build
-1. Add a local purchase-receipt record outside the execute path. Fields: tenant_id, receipt_id, issued_at, plan_label, status (paid_local or void), sha256 of the canonical receipt bytes. Store under AEGIS_DATA_DIR. Do not call a card network.
-2. On Approve for that same tenant, attach the receipt_id to the approval note or receipt chain as a citation only. A missing receipt must not block Approve. A present receipt must not flip status to executed.
-3. Cross-tenant read of the receipt returns empty or typed deny. Void receipt stays void. Expiry and cancel still return Echo-limited and do not clear the local receipt file by themselves.
-4. Tests: same-tenant Approve cites receipt_id; other tenant cannot read it; missing receipt still allows Approve; receipt does not execute; core has no stripe token; Echo-limited still holds after cancel or expiry.
-5. Update STATUS or RELEASES with one honest line: local purchase receipt can be cited by Approve; not a live shop; not a card form. README only if a proof sentence already exists. No Microsoft. No revenue claim.
+1. Add a local update step that copies or replaces only the operator pack files (app code, start script, version marker). It must refuse to run if the target path is inside AEGIS_DATA_DIR.
+2. Before replace, record a fingerprint of the data dir (profile file size or sha256, receipt count). After replace, the same fingerprint must match. A mismatch is a typed fail and must not continue.
+3. The update must not delete export/, receipts/, or purchase_receipts/. It must not clear entitlement.json. It must not open a network call.
+4. Tests: data fingerprint unchanged after update; path inside AEGIS_DATA_DIR is typed deny; entitlement file still present; no stripe token in core; Echo-limited still holds; start_operator.sh still the only start path.
+5. Update STATUS or RELEASES with one honest line: local pack update leaves AEGIS_DATA_DIR untouched; not a live store update; not notarized. README only if a proof sentence already exists. No Microsoft. No revenue claim.
 
 Out of scope
-Live shop keys. Card form. Webhook that unlocks execute. App update. Fourteen-day eval pack. T230. Microsoft.
+Live shop keys. Card form. Telegram send. Fourteen-day eval pack. T231. Microsoft. Auto-update from the internet.
 
 Verify
 ruff check.
 pytest -q. Zero failed.
-Proof: same-tenant cite True; cross-tenant deny True; no execute from receipt True; no stripe in core True.
+Proof: data fingerprint unchanged True; inside-data-dir deny True; entitlement kept True; no stripe in core True.
 git add -A
-git commit -m "feat(t229): local purchase receipt cited by approve"
+git commit -m "feat(t230): pack update leaves data dir untouched"
 git push origin main
 Print the new SHA and pytest summary.
-Stop. Do not start T230.
+Stop. Do not start T231.
