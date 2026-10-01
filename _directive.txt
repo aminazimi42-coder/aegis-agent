@@ -1,8 +1,8 @@
-T230 — app update leaves $HOME/.aegis untouched.
-This is instruction 3 of 5. After 100% pass the owner says put instruction 4 of 5. Do not start T231. Do not start live shop. Do not start Microsoft. Do not write Microsoft, Partner Center, or partnership into README, STATUS, RELEASES, or operator UI.
+T231 — fourteen-day local eval pack, no repo inside the pack.
+This is instruction 4 of 5. After 100% pass the owner says put instruction 5 of 5. Do not start T232. Do not start live shop. Do not start Microsoft. Do not write Microsoft, Partner Center, or partnership into README, STATUS, RELEASES, or operator UI.
 
 Goal
-An operator-pack update can replace the local app files and must not delete, move, or rewrite the operator data directory. Profile, actions, receipts, and export files under AEGIS_DATA_DIR stay byte-stable across the update. No card. No seventh agent.
+A local eval pack can be marked as a fourteen-day trial. The pack contains the operator app files only. It must not contain .git, the owner .aegis data, or a Hermes directive. When the local trial window is past, entitlement returns Echo-limited. The data directory is not deleted.
 
 Locks
 - Six specialists only: Alina, Kian, Bita, Aylin, Ahmad, Amin. No seventh agent.
@@ -11,26 +11,26 @@ Locks
 - Stripe, checkout, and card stay outside execute. core/ must not gain a stripe token.
 - Author block and LICENSE untouched.
 - Do not open Safari. start_operator.sh remains the only operator start.
-- Do not write notarized. Do not write a shipped-update claim that a store already pushes updates.
-- Local data stays under AEGIS_DATA_DIR. Update code must not set AEGIS_DATA_DIR to the pack folder.
-- Neighbor tenant data must not be read or deleted.
+- Do not write notarized. Do not write that a buyer already received this pack.
+- Local data stays under AEGIS_DATA_DIR. Eval expiry must not purge it.
+- Neighbor tenant must not see this eval marker.
 
 Build
-1. Add a local update step that copies or replaces only the operator pack files (app code, start script, version marker). It must refuse to run if the target path is inside AEGIS_DATA_DIR.
-2. Before replace, record a fingerprint of the data dir (profile file size or sha256, receipt count). After replace, the same fingerprint must match. A mismatch is a typed fail and must not continue.
-3. The update must not delete export/, receipts/, or purchase_receipts/. It must not clear entitlement.json. It must not open a network call.
-4. Tests: data fingerprint unchanged after update; path inside AEGIS_DATA_DIR is typed deny; entitlement file still present; no stripe token in core; Echo-limited still holds; start_operator.sh still the only start path.
-5. Update STATUS or RELEASES with one honest line: local pack update leaves AEGIS_DATA_DIR untouched; not a live store update; not notarized. README only if a proof sentence already exists. No Microsoft. No revenue claim.
+1. Add a local eval marker outside execute. Fields: tenant_id, started_at, ends_at, status (active or expired). Store under AEGIS_DATA_DIR. ends_at is started_at plus fourteen days. No network call.
+2. A pack manifest lists operator files only. Tests must show .git, _directive.txt, and any path under the owner .aegis data dir are excluded.
+3. When now is after ends_at, the page or entitlement read returns Echo-limited. The marker file stays. Profile, receipts, and export stay. A missing marker stays the existing missing-file Echo-limited path, not a crash.
+4. Tests: manifest excludes repo and data dir; active window is not expired; past window is Echo-limited; data dir still present after expiry; cross-tenant cannot read the marker; no stripe token in core.
+5. Update STATUS or RELEASES with one honest line: local fourteen-day eval marker; pack excludes repo; expiry is Echo-limited and does not delete data. README only if a proof sentence already exists. No Microsoft. No revenue claim.
 
 Out of scope
-Live shop keys. Card form. Telegram send. Fourteen-day eval pack. T231. Microsoft. Auto-update from the internet.
+Live shop keys. Card form. Telegram send. Auto-update from the internet. T232. Microsoft. Sending the pack to a person.
 
 Verify
 ruff check.
 pytest -q. Zero failed.
-Proof: data fingerprint unchanged True; inside-data-dir deny True; entitlement kept True; no stripe in core True.
+Proof: manifest excludes repo True; expired is Echo-limited True; data dir kept True; no stripe in core True.
 git add -A
-git commit -m "feat(t230): pack update leaves data dir untouched"
+git commit -m "feat(t231): fourteen-day eval pack excludes repo"
 git push origin main
 Print the new SHA and pytest summary.
-Stop. Do not start T231.
+Stop. Do not start T232.
