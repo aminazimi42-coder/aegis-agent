@@ -166,6 +166,33 @@ def recent(
     ]
 
 
+def hours_saved(tenant_id: str) -> dict[str, Any]:
+    """Return hours saved from the local decision ledger for *tenant_id*.
+
+    The number is a count of approved local decisions in the ledger
+    window (TTL), times a fixed local weight of fifteen minutes, shown
+    as a number of hours.  It is labeled ``local ledger count`` — it is
+    not a behavioral twin and not a multi-month claim.  A neighbor
+    tenant always returns zero; a missing ledger returns zero, not an
+    error.  The number must not unlock execute and must not change
+    entitlement.
+    """
+    _MINUTES_PER_DECISION = 15
+    try:
+        rows = recent(tenant_id)
+    except Exception:
+        rows = []
+    approved = [r for r in rows if r.get("decision") == "approve"]
+    count = len(approved)
+    hours = round(count * _MINUTES_PER_DECISION / 60, 2)
+    return {
+        "tenant_id": tenant_id,
+        "hours_saved": hours,
+        "label": "local ledger count",
+        "approved_count": count,
+    }
+
+
 def forget(tenant_id: str) -> int:
     """Delete all decision rows for *tenant_id*; neighbor rows stay.
 

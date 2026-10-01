@@ -1682,10 +1682,16 @@ def create_app() -> FastAPI:
         Unauthenticated public demo does not dump the ledger; the data
         stays local under ``AEGIS_DATA_DIR``.
         """
+        from core.decision_ledger import hours_saved as _ledger_hours
         from core.decision_ledger import list as _ledger_list
 
         rows = _ledger_list(tenant_id)
-        return {"tenant_id": tenant_id, "rows": rows, "count": len(rows)}
+        return {
+            "tenant_id": tenant_id,
+            "rows": rows,
+            "count": len(rows),
+            "hours_saved": _ledger_hours(tenant_id),
+        }
 
     # T175 — verify receipt chain for one action_id.
     @app.get(
