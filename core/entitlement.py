@@ -96,14 +96,40 @@ def _signature_valid(data: dict[str, Any]) -> bool:
     return sig == expected
 
 
+def _sig_field_valid(data: dict[str, Any]) -> bool:
+    """Return True when the ``sig`` field matches the canonical body.
+
+    T228 — when the local file carries a ``sig`` field (a short
+    signature distinct from ``signature_sha256``), verify it with the
+    same local verify path: HMAC-SHA256 when ``issuer="local-cli"``,
+    plain SHA-256 otherwise.  A broken or missing sig returns False
+    (typed ``entitlement_sig_invalid`` by the caller).
+    """
+    sig = data.get("sig")
+    if not isinstance(sig, str) or not sig:
+        return False
+    body = _canonical_body(data)
+    issuer = data.get("issuer")
+    if isinstance(issuer, str) and issuer == "local-cli":
+        key = os.getenv(_ISSUER_KEY_ENV, "")
+        if not key:
+            return False
+        expected = hmac.new(
+            key.encode("utf-8"), body.encode("utf-8"), hashlib.sha256
+        ).hexdigest()
+        return hmac.compare_digest(sig, expected)
+    expected = hashlib.sha256(body.encode("utf-8")).hexdigest()
+    return sig == expected
+
+
 def load(tenant_id: str | None = None) -> dict[str, Any]:
     """Load the local entitlement file and return a tier dict.
 
     When *tenant_id* is provided, the file's ``tenant_id`` field must
     match it; otherwise the tier degrades to ``echo`` with a typed
     ``reason``.  Returns ``{"tier": "echo", "reason": ...}`` when the
-    file is missing, expired, malformed, signature-invalid, or
-    tenant-mismatched.  Never calls a network host.
+    file is missing, expired, cancelled, malformed, signature-invalid,
+    or tenant-mismatched.  Never calls a network host.
     """
     path = _entitlement_path()
     if not path.is_file():
@@ -120,7 +146,23 @@ def load(tenant_id: str | None = None) -> dict[str, Any]:
         return {"tier": ECHO_TIER, "reason": "invalid_tier"}
     if _is_expired(data.get("expires_at")):
         return {"tier": ECHO_TIER, "reason": "expired"}
-    if not _signature_valid(data):
+    # T228 — cancelled entitlement.  When the file carries
+    # ``status: "cancelled"`` the tier degrades to Echo with a typed
+    # ``reason="cancelled"``.  Cancel and expiry are the same product
+    # outcome: page banner Echo-limited + reason.  Approve and propose
+    # still work as Echo.
+    file_status = data.get("status")
+    if isinstance(file_status, str) and file_status == "cancelled":
+        return {"tier": ECHO_TIER, "reason": "cancelled"}
+    # T228 — optional ``sig`` field.  When the local file carries a
+    # ``sig`` field (short signature), verify it with the same local
+    # verify path used for ``signature_sha256``.  A broken or missing
+    # sig is typed ``entitlement_sig_invalid`` and Echo-limited.  No
+    # lock of Echo propose.
+    if "sig" in data:
+        if not _sig_field_valid(data):
+            return {"tier": ECHO_TIER, "reason": "entitlement_sig_invalid"}
+    elif not _signature_valid(data):
         return {"tier": ECHO_TIER, "reason": "signature_mismatch"}
     if tenant_id is not None:
         file_tenant = data.get("tenant_id")

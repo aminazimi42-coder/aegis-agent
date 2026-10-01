@@ -516,7 +516,7 @@
     // (missing_file or expired), show it inside the offline banner.
     var br = el("banner-reason");
     if (br) {
-      if (bannerReasonToken === "missing_file" || bannerReasonToken === "expired") {
+      if (bannerReasonToken === "missing_file" || bannerReasonToken === "expired" || bannerReasonToken === "cancelled") {
         br.textContent = "Echo-limited (" + bannerReasonToken + ")";
         br.style.display = "block";
       } else {
@@ -1330,7 +1330,7 @@
         ln.textContent = "Echo-limited " + reason + lcLabel;
         ln.className = "muted";
         // T162 — store the reason token for the offline banner.
-        if (reason === "missing_file" || reason === "expired") {
+        if (reason === "missing_file" || reason === "expired" || reason === "cancelled") {
           bannerReasonToken = reason;
         } else {
           bannerReasonToken = null;
