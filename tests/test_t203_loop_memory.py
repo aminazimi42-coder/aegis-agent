@@ -208,8 +208,10 @@ class TestT203LoopMemory(unittest.TestCase):
     # ------------------------------------------------------------------ #
 
     def test_session_id_restores_after_restart(self) -> None:
-        """After a propose writes a receipt, Start Session returns the
-        prior session id."""
+        """After a start session writes a receipt with a real twin- session
+        id, a subsequent Start Session restores that session id.  T234
+        changed the restore path: a receipt from the propose route alone
+        (no session id) does not restore the tenant id as the session id."""
         from app.server import create_app
         from fastapi.testclient import TestClient
 
@@ -217,7 +219,17 @@ class TestT203LoopMemory(unittest.TestCase):
         self._full_interview(tenant)
 
         client = TestClient(create_app())
-        # Propose to write a session receipt.
+        # Start a session via the route — this writes a receipt with a
+        # real twin- session id.
+        resp0 = client.post(
+            "/api/v1/twin/session/start",
+            json={"tenant_id": tenant},
+        )
+        self.assertEqual(resp0.status_code, 200)
+        started_sid = resp0.json()["session_id"]
+        self.assertTrue(started_sid.startswith("twin-"))
+
+        # Propose to update the receipt — the session id is preserved.
         resp = client.post(
             "/api/v1/twin/propose",
             json={"tenant_id": tenant, "text": "restore me task"},
@@ -248,7 +260,8 @@ class TestT203LoopMemory(unittest.TestCase):
 
     def test_last_task_restores_after_restart(self) -> None:
         """The last task string restores from the local receipt after an
-        engine sleep."""
+        engine sleep.  T234 — the receipt must have a real twin- session
+        id (from a prior start session) for the last_task to restore."""
         from app.server import create_app
         from fastapi.testclient import TestClient
 
@@ -256,6 +269,13 @@ class TestT203LoopMemory(unittest.TestCase):
         self._full_interview(tenant)
 
         client = TestClient(create_app())
+        # Start a session via the route — this writes a receipt with a
+        # real twin- session id.
+        resp0 = client.post(
+            "/api/v1/twin/session/start",
+            json={"tenant_id": tenant},
+        )
+        self.assertEqual(resp0.status_code, 200)
         task_text = "the last task text for restore"
         resp = client.post(
             "/api/v1/twin/propose",

@@ -1113,7 +1113,13 @@ def create_app() -> FastAPI:
         from core.session_receipt import read_session_receipt
 
         prior = read_session_receipt(request.tenant_id)
-        if prior is not None and prior.get("session_id"):
+        # T234 — only restore a real twin- session id from the receipt, never
+        # the tenant id.  A receipt written from the propose route stores
+        # ``None`` for session_id; restoring the tenant id would send it as
+        # the session id on the next Commit Profile, which the engine
+        # rejects as ``unknown session: <tenant>``.
+        prior_sid = prior.get("session_id") if prior else None
+        if prior_sid and str(prior_sid).startswith("twin-") and prior is not None:
             # T207 — the next Start Session for this tenant turns Quiet
             # off and writes the change locally.  Refresh alone does not
             # clear Quiet.
@@ -1121,7 +1127,7 @@ def create_app() -> FastAPI:
 
             write_session_receipt(
                 request.tenant_id,
-                session_id=prior.get("session_id"),
+                session_id=prior_sid,
                 last_event=prior.get("last_event", "start"),
                 last_action_id=prior.get("last_action_id", ""),
                 last_reject_reason=prior.get("last_reject_reason", ""),
@@ -1129,7 +1135,7 @@ def create_app() -> FastAPI:
                 quiet_mode=False,
             )
             return {
-                "session_id": prior["session_id"],
+                "session_id": prior_sid,
                 "tenant_id": request.tenant_id,
                 "last_task": prior.get("last_task", ""),
                 "restored": True,

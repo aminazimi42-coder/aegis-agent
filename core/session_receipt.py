@@ -62,29 +62,42 @@ def write_session_receipt(
     from core.twin_local_view import cage_path, data_root
 
     root = data_root()
-    sid = session_id or tenant_id
+    # T234 — the receipt file is always named after the tenant id so that
+    # the propose route (which has no session id) and the start route
+    # (which has a real twin- session id) write to the same file.  The
+    # stored ``session_id`` field is never the tenant id — when the
+    # caller passes ``None`` the existing session_id is preserved, and a
+    # receipt with no prior session_id stores ``None``.
     receipts_dir = root / "receipts"
     receipts_dir = cage_path(receipts_dir)
     receipts_dir.mkdir(parents=True, exist_ok=True)
 
-    receipt_path = receipts_dir / f"session_{sid}.json"
+    receipt_path = receipts_dir / f"session_{tenant_id}.json"
     receipt_path = cage_path(receipt_path)
 
     # T207 — preserve the existing quiet_mode when the caller does not
     # pass an explicit value (refresh alone does not clear Quiet).
     existing_quiet = False
+    existing_session_id: str | None = None
     if receipt_path.is_file():
         try:
             prev = json.loads(receipt_path.read_text(encoding="utf-8"))
-            if isinstance(prev, dict) and isinstance(prev.get("quiet_mode"), bool):
-                existing_quiet = prev["quiet_mode"]
+            if isinstance(prev, dict):
+                if isinstance(prev.get("quiet_mode"), bool):
+                    existing_quiet = prev["quiet_mode"]
+                _prev_sid = prev.get("session_id")
+                if isinstance(_prev_sid, str) and _prev_sid:
+                    existing_session_id = _prev_sid
         except (OSError, ValueError, TypeError):
             pass
     effective_quiet = existing_quiet if quiet_mode is None else quiet_mode
+    # T234 — preserve the existing session_id when the caller passes None;
+    # never fall back to the tenant id.
+    stored_session_id = session_id if session_id is not None else existing_session_id
 
     receipt: dict[str, Any] = {
         "tenant_id": tenant_id,
-        "session_id": sid,
+        "session_id": stored_session_id,
         "last_event": last_event,
         "last_action_id": last_action_id,
         "last_reject_reason": last_reject_reason,

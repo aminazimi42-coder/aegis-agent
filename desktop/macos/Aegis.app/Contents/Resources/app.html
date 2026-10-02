@@ -713,7 +713,13 @@
   }
 
   window.commitInterview = function () {
-    if (!session) { el("commit-label").textContent = "Start a session first"; return; }
+    // T234 — Commit Profile must post the started session id, not the
+    // tenant id.  If no real twin- session id is stored, return a typed
+    // error and do not call answer or commit with the tenant id.
+    if (!session || String(session).indexOf("twin-") !== 0) {
+      el("commit-label").textContent = "Start a session first";
+      return;
+    }
     // Map the four operator-page fields onto the store's question IDs.
     var name = (el("q-name") && el("q-name").value) || "";
     var role = (el("q-role") && el("q-role").value) || "";
