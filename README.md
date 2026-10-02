@@ -144,6 +144,12 @@ A local digital-twin operator — not a store installer, not a cloud brain. Toda
 
 ---
 
+## Project test home
+
+The folder [`خانه-تست-پروژه`](خانه-تست-پروژه) holds finished local proofs from closed loops on this machine. This README is a pointer only; it does not paste the proof bodies. It is not a completion claim, not a sale claim, and not a messenger claim.
+
+---
+
 ## Destination — Planned
 
 The road ahead, not yet shipped:

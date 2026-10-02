@@ -1,36 +1,30 @@
-T231 — fourteen-day local eval pack, no repo inside the pack.
-This is instruction 4 of 5. After 100% pass the owner says put instruction 5 of 5. Do not start T232. Do not start live shop. Do not start Microsoft. Do not write Microsoft, Partner Center, or partnership into README, STATUS, RELEASES, or operator UI.
+T233 — project test home, README pointer only
+This is the owner-named layer after T232 and the 2026-10-02 Telegram sidecar trial. Do not start T234. Do not touch Stripe, shop, live keys, notarize scripts, Author, LICENSE, operator HTML, or start_operator.sh.
 
-Goal
-A local eval pack can be marked as a fourteen-day trial. The pack contains the operator app files only. It must not contain .git, the owner .aegis data, or a Hermes directive. When the local trial window is past, entitlement returns Echo-limited. The data directory is not deleted.
+GOAL
+Keep README uncluttered. Add one short pointer box and a folder of proof files for tests that already passed. No new product behavior. No new agent.
 
-Locks
-- Six specialists only: Alina, Kian, Bita, Aylin, Ahmad, Amin. No seventh agent.
-- Approve before execute. No auto-execute.
-- Echo default. Missing, expired, or cancelled entitlement stays Echo-limited.
-- Stripe, checkout, and card stay outside execute. core/ must not gain a stripe token.
-- Author block and LICENSE untouched.
-- Do not open Safari. start_operator.sh remains the only operator start.
-- Do not write notarized. Do not write that a buyer already received this pack.
-- Local data stays under AEGIS_DATA_DIR. Eval expiry must not purge it.
-- Neighbor tenant must not see this eval marker.
+IN SCOPE
+1. Create folder خانه-تست-پروژه at the repo root. Display name in the folder index is «خانه تست پروژه». No spaces in the directory name.
+2. Folder index README inside that folder, about fifty English words: this folder is the project test home; each file is one finished proof; README stays a pointer only; not a completion claim; not a second-week or behavioral-twin claim.
+3. Proof files, facts only, no token, no chat secret beyond the already observed chat id, no Microsoft, no Partner Center, no Mohammadreza, no unknown-session bug:
+   - WEEKLY_COLD_START.md — one week, morning and night, cold start, hermesdev, 2026-09-16 through 2026-09-24, fourteen sessions. Not two weeks. Not a behavioral twin.
+   - TELEGRAM_SIDECAR.md — 2026-10-02, bot @AegisLocalNoticeBot, chat id 8064095778, outside execute. Propose sent nothing. Approve Alina act-e9abbe8b54ae digest prefix ba7bcb35aa48 sent one notice at 04:49. Reject Kian Bita Aylin Ahmad Amin sent nothing. Latest empty. Archive leftovers stayed. Reveal in Finder showed the brief and sibling .sig. Ctrl+C shutdown complete. Not auto-send. Not in core.
+   - NOTARIZE.md — 2026-09-26, profile AEGIS_NOTARY, Team 3J54UZPZW3, submission 7fde5e42-aad5-4964-992b-f1987149f834 Accepted, stapler validate worked for Aegis Operator.app. Not an App Store claim. Not a paid-shop claim.
+   - AMIN_STRANGER.md — separate Mac account amin, pack under that account home, data /Users/amin/.aegis, port 8741, script did not open Safari. Sara Novak profile. Isolated from hermesdev. Last closed loop 2026-09-27, Approve Alina act-89fdc25ca6d6.
+   - RICARDO_STRANGER.md — separate Mac, pack $HOME/aegis-local-operator, data /Users/ricardo/.aegis, port 8741. Day-1 2026-09-24 Approve Alina act-ddbc7f12eaf0. Day-2 2026-09-26 Approve Alina only, reject the other five, export UI correct. Do not chase.
+4. Root README: one box only, about fifty English words, titled Project test home, linking to خانه-تست-پروژه. Say the folder holds finished local proofs. Do not paste the proof bodies into README. Do not say the product is complete, notarized-for-sale, or a messenger.
+5. STATUS: one honest line that the test-home folder exists and README is a pointer. No new feature claim.
+6. One test tests/test_t233_test_home.py: folder exists; index exists; README contains the pointer and does not contain the proof bodies; forbidden strings absent from the new folder and the new README box: stripe, microsoft, partner center, token, seventh agent. Author and LICENSE bytes unchanged.
+7. Do not edit operator HTML. Do not edit start_operator.sh. Do not open Safari. Echo stays default.
 
-Build
-1. Add a local eval marker outside execute. Fields: tenant_id, started_at, ends_at, status (active or expired). Store under AEGIS_DATA_DIR. ends_at is started_at plus fourteen days. No network call.
-2. A pack manifest lists operator files only. Tests must show .git, _directive.txt, and any path under the owner .aegis data dir are excluded.
-3. When now is after ends_at, the page or entitlement read returns Echo-limited. The marker file stays. Profile, receipts, and export stay. A missing marker stays the existing missing-file Echo-limited path, not a crash.
-4. Tests: manifest excludes repo and data dir; active window is not expired; past window is Echo-limited; data dir still present after expiry; cross-tenant cannot read the marker; no stripe token in core.
-5. Update STATUS or RELEASES with one honest line: local fourteen-day eval marker; pack excludes repo; expiry is Echo-limited and does not delete data. README only if a proof sentence already exists. No Microsoft. No revenue claim.
+OUT OF SCOPE
+SMTP live trial, Touch ID live trial, live shop keys, Ricardo zip, Mohammadreza invite, Commit Profile unknown-session fix, new agent, Stripe in core, auto-exec, App Store claim.
 
-Out of scope
-Live shop keys. Card form. Telegram send. Auto-update from the internet. T232. Microsoft. Sending the pack to a person.
-
-Verify
-ruff check.
-pytest -q. Zero failed.
-Proof: manifest excludes repo True; expired is Echo-limited True; data dir kept True; no stripe in core True.
-git add -A
-git commit -m "feat(t231): fourteen-day eval pack excludes repo"
-git push origin main
-Print the new SHA and pytest summary.
-Stop. Do not start T232.
+PROOF
+Print:
+- git rev-parse HEAD
+- pytest -q (0 failed)
+- four booleans: folder_exists, readme_pointer_only, author_untouched, forbidden_absent
+Commit and push origin main. Stop.
+Do not start T234.
