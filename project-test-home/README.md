@@ -1,4 +1,4 @@
-# خانه تست پروژه
+# Project test home
 
 This folder is the project test home. Each file inside is one finished local
 proof from a closed loop on this machine. The root README is a pointer only.

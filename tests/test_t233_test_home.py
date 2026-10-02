@@ -2,7 +2,7 @@
 
 Covers:
 
-* ``test_folder_exists`` — the ``خانه-تست-پروژه`` folder exists at repo root.
+* ``test_folder_exists`` — the ``project-test-home`` folder exists at repo root.
 * ``test_index_exists`` — the folder index README exists.
 * ``test_readme_contains_pointer`` — the root README contains the pointer box.
 * ``test_readme_does_not_contain_proof_bodies`` — root README does not paste
@@ -11,20 +11,29 @@ Covers:
   folder.
 * ``test_forbidden_absent_from_readme_box`` — forbidden tokens absent from the
   new README box.
+* ``test_no_persian_in_readme`` — no Persian script in README.md.
+* ``test_no_persian_in_status`` — no Persian script in STATUS.md.
+* ``test_no_persian_in_folder`` — no Persian script in any folder file.
+* ``test_no_persian_in_test_file`` — no Persian script in this test file.
 * ``test_author_untouched`` — Author section bytes unchanged.
 * ``test_license_untouched`` — License section bytes unchanged.
 """
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-FOLDER = REPO_ROOT / "خانه-تست-پروژه"
+FOLDER = REPO_ROOT / "project-test-home"
 INDEX = FOLDER / "README.md"
 README = REPO_ROOT / "README.md"
+STATUS = REPO_ROOT / "STATUS.md"
+TEST_FILE = Path(__file__).resolve()
+
+PERSIAN_RE = re.compile(r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]")
 
 FORBIDDEN = [
     "stripe",
@@ -54,7 +63,7 @@ def test_index_exists() -> None:
 def test_readme_contains_pointer() -> None:
     text = README.read_text(encoding="utf-8")
     assert "Project test home" in text
-    assert "خانه-تست-پروژه" in text
+    assert "project-test-home" in text
 
 
 def test_readme_does_not_contain_proof_bodies() -> None:
@@ -80,6 +89,36 @@ def test_forbidden_absent_from_readme_box(needle: str) -> None:
     end = text.index("## Destination — Planned")
     box = text[start:end]
     assert needle not in box.lower()
+
+
+def test_no_persian_in_readme() -> None:
+    text = README.read_text(encoding="utf-8")
+    assert not PERSIAN_RE.search(text), "README.md must not contain Persian script"
+
+
+def test_no_persian_in_status() -> None:
+    text = STATUS.read_text(encoding="utf-8")
+    assert not PERSIAN_RE.search(text), "STATUS.md must not contain Persian script"
+
+
+def test_no_persian_in_folder() -> None:
+    assert not PERSIAN_RE.search(_folder_text()), (
+        "project-test-home folder must not contain Persian script"
+    )
+
+
+def test_no_persian_in_test_file() -> None:
+    text = TEST_FILE.read_text(encoding="utf-8")
+    assert not PERSIAN_RE.search(text), (
+        "test_t233_test_home.py must not contain Persian script"
+    )
+
+
+def test_old_persian_folder_absent() -> None:
+    old_folder = REPO_ROOT / "\u0645\u0627\u0646\u0647-\u062a\u0633\u062a-\u067e\u0631\u0648\u0698\u0647"
+    assert not old_folder.exists(), (
+        "the old Persian folder name must not exist"
+    )
 
 
 def test_author_untouched() -> None:
