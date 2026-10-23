@@ -1,214 +1,238 @@
-Copyright 2026 Amin Azimi
-AI Architect Amin Azimi — End-to-End System Development
+# AEGIS AGENT
+## EXCLUSIVE PROPRIETARY RIGHTS AND RESTRICTED ACCESS LICENSE
+### ALL RIGHTS RESERVED — NO PUBLIC LICENSE
+
+**Copyright © 2026 Amin Azimi. All Rights Reserved.**
+
+**Sole Designated Rights Holder:** Amin Azimi
+**Professional and Commercial Identity:** Azimi Innovation Lab
+**Project:** Aegis Agent
+**Status:** Private Intellectual Property — Publicly Viewable Development Repository
+**License Classification:** Proprietary / Restricted / No Public Grant
+
+---
+
+### ARTICLE 1 — EXCLUSIVE OWNERSHIP
+
+All intellectual property rights, economic exploitation rights, copyrights, and other legally protectable interests in the original Aegis Agent project materials owned by Amin Azimi are exclusively reserved to Amin Azimi.
+
+These materials include, without limitation:
+
+- Source code, executable code, scripts, libraries, and original software components.
+- System architecture, agent orchestration, workflows, interfaces, and implementation designs.
+- Original algorithms, security mechanisms, authorization systems, and engineering methods to the extent legally protectable.
+- Documentation, diagrams, technical specifications, research materials, and original benchmarks.
+- Original prompts, agent configurations, evaluation frameworks, and project-specific datasets.
+- Original user interfaces, visual designs, branding, and associated creative materials.
+
+No ownership, exploitation, or licensing rights are transferred to any third party by publication, repository access, disclosure, inspection, or availability of these materials.
+
+All rights are expressly reserved.
+
+### ARTICLE 2 — ABSOLUTE RESERVATION OF PUBLIC LICENSING RIGHTS
+
+**NO GENERAL PUBLIC LICENSE IS GRANTED.**
+
+No individual, company, institution, organization, government body, research group, developer, or other third party receives permission to use, execute, reproduce, modify, distribute, commercialize, sublicense, or otherwise exploit the protected project materials solely because they are accessible.
+
+Any activity requiring the Rights Holder's authorization is prohibited unless Amin Azimi has provided prior, express, written authorization.
+
+No implied license, permission by silence, informal consent, or authorization arising solely from public availability is granted.
+
+### ARTICLE 3 — RESTRICTED ACTIVITIES
+
+Without prior written authorization from Amin Azimi, third parties are not granted permission to undertake any of the following activities involving protected Aegis Agent materials:
+
+1. Execute, deploy, host, operate, or commercially use the software.
+2. Copy, reproduce, redistribute, republish, or distribute source code or executable components.
+3. Modify, adapt, translate, extend, refactor, or create derivative software.
+4. Incorporate protected components into other software products, platforms, or services.
+5. Sell, resell, rent, lease, sublicense, assign, or otherwise transfer exploitation rights.
+6. Offer the software or its protected components as a commercial service, SaaS platform, API service, managed service, or white-label solution.
+7. Package, publish, or distribute protected components through public or private software registries or distribution channels.
+8. Use protected project materials for commercial training datasets, model training, fine-tuning, or other exploitation requiring authorization under applicable law.
+9. Extract or systematically reproduce protected documentation, original datasets, or implementation materials for unauthorized exploitation.
+10. Claim ownership, authorship, exclusive rights, official partnership, or commercial authorization over the project.
+11. Grant any third party rights that the acting party has not lawfully obtained from the Rights Holder.
+
+These restrictions apply to the extent permitted by applicable law and do not override non-waivable statutory rights.
+
+### ARTICLE 4 — EXCLUSIVE COMMERCIAL CONTROL
+
+Amin Azimi exclusively reserves the authority, to the extent of his lawful rights, to determine whether, when, how, and under what conditions Aegis Agent may be:
+
+- Licensed to individuals, companies, or institutions.
+- Sold or otherwise commercially transferred.
+- Offered under enterprise, subscription, SaaS, OEM, white-label, or other commercial arrangements.
+- Deployed within customer environments.
+- Incorporated into commercial software or services.
+- Distributed in source-code or binary form.
+- Developed, maintained, supported, or commercially operated by authorized third parties.
+- Assigned, exclusively licensed, or contributed to a separate legal entity.
+
+No third party may independently confer these permissions in relation to rights exclusively controlled by Amin Azimi.
+
+No public repository access constitutes a commercial offer, license grant, or permission to exploit the project.
+
+### ARTICLE 5 — MANDATORY PRIOR WRITTEN AUTHORIZATION
+
+Any permission from the Rights Holder must be granted through a separate written authorization expressly approved and signed by Amin Azimi or a legally authorized representative acting under his authority.
+
+The authorization must identify, as applicable:
+
+- The authorized person or legal entity.
+- The protected materials covered.
+- The precise activities permitted.
+- Whether commercial use is permitted.
+- Whether modification or redistribution is permitted.
+- Whether sublicensing or transfer is permitted.
+- The authorized duration and territory.
+- Applicable fees, obligations, restrictions, and termination conditions.
+
+Authorization is strictly limited to the rights expressly granted.
+
+No rights beyond the written authorization shall be inferred.
+
+### ARTICLE 6 — NO TRANSFER, SUBLICENSE, OR ASSIGNMENT
+
+Unless explicitly authorized in a separate signed agreement, no recipient may:
+
+- Transfer any granted rights to another party.
+- Sublicense protected project materials.
+- Assign contractual exploitation rights.
+- Sell or distribute an authorization.
+- Extend permission to affiliates, contractors, customers, or related organizations beyond the agreed scope.
+
+Any proposed transfer, sublicense, or expansion of rights requires separate authorization from Amin Azimi.
+
+### ARTICLE 7 — PUBLIC REPOSITORY AND DEVELOPMENT STATUS
+
+Aegis Agent may be publicly visible for professional portfolio presentation, technical demonstration, evaluation, and development transparency.
+
+Public visibility does not make the project open-source software and does not establish a public license to execute, modify, redistribute, or commercially exploit its protected implementation.
+
+The project is under active development and testing. Publication does not represent a warranty of production readiness, security certification, regulatory compliance, or commercial availability.
+
+Access and interactions expressly permitted by applicable law or binding repository-hosting platform terms remain unaffected.
+
+### ARTICLE 8 — SOURCE CODE, ARCHITECTURE, AND TECHNICAL MATERIALS
+
+The Rights Holder reserves all legally protectable rights in original project-specific software implementations, architectural expression, technical documentation, designs, and related materials.
+
+Disclosure of a technical concept, architectural pattern, or general engineering idea does not, by itself, establish exclusive ownership of that underlying idea.
+
+Nothing in this notice asserts copyright ownership over unprotectable ideas, public-domain materials, independently created implementations, or rights lawfully owned by third parties.
+
+### ARTICLE 9 — AI SYSTEMS, MODELS, DATA, AND AUTOMATED PROCESSING
+
+No general license is granted for the use of protected Aegis Agent materials in:
+
+- Commercial AI-agent products or services.
+- Training or fine-tuning of machine-learning models.
+- Commercial dataset construction.
+- Unauthorized automated reproduction or redistribution.
+- Commercial extraction of protected project-specific implementation materials.
+- Deployment of derived AI systems incorporating protected components.
+
+Any activity requiring permission from the Rights Holder must be separately authorized in writing.
+
+Mandatory statutory exceptions, including applicable text-and-data-mining provisions, are not displaced by this notice. The Rights Holder expressly reserves rights against text and data mining to the extent and in the manner permitted by applicable law.
+
+### ARTICLE 10 — CONTRIBUTIONS AND THIRD-PARTY RIGHTS
+
+No external contribution is automatically accepted as a transfer of copyright or other intellectual property rights.
+
+Any third-party contribution, assignment, or commercial exploitation arrangement must be evaluated under its applicable terms and, where necessary, governed by a separate written agreement.
+
+Third-party dependencies, libraries, frameworks, and components remain governed by their respective licenses.
+
+This document neither claims ownership over third-party materials nor overrides permissions granted by their lawful rights holders.
+
+### ARTICLE 11 — BRANDING AND TRADEMARK RESERVATION
+
+All rights lawfully held in the Aegis Agent name, Azimi Innovation Lab name, original logos, and associated branding are reserved.
+
+No permission is granted to use protected branding in a manner suggesting official authorization, endorsement, sponsorship, partnership, or affiliation.
+
+Any use of protected marks beyond applicable legal exceptions requires appropriate authorization.
+
+### ARTICLE 12 — CONFIDENTIALITY AND NON-PUBLIC ASSETS
+
+Publication of selected project materials does not authorize access to:
+
+- Private source repositories.
+- Confidential engineering documentation.
+- Proprietary datasets.
+- Credentials, secrets, and cryptographic keys.
+- Restricted infrastructure or internal services.
+- Non-public model configurations or implementation materials.
+
+Access to restricted assets requires separate authorization.
+
+Publicly disclosed information is not made confidential merely by this notice.
+
+### ARTICLE 13 — NO IMPLIED PARTNERSHIP OR REPRESENTATION
+
+Access to Aegis Agent does not establish an employment relationship, agency, partnership, joint venture, distribution agreement, reseller status, or commercial affiliation with Amin Azimi or Azimi Innovation Lab.
+
+No third party is authorized to represent the project commercially or enter into commitments on behalf of the Rights Holder without express authorization.
+
+### ARTICLE 14 — RESERVATION OF ENFORCEMENT RIGHTS
+
+The Rights Holder reserves the right to enforce all legally available intellectual property, contractual, and other applicable rights.
+
+Unauthorized activities may result in appropriate legal action, including requests for cessation, removal, injunctive relief, compensation, and other remedies where available under applicable law.
+
+Nothing in this document guarantees a particular remedy or removes procedural or substantive requirements imposed by law.
+
+### ARTICLE 15 — NO WARRANTY AND LIMITATION OF LIABILITY
+
+The publicly viewable development materials are provided on an “AS IS” and “AS AVAILABLE” basis.
+
+To the maximum extent permitted by applicable law, no voluntary warranty is provided regarding reliability, availability, security, fitness for a particular purpose, merchantability, or non-infringement.
+
+Liability is limited only to the extent permitted by applicable law.
+
+Nothing excludes or restricts liability that cannot lawfully be excluded, including applicable liability for intentional misconduct, gross negligence, or injury to life, body, or health.
+
+### ARTICLE 16 — GOVERNING LAW AND MANDATORY PROTECTIONS
+
+To the extent a valid contractual relationship is established and a choice of law is legally permissible, that relationship may be governed by the laws of the Federal Republic of Germany, subject to mandatory applicable law and any contrary provisions of a separately executed agreement.
+
+This notice does not itself create contractual consent by every repository visitor, establish an exclusive court jurisdiction, or override mandatory protections under German law or European Union law.
+
+### ARTICLE 17 — LICENSE STATUS AND SEPARATE AGREEMENTS
+
+This document constitutes an express reservation of rights and a statement that no general public software license is granted for materials lawfully controlled by Amin Azimi and made available under these terms.
+
+Any permitted exploitation requiring the Rights Holder's authorization must be based on a separate valid written agreement.
+
+No person is entitled to demand, assume, or obtain a license solely because the project is publicly accessible.
+
+This notice does not purport to revoke legally effective permissions granted under other applicable licenses or agreements.
+
+### ARTICLE 18 — FINAL DECLARATION
+
+**AEGIS AGENT IS PROPRIETARY SOFTWARE.**
+
+**ALL RIGHTS RESERVED.**
+
+**NO PUBLIC SOFTWARE LICENSE IS GRANTED.**
+
+**NO UNAUTHORIZED USE, EXECUTION, MODIFICATION, REPRODUCTION, DISTRIBUTION, SUBLICENSING, TRANSFER, OR COMMERCIAL EXPLOITATION IS PERMITTED.**
+
+**ALL LICENSING AND COMMERCIAL AUTHORIZATION RIGHTS LAWFULLY HELD BY THE RIGHTS HOLDER REMAIN EXCLUSIVELY RESERVED TO AMIN AZIMI.**
+
+**PRIOR EXPRESS WRITTEN AUTHORIZATION IS REQUIRED FOR ACTIVITIES THAT REQUIRE THE RIGHTS HOLDER'S PERMISSION.**
+
+---
+
+**AMIN AZIMI**
+AI Architect | End-to-End System Development
 Azimi Innovation Lab
 
-   Reason: current file mixes MIT grant with "All rights reserved" and exclusive-property language. That conflict blocks clean commercialization. Apache-2.0 is permissive, includes a patent grant, requires attribution, and does not force later products to be open.
+**Copyright © 2026 Amin Azimi. All Rights Reserved.**
 
-                                 Apache License
-                           Version 2.0, January 2004
-                        http://www.apache.org/licenses/
+**License Type: Proprietary — All Rights Reserved — No Public License**
 
-   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
-
-   1. Definitions.
-
-      "License" shall mean the terms and conditions for use, reproduction,
-      and distribution as defined by Sections 1 through 9 of this document.
-
-      "Licensor" shall mean the copyright owner or entity authorized by
-      the copyright owner that is granting the License.
-
-      "Legal Entity" shall mean the union of the acting entity and all
-      other entities that control, are controlled by, or are under common
-      control with that entity. For the purposes of this definition,
-      "control" means (i) the power, direct or indirect, to cause the
-      direction or management of such entity, whether by contract or
-      otherwise, or (ii) ownership of fifty percent (50%) or more of the
-      outstanding shares, or (iii) beneficial ownership of such entity.
-
-      "You" (or "Your") shall mean an individual or Legal Entity
-      exercising permissions granted by this License.
-
-      "Source" form shall mean the preferred form for making modifications,
-      including but not limited to software source code, documentation
-      source, and configuration files.
-
-      "Object" form shall mean any form resulting from mechanical
-      transformation or translation of a Source form, including but
-      not limited to compiled object code, generated documentation, and
-      conversions to other media types.
-
-      "Work" shall mean the work of authorship, whether in Source or
-      Object form, made available under the License, as indicated by a
-      copyright notice that is included in or attached to the work
-      (an example is provided in the Appendix below).
-
-      "Derivative Works" shall mean any work, whether in Source or Object
-      form, that is based on (or derived from) the Work and for which the
-      editorial revisions, annotations, elaborations, or other modifications
-      represent, as a whole, an original work of authorship. For the purposes
-      of this License, Derivative Works shall not include works that remain
-      separable from, or merely link (or bind by name) to the interfaces of,
-      the Work and Derivative Works thereof.
-
-      "Contribution" shall mean any work of authorship, including
-      the original version of the Work and any modifications or additions
-      to that Work or Derivative Works thereof, that is intentionally
-      submitted to Licensor for inclusion in the Work by the copyright owner
-      or by an individual or Legal Entity authorized to submit on behalf of
-      the copyright owner. For the purposes of this definition, "submitted"
-      means any form of electronic, verbal, or written communication sent
-      to the Licensor or its representatives, including but not limited to
-      communication on electronic mailing lists, source code control systems,
-      and issue tracking systems that are managed by, or on behalf of, the
-      Licensor for the purpose of discussing and improving the Work, but
-      excluding communication that is conspicuously marked or otherwise
-      designated in writing by the copyright owner as "Not a Contribution."
-
-      "Contributor" shall mean Licensor and any individual or Legal Entity
-      on behalf of whom a Contribution has been received by Licensor and
-      subsequently incorporated within the Work.
-
-   2. Grant of Copyright License. Subject to the terms and conditions of
-      this License, each Contributor hereby grants to You a perpetual,
-      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
-      copyright license to reproduce, prepare Derivative Works of,
-      publicly display, publicly perform, sublicense, and distribute the
-      Work and such Derivative Works in Source or Object form.
-
-   3. Grant of Patent License. Subject to the terms and conditions of
-      this License, each Contributor hereby grants to You a perpetual,
-      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
-      (except as stated in this section) patent license to make, have made,
-      use, offer to sell, sell, import, and otherwise transfer the Work,
-      where such license applies only to those patent claims licensable
-      by such Contributor that are necessarily infringed by their
-      Contribution(s) alone or by combination of their Contribution(s)
-      with the Work to which such Contribution(s) was submitted. If You
-      institute patent litigation against any entity (including a
-      cross-claim or counterclaim in a lawsuit) alleging that the Work
-      or a Contribution incorporated within the Work constitutes direct
-      or contributory patent infringement, then any patent licenses
-      granted to You under this License for that Work shall terminate
-      as of the date such litigation is filed.
-
-   4. Redistribution. You may reproduce and distribute copies of the
-      Work or Derivative Works thereof in any medium, with or without
-      modifications, and in Source or Object form, provided that You
-      meet the following conditions:
-
-      (a) You must give any other recipients of the Work or Derivative
-          Works a copy of this License; and
-
-      (b) You must cause any modified files to carry prominent notices
-          stating that You changed the files; and
-
-      (c) You must retain, in the Source form of any Derivative Works
-          that You distribute, all copyright, patent, trademark, and
-          attribution notices from the Source form of the Work,
-          excluding those notices that do not pertain to any part of
-          the Derivative Works; and
-
-      (d) If the Work includes a "NOTICE" text file as part of its
-          distribution, then any Derivative Works that You distribute must
-          include a readable copy of the NOTICE file contained within such
-          NOTICE file, excluding those notices that do not pertain to any
-          part of the Derivative Works in which the NOTICE file is derived
-          from, excluding those notices that do not pertain to any part of
-          the Derivative Works, and excluding all notices that do not
-          pertain to the Derivative Works. If the Work includes a NOTICE
-          text file as part of its distribution, then Derivative Works
-          that You distribute must include a readable copy of the NOTICE
-          file contained within such NOTICE file, excluding any notices
-          that do not pertain to any part of the Derivative Works, in
-          at least one of the following places: within a NOTICE text
-          file distributed as part of the Derivative Works; within the
-          Source form or documentation, if provided along with the
-          Derivative Works; or within a display generated by the
-          Derivative Works, if and where such third-party notices normally
-          appear. The contents of the NOTICE file are for informational
-          purposes only and do not modify the License. You may add Your own
-          attribution notices within Derivative Works that You distribute,
-          alongside or as an addendum to the NOTICE text from the Work,
-          provided that such additional attribution notices cannot be
-          construed as modifying the License.
-
-      You may add Your own copyright statement to Your modifications and
-      may provide additional or different license terms and conditions
-      for use, reproduction, or distribution of Your modifications, or
-      for any such Derivative Works as a whole, provided Your use,
-      reproduction, and distribution of the Work otherwise complies with
-      the conditions stated in this License.
-
-   5. Submission of Contributions. Unless You explicitly state otherwise,
-      any Contribution intentionally submitted for inclusion in the Work
-      by You to the Licensor shall be under the terms and conditions of
-      this License, without any additional terms or conditions.
-      Notwithstanding the above, nothing herein shall supersede or modify
-      the terms of any separate license agreement you may have executed
-      with Licensor regarding such Contributions.
-
-   6. Trademarks. This License does not grant permission to use the trade
-      names, trademarks, service marks, or product names of the Licensor,
-      except as required for reasonable and customary use in describing the
-      origin of the Work and reproducing the content of the NOTICE file.
-
-   7. Disclaimer of Warranty. Unless required by applicable law or
-      agreed to in writing, Licensor provides the Work (and each
-      Contributor provides its Contributions) on an "AS IS" BASIS,
-      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-      implied, including, without limitation, any warranties or conditions
-      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
-      PARTICULAR PURPOSE. You are solely responsible for determining the
-      appropriateness of using or redistributing the Work and assume any
-      risks associated with Your exercise of permissions under this License.
-
-   8. Limitation of Liability. In no event and under no legal theory,
-      whether in tort (including negligence), contract, or otherwise,
-      unless required by applicable law (such as deliberate and grossly
-      negligent acts) or agreed to in writing, shall any Contributor be
-      liable to You for damages, including any direct, indirect,, special,
-      incidental, or consequential damages of any character arising as a
-      result of this License or out of the use or inability to use the
-      Work (including but not limited to damages for loss of goodwill,
-      work stoppage, computer failure or malfunction, or any and all
-      other commercial damages or losses), even if such Contributor
-      has been advised of the possibility of such damages.
-
-   9. Accepting Warranty or Additional Liability. While redistributing
-      the Work or Derivative Works thereof, You may choose to offer,
-      and charge a fee for, acceptance of support, warranty, indemnity,
-      or other liability obligations and/or rights consistent with this
-      License. However, in accepting such obligations, You may act only
-      on Your own behalf and on Your sole responsibility, not on behalf
-      of any other Contributor, and only if You agree to indemnify,
-      defend, and hold each Contributor harmless for any liability
-      incurred by, or claims asserted against, such Contributor by reason
-      of your accepting any such warranty or additional liability.
-
-   END OF TERMS AND CONDITIONS
-
-   APPENDIX: How to apply the Apache License to your work.
-
-      To apply the Apache License to your work, attach the following
-      boilerplate notice, with the fields enclosed by brackets "[]"
-      replaced with your own identifying information. (Don't include
-      the brackets!)  The text should be enclosed in the appropriate
-      comment syntax for the file format. We also recommend that a
-      file or class name and description of purpose be included on the
-      same "printed page" as the copyright notice for easier
-      identification within third-party archives.
-
-   Copyright [yyyy] [name of copyright owner]
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+**END OF LICENSE NOTICE**
